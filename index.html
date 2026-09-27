@@ -260,6 +260,9 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #strip,#scue{display:none}
   #stepRow{display:flex!important;gap:0;border:1px solid rgba(236,230,218,.16);border-radius:22px;background:rgba(12,16,26,.28);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);overflow:hidden}
   #stepRow .step-b,#stepRow .step-next{border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;min-height:40px}
+  #stepRow{position:relative;touch-action:none}
+  #stepRow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:calc(var(--f,0)*100%);background:linear-gradient(90deg,rgba(236,230,218,.04),rgba(255,91,58,.22));border-right:1.5px solid rgba(255,91,58,.85);opacity:calc(var(--f,0)*40);max-width:100%;pointer-events:none;transition:opacity .3s}
+  #stepRow.scrub{border-color:rgba(255,91,58,.45)}
   #stepRow .step-b{width:42px;border-right:1px solid rgba(236,230,218,.12)}
   #stepRow .step-next{min-width:0;padding:6px 14px 7px 12px;gap:10px}
   #stepRow .step-t b{font-size:8px;letter-spacing:.22em}
@@ -2823,7 +2826,7 @@ const NEXT = ['Into the brain', 'Light up the amygdalae', 'Sort their nuclei', '
 NEXT[-1] = 'Through the Solar System to Earth';
 const nav = { from: -1, to: -1, t0: 0, dur: 1, busy: false, used: false };
 function goChapter(k){
-  k = clamp(Math.round(k), FIRST, LAST); SCR.on = false; nav.out = false;
+  k = clamp(Math.round(k), FIRST, LAST); SCR.on = SCR.hold = false; nav.out = false;
   if (k === nav.to && (nav.busy || Math.abs(S - k) < 1e-4)) return;
   const n = Math.abs(k - S);
   nav.from = S; nav.to = k; nav.t0 = performance.now(); nav.busy = true; nav.used = true;
@@ -2832,7 +2835,7 @@ function goChapter(k){
   if (nav.soft) nav.dur = Math.max(S, k) <= .001 ? 9000 : Math.min(S, k) < ST.CHROM - .001 ? 7000 : 5200;
   try { history.replaceState(null, '', '#' + HASH[k]); } catch (e) {}
 }
-const stepChapter = d => goChapter(nav.to + d);
+const stepChapter = d => goChapter(SCR.hold ? (d > 0 ? Math.floor(S + 1e-3) + 1 : Math.ceil(S - 1e-3) - 1) : nav.to + d);   // (from a paused point: the chapters either side of it)
 let navSettle = 0;                                               // the camera keeps easing into a chapter for this long, or until it arrives
 const azFor = k => k === ST.ORBIT ? (v => Math.atan2(v.x, v.z))(orbitDir()) : k === ST.SORT ? az.sort : k === ST.CELL ? az.neu : k === ST.CHROM ? az.chr : k === ST.ZMW ? az.smrt : k === ST.NET ? az.net : null;
 for (const ev of ['pointerdown', 'touchstart', 'wheel']) canvas.addEventListener(ev, () => { if (!nav.busy) navSettle = 0; }, { passive: true });   // a hand on the scene takes over
@@ -2849,10 +2852,20 @@ document.querySelectorAll('#rail button').forEach(b => b.addEventListener('click
 $('stPrev').addEventListener('click', () => stepChapter(-1));
 $('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
 let stepSwiped = false, stepSwipe = null;                        // a swipe across the buttons turns the page too
-$('stepRow').addEventListener('pointerdown', e => { stepSwipe = { x: e.clientX, y: e.clientY }; stepSwiped = false; });
-addEventListener('pointerup', e => {
-  if (!stepSwipe) return; const dx = e.clientX - stepSwipe.x, dy = e.clientY - stepSwipe.y; stepSwipe = null;
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)*1.5){ stepSwiped = true; stepChapter(dx < 0 ? 1 : -1); setTimeout(() => stepSwiped = false, 350); }
+// a finger drawn along the bar scrubs the story like a slider (right is forward, one bar's width a chapter); let go, and it stays there
+$('stepRow').addEventListener('pointerdown', e => { if (!ready) return; stepSwipe = { x: e.clientX, y: e.clientY, id: e.pointerId, s0: SCR.on ? SCR.target : S, m: 0 }; stepSwiped = false; });
+addEventListener('pointermove', e => {
+  const W = stepSwipe; if (!W || e.pointerId !== W.id) return; const dx = e.clientX - W.x;
+  if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = SCR.on ? SCR.target : S; $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
+  if (!W.m) return;
+  if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
+  const w = $('stepRow').getBoundingClientRect().width;
+  SCR.target = clamp(W.s0 + (e.clientX - W.x)/Math.max(160, w), FIRST, LAST); SCR.on = true; SCR.hold = true; SCR.t = performance.now();
+  SCR.dir = e.clientX >= W.x ? 1 : -1; nav.busy = false; nav.out = false; nav.used = true; nav.to = Math.round(SCR.target);
+});
+for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => {
+  const W = stepSwipe; if (!W || e.pointerId !== W.id) return; stepSwipe = null; $('stepRow').classList.remove('scrub');
+  if (W.m){ stepSwiped = true; setTimeout(() => stepSwiped = false, 350); }
 });
 addEventListener('keydown', e => {
   if (e.target.closest?.('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2877,7 +2890,7 @@ const chEls = [...document.querySelectorAll('[data-ch]')];
 // ---------------------------------------------------------------- scrolling turns the pages
 // The wheel, a trackpad or a vertical swipe moves through the story itself, transitions and all; when it stops, the story settles
 // on a chapter (a small push is enough to turn the page). A pinch, or ⌘/Ctrl with the wheel, zooms the scene; a sideways drag turns it.
-const SCR = { on: false, target: 0, t: 0, dir: 1, idle: 260 };
+const SCR = { on: false, hold: false, target: 0, t: 0, dir: 1, idle: 260 };   // (hold: paused part-way by the bar, it does not settle)
 const scrLen = k => k === ST.CELL || k === ST.CHROM ? 2.4 : k === ST.COSMOS ? 2.8 : 1.1;    // screen heights of scrolling from chapter k to the next (the dives take longer)
 function scrollStory(px){
   if (!ready || !px) return;
@@ -2885,6 +2898,7 @@ function scrollStory(px){
     if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
     COS.manual = true; COS.za = clamp(COS.za + px/(innerHeight*2.2), 0, 1); nav.used = true; if (!(px > 0 && COS.za >= 1)) return; }
   if (intro.t < 1){ intro.t = 1; controls.enabled = true; }                            // (scrolling ends the opening flight)
+  SCR.hold = false;
   if (!SCR.on){ SCR.on = true; SCR.target = S; nav.busy = false; nav.out = false; }
   const fwd = px > 0, k = clamp(Math.floor(fwd ? SCR.target : SCR.target - 1e-6), FIRST, LAST - 1);
   SCR.target = clamp(SCR.target + px/(innerHeight*scrLen(k)), FIRST, LAST); SCR.t = performance.now(); SCR.dir = fwd ? 1 : -1; nav.used = true;
@@ -2906,7 +2920,7 @@ addEventListener('wheel', e => {
   // over the scene of a 3D chapter the wheel zooms it (the orbit controls, or the repair map's own zoom); the chapters turn from the
   // strip beside the chapter dots, the rail, the arrow keys and the buttons. In the opening chapter the wheel still drives its zoom
   const onScene = e.target === canvas || !!e.target.closest?.('#labels, #netLabels, #zmwLabels, #sortLabels, #cellLabels, #arrLabels');
-  if (onScene && !SCR.on && Sd > -.5){ if (ready && intro.t < 1){ intro.t = 1; controls.enabled = true; } return; }
+  if (onScene && (!SCR.on || SCR.hold) && Sd > -.5){ if (ready && intro.t < 1){ intro.t = 1; controls.enabled = true; } return; }
   e.preventDefault(); e.stopPropagation(); scrollStory(dy);
 }, { capture: true, passive: false });
 // one finger on the scene: up or down turns the pages, sideways turns the scene; a second finger, or a tap, is the scene's
@@ -5531,7 +5545,7 @@ renderer.setAnimationLoop(() => {
   simTicker.set(new Date(now).toISOString().slice(11, 19));
 
   // the chapter, or the way between two
-  if (SCR.on){ S += (SCR.target - S)*Math.min(1, dt*6); if (Math.abs(SCR.target - S) < 1e-4) S = SCR.target; Sd = S; if (tNow - SCR.t > SCR.idle) scrSettle(tNow); }
+  if (SCR.on){ S += (SCR.target - S)*Math.min(1, dt*6); if (Math.abs(SCR.target - S) < 1e-4) S = SCR.target; Sd = S; if (tNow - SCR.t > SCR.idle && !SCR.hold) scrSettle(tNow); }
   else S = Sd = navStage(tNow);
   if (nav.busy || SCR.on) navSettle = 1.8; else navSettle -= dt;          // (counted in frame time, so a slow device gets as many steps)
   const inTransit = nav.busy || navSettle > 0 || Math.abs(Sd - Math.round(Sd)) > .002;   // only a real transition steers the camera
@@ -5579,6 +5593,7 @@ renderer.setAnimationLoop(() => {
     $('stPrev').disabled = nav.to === FIRST; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
+  { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
   $('stBar').style.setProperty('--p', nav.busy ? clamp((tNow - nav.t0)/nav.dur, 0, 1).toFixed(3) : '0');
   // chapter text, legends and panels crossfade with the scroll
   for (const el of chEls){
