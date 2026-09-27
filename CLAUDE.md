@@ -4,17 +4,20 @@
 
 ## Layout
 
-Everything lives in one self-contained file, `index.html` (~7 MB, ~5,700 lines). There is no build step.
+The page and its code are in `index.html` (~580 KB). Large assets live beside it. There is no build step.
+
+- `assets/*.jpg`: Earth day, night and clouds, the planets (Mercury to Neptune, no Earth) and the Moon.
+- `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (fetched in parallel at start via `BIN`) and `tle`, the satellite snapshot (fetched only if the live feeds fail). Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
-- **Line ~776**: `window.NOOS_DATA`, a ~3.5 MB line of gzipped + base64 data (GWAS and more). It is decoded in the browser with pako.
-- **Line ~778**: the import map, which pins `three@0.170.0` from jsDelivr.
-- **Line ~784 onward**: the main `<script type="module">` with all scene code.
-- **Very long lines** hold embedded base64 JPEG textures (Earth day map ~L1104, planets `PL_TEX` ~L4538, `MOON_TEX` ~L4559) and voxel data (`AMY_VOX` ~L4926).
+- `window.NOOS_DATA` (one long line near the import map) keeps only the small inline data: the `net` and `land` datasets, their metadata, and the time-zone table.
+- The import map, which pins `three@0.170.0` from jsDelivr.
+- After it comes the main `<script type="module">` with all scene code.
+- Long lines still hold `NOOS_DATA` and the amygdala voxel data `AMY_VOX` (~22 KB).
 
 ## Working on it
 
-- **Never read the file whole, and never print the long data lines.** A single line can be MBs. Use `grep -n` to find code, and read with `offset`/`limit`. Pipe output through `cut -c1-200` when a match could land on a data line.
+- **Never read the file whole, and never print the long data lines.** Some lines are tens of KB. Use `grep -n` to find code, and read with `offset`/`limit`. Pipe output through `cut -c1-200` when a match could land on a data line.
 - Edit with small, exact replacements. Leave the base64/gzip blobs untouched unless you are replacing an asset on purpose.
 - **External dependencies:**
   - three.js 0.170.0 and satellite.js 5.0.0 (jsDelivr)
