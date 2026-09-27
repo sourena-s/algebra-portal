@@ -560,7 +560,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <p data-ch="1" id="ledeCortex">An ageing brain. Does its DNA break down in Alzheimer's disease?</p>
     <p data-ch="2" id="ledeAmy">From 90 donors, the most vulnerable tissue first: the amygdalae.</p>
     <p data-ch="3" id="ledeSort">Nuclei sorted by laser into neurons and oligodendrocytes.</p>
-    <p data-ch="4" id="ledeCell">One neuron. It never divides, so its mutations stay for life.</p>
+    <p data-ch="4" id="ledeCell"></p>
     <p data-ch="5" id="ledeChrom">46 chromosomes, gaining 10 to 20 mutations a year.</p>
     <p data-ch="6" id="ledeZmw">One DNA circle, read round and round in one well.</p>
     <p data-ch="7" id="ledeSmrt">One of 25 million wells on a SMRT Cell, imaged as they read.</p>
@@ -5186,7 +5186,7 @@ function buildSorterFx(){
   const tubeGlow = (x, c) => sprite(x, -1.68, .45, `uniform float uOn, uFill; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard;
     gl_FragColor = vec4(${c}, exp(-d*d*4.)*.16*uOn*min(1., uFill*3.)); }`);
   tubeGlow(-.72, 'vec3(.3, .64, 1.)'); tubeGlow(.72, 'vec3(1., .29, .24)');
-  sLabels = [[-.38, 1.73, 0, 'Sample · amygdala nuclei', 'r'], [.06, .66, 0, 'Nozzle', 'l'], [1.36, .58, 0, 'Lasers · 355 · 405 · 488 · 561 · 640 nm', 'r'], [-.62, .56, 0, 'Detectors', 'c'],
+  sLabels = [[-.38, 1.73, 0, 'Sample · amygdala nuclei', 'r'], [.06, .66, 0, 'Nozzle', 'l'], [1.36, .58, 0, 'Laser', 'r'], [-.62, .56, 0, 'Detectors', 'c'],
     [.34, -.2, 0, 'Deflection plates', 'l'], [-.86, -1.52, 0, 'Neurons', 'r'], [.86, -1.52, 0, 'Oligodendrocytes', 'l'],
     [-.24, 1.1, 0, 'Funnel', 'r'], [.98, 1.5, 0, 'Events · live', 'c'], [.98, .76, 0, 'NeuN →', 'c'], [.59, 1.1, 0, 'Olig2 →', 'r'],
     [1.14, 1.08, 0, 'Neurons', 'c', '#4DA3FF'], [.8, 1.38, 0, 'Oligodendrocytes', 'c', '#FF4A3D']]
