@@ -4701,12 +4701,14 @@ function buildCosmos(){
 const _m4a = new THREE.Matrix4(), _m4b = new THREE.Matrix4();
 const _cv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
 // the frames' placements for a zoom level z: world = local*s + o for each of L, M, S, and the Earth's globe
+// on a tall screen the Milky Way is met more open and on a steep diagonal, filling the height; 0 away from it, 1 at the galaxy (z = 1)
+const mwPose = z => innerHeight > innerWidth ? cosSm(.55, 1, z)*(1 - cosSm(1.02, 1.5, z)) : 0;
 function cosPlace(z){
-  const [K1, K2, K3] = COS_K, F1 = COS.F1, F2 = mwSun(_cv[0]), F3 = ssEarth(_cv[1]);
+  const [K1, K2, K3] = COS_K, F1 = COS.F1, F2 = mwSun(_cv[0]), F3 = ssEarth(_cv[1]), mwZ = 1 + .35*mwPose(z);   // (on a tall screen, a little closer on the Milky Way)
   const sL = Math.pow(K1, z), w1 = 1 - (1 - cosSm(0, .5, z))/sL, oL = F1.clone().multiplyScalar(-w1*sL);   // (the Milky Way's point slides to the centre as the view closes, never leaving it)
   let sM, oM;
-  if (z <= 1){ sM = Math.pow(K1, z - 1); oM = F1.clone().multiplyScalar(sL).add(oL); }       // (the Milky Way at its true size in Laniakea)
-  else { const w2 = cosSm(1, 1.42, z); sM = Math.pow(K2, z - 1); oM = F2.clone().multiplyScalar(-w2*sM); }
+  if (z <= 1){ sM = Math.pow(K1, z - 1)*mwZ; oM = F1.clone().multiplyScalar(sL).add(oL); }       // (the Milky Way at its true size in Laniakea)
+  else { const w2 = cosSm(1, 1.42, z); sM = Math.pow(K2, z - 1)*mwZ; oM = F2.clone().multiplyScalar(-w2*sM); }
   let sS, oS;
   if (z <= 2){ sS = Math.pow(K2, z - 2); oS = F2.clone().multiplyScalar(sM).add(oM); }
   else { const w3 = cosSm(2.16, 2.56, z); sS = Math.pow(K3, z - 2); oS = F3.clone().multiplyScalar(-w3*sS); }   // (on the Sun first, while it grows; then across to the Earth)
@@ -4719,8 +4721,8 @@ const _tv = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new 
 function cosTurn(z, out){
   const bump = (a, b) => Math.sin(Math.PI*clamp((z - a)/(b - a), 0, 1));
   const yaw = 1.0*cosSm(0, .66, z) - 1.6*cosSm(1, 1.62, z) + .6*cosSm(2.05, 2.95, z);
-  const pitch = .38*bump(0, .95) + .52*cosSm(1.02, 1.55, z) - .52*cosSm(1.9, 2.9, z);
-  const roll = .26*bump(0, .66) - .32*bump(1, 1.62) + .22*bump(2.05, 2.95);
+  const mp = mwPose(z), pitch = -.55*mp + .38*bump(0, .95) + .52*cosSm(1.02, 1.55, z) - .52*cosSm(1.9, 2.9, z);
+  const roll = 1.1*mp + .26*bump(0, .66) - .32*bump(1, 1.62) + .22*bump(2.05, 2.95);
   const F = camera.getWorldDirection(_tv[0]), Up = _tv[1].set(0, 1, 0).applyQuaternion(camera.quaternion), Rt = _tv[2].crossVectors(F, Up).normalize();
   out.setFromAxisAngle(Up, yaw).multiply(_q[1].setFromAxisAngle(Rt, pitch)).multiply(_q[2].setFromAxisAngle(F, roll));
   // in the Solar System, the frames settle so that the Sun lies where the real Sun does from the Earth (the side the globe is lit
