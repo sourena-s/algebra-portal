@@ -4256,7 +4256,7 @@ $('snd').setAttribute('aria-pressed', SND.on);
 // Three nested frames, each drawn at its own scale and handed to the next by a zoom about the point where the next one lies:
 // the supercluster (L), the galaxy at its edge (M), the Sun's system in that galaxy (S), and last the Earth itself, which is the
 // scene's own globe. z runs 0 (Laniakea) -> 1 (the Milky Way) -> 2 (the Solar System) -> 3 (Earth, the orbit chapter).
-const COS = { za: 0, zs: 0, manual: false, lan: null, mw: null, ss: null, auto: 0, z: 0, F1: null, labels: null, sunA: 2.2, earthA: .8 };
+const COS = { za: 0, zs: 0, manual: false, lan: null, mw: null, ss: null, auto: 0, z: 0, F1: null, labels: null, sunA: 2.2, earthA: .8, rot: 0 };
 const COS_RE = .003, COS_K = [1e6, 20000, 1/COS_RE];     // (deep into Laniakea's filament before the Milky Way; Earth's true size against its orbit is far smaller still)                 // the zoom from each frame into the next; Earth's radius in the S frame
 const cosGroup = new THREE.Group(); cosGroup.visible = false; scene.add(cosGroup);
 const cosEio = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
@@ -4553,7 +4553,7 @@ function buildLaniakea(){
 // into many feathery arms, two strongest, at a pitch of 16 degrees; blue-white clusters of young stars strung along them; fine brown
 // dust lanes threaded through the whole disk; a halo of globular clusters and the Magellanic Clouds. It turns slowly. The Sun lies
 // inside one of the arms, 26,000 light-years out, among its own crowd of stars.
-const MW_TS = .06, MW_OMP = .35, MW_K = 1/Math.tan(16*DEG), MW_R0 = .45, MW_BAR = 27*DEG;
+const MW_SPIN = 3*2*Math.PI/60, MW_K = 1/Math.tan(16*DEG), MW_R0 = .45, MW_BAR = 27*DEG;
 const mwN = (x, y) => Math.sin(x*1.7 + Math.sin(y*2.3)*1.3)*Math.cos(y*1.9 - Math.sin(x*1.3)*1.1);
 const mwPsi = (r, ph) => ph - MW_BAR - MW_K*Math.log(Math.max(r, .05)/MW_R0);
 const mwArms = (r, ph) => { const s = mwPsi(r, ph), n = mwN(r*5, ph*2);
@@ -4615,8 +4615,7 @@ function buildMilkyWay(){
   dm.blending = THREE.NormalBlending; dm.fragmentShader = `varying vec3 vC; varying float vA; void main(){ vec2 c = gl_PointCoord - .5; float d = dot(c, c)*4.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*3.)); }`;
   COS.dust = cosPoints({ position: [D, 3], aK: [DK, 2] }, dm); COS.dust.renderOrder = -7; cosGroup.add(COS.dust);
 }
-const mwTime = () => U.uTime.value*MW_TS;
-const mwSun = (out = new THREE.Vector3()) => { const a = 1.1, ang = COS.sunA + MW_OMP*mwTime(); return out.set(a*Math.cos(ang), 0, a*Math.sin(ang)); };
+const mwSun = (out = new THREE.Vector3()) => { const a = 1.1, ang = COS.sunA + COS.rot; return out.set(a*Math.cos(ang), 0, a*Math.sin(ang)); };
 
 // The Solar System, in order but not to scale: the Sun and eight planets as spheres lit by it (sizes and distances compressed),
 // their orbits, the asteroid belt and Saturn's rings. Earth is the scene's own globe, and the Moon goes round it.
@@ -4735,6 +4734,7 @@ function cosTurn(z, out){
 const cosLabel = (e, w, o, dy = 0) => { tmp3.copy(w).project(camera); const on = tmp3.z < 1 && Math.abs(tmp3.x) < 1.1 && Math.abs(tmp3.y) < 1.1 ? o : 0;
   labelAt(e, (tmp3.x*.5 + .5)*innerWidth + (e.classList.contains('l') ? 14 : 0), (1 - (tmp3.y*.5 + .5))*innerHeight + dy, on); };
 function cosmosFrame(dt, Sd){
+  COS.rot += dt*MW_SPIN*(innerHeight > innerWidth ? 1 : -1);   // the Milky Way turns three times a minute, anticlockwise on the screen (a tall screen sees it from the other face)
   const f = clamp(Sd + 1, 0, 1), here = f < 1 - 1e-4;
   if (Sd <= -.999 && !SCR.on && !nav.busy) COS.auto += dt; else if (f > .02){ COS.auto = Math.max(COS.auto, 9.5); COS.za = 1; }
   if (!COS.manual) COS.za = RM ? 1 : cosEio(clamp((COS.auto - 3.2)/6.3, 0, 1));             // (on its own at first; once scrolled, the scroll leads)
@@ -4781,7 +4781,7 @@ function cosmosFrame(dt, Sd){
   const mwOn = mwIn*(1 - cosSm(2.04, 2.12, z));
   setP(COS.mw, pl.sM, pl.oM, mwOn);
   const MU = COS.mw.material.uniforms; MU.uIso.value = 0; MU.uDot.value = cosSm(1.05, 1.35, z)*(1 - cosSm(1.96, 2.08, z));
-  const rot = MW_OMP*mwTime(); MU.uRot.value = rot; COS.dust.material.uniforms.uRot.value = rot;
+  const rot = COS.rot; MU.uRot.value = rot; COS.dust.material.uniforms.uRot.value = rot;
   MU.uZ.value = z; COS.dust.material.uniforms.uZ.value = z; COS.ss.material.uniforms.uZ.value = z; mwSun(MU.uSunP.value);
   setP(COS.dust, pl.sM, pl.oM, mwOn);
   // III. the star becomes the Sun, its planets round it; then across to the Earth
@@ -5261,7 +5261,6 @@ function placeSortLabels(){
     e.classList.remove('c', 'l', 'r'); e.classList.add(sd > 0 ? 'l' : 'r'); const ex = labelAt(e, lx, ly, o), ew = e._w;
     const x0 = sd > 0 ? ex : ex + ew, y0 = ly + (e._h || (e._h = e.offsetHeight))/2 - 1, dx = A[0] - x0, dy = A[1] - y0, len = Math.hypot(dx, dy);
     ln.style.width = `${Math.max(0, len).toFixed(1)}px`; ln.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px) rotate(${Math.atan2(dy, dx)}rad)`; ln.style.opacity = o.toFixed(2);
-    ln.classList.toggle('occl', e.classList.contains('occl'));   // the line and its label always together
   }
 }
 // ---------------------------------------------------------------- loading your own summary statistics (parsed in the browser)
@@ -5518,6 +5517,7 @@ async function boot(){
   camera.position.copy(dirAt(.7, 34*DEG).multiplyScalar(dCos*1.6));
 }
 // labels in the scene step out of the way of the chapter's own text and panels: any that would sit under them is hidden
+// (not the amygdala's: it picks a corner clear of them itself, so it never blinks as the chapter's text slides in)
 const hudObs = [];
 setInterval(() => {
   const obs = [], all = hudObs; all.length = 0;
@@ -5525,7 +5525,7 @@ setInterval(() => {
     const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
     const r = el.getBoundingClientRect(); if (r.width > 2 && r.height > 2){ all.push(r); if (+cs.opacity >= .3) obs.push(r); }
   }
-  for (const el of document.querySelectorAll('#labels > *, #zmwLabels > *, #sortLabels > :not(.amy-line), #cellLabels > *, #arrLabels > *')){
+  for (const el of document.querySelectorAll('#labels > *, #zmwLabels > *, #sortLabels > :not(.amy-line):not(.amy), #cellLabels > *, #arrLabels > *')){
     const r = el.getBoundingClientRect(), hit = r.width > 0 && obs.some(o => r.left < o.right + 4 && r.right > o.left - 4 && r.top < o.bottom + 3 && r.bottom > o.top - 3);
     el.classList.toggle('occl', hit);
   }
