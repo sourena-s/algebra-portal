@@ -5200,7 +5200,7 @@ function labelAt(e, sx, sy, o){
 }
 function placeSortLabels(){
   const vis = clamp((mSortG - .9)/.1, 0, 1)*(1 - clamp(mSmG/.08, 0, 1)), aIn = clamp((mAmyG - .8)/.2, 0, 1)*(1 - clamp(mSortG/.2, 0, 1));
-  const aLbl = smooth(clamp(mAmyG/.12, 0, 1))*(1 - clamp(AMY.drop/.18, 0, 1)), aLit = aIn*(1 - clamp(AMY.drop/.18, 0, 1)), aTube = aIn*clamp((AMY.drop - .8)/.2, 0, 1), el = $('sortLabels');
+  const aLbl = smooth(clamp(mAmyG/.12, 0, 1))*(1 - clamp(mSortG/.05, 0, 1)), aLit = aIn*(1 - clamp(AMY.drop/.18, 0, 1)), aTube = aIn*clamp((AMY.drop - .8)/.2, 0, 1), el = $('sortLabels');
   const any = vis > .02 || aLbl > .02 || aLit > .02 || aTube > .02;
   el.style.display = any ? 'block' : 'none'; if (!any) return;
   const put = (e, w, o, dy = 0) => { tmp3.set(w[0], w[1], w[2]).project(camera); labelAt(e, (tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight + dy, o*(tmp3.z < 1 ? 1 : 0)); };
@@ -5210,7 +5210,8 @@ function placeSortLabels(){
     const bm = brainGroup.matrixWorld.elements;
     const [e, ln] = amyLabels, c = AMY.cen[AMY.cen[0].x > 0 ? 0 : 1];            // (x > 0 is the right hemisphere)
     const scr = w => { tmp3.set(w[0], w[1], w[2]).project(camera); return [(tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight, tmp3.z < 1]; };
-    const A = scr(xform(bm, [c.x, c.y, c.z], 0)), o0 = xform(bm, [0, 0, 0], 0), B = scr(o0);
+    const k = easeIO(clamp((AMY.drop*1.7 - .65)/.7, 0, 1)), wa = xform(bm, [c.x, c.y, c.z], 0), wv = xform(AU.uTubeM.value.elements, [0, 1.2, 0], 0);   // the line follows the amygdalae into the vial
+    const A = scr(wa.map((v, i) => v + (wv[i] - v)*k)), o0 = xform(bm, [0, 0, 0], 0), B = scr(o0);
     const cu = tmpV.setFromMatrixColumn(camera.matrixWorld, 1).multiplyScalar(BRAIN_HALF), T = scr([o0[0] + cu.x, o0[1] + cu.y, o0[2] + cu.z]);
     const half = Math.hypot(T[0] - B[0], T[1] - B[1]);
     const sd = A[0] >= B[0] ? 1 : -1, lx = B[0] + sd*half*1.1, ly = B[1] - half*1.05, o = aLbl*(A[2] ? 1 : 0);   // diagonal to the brain: up and out, on the amygdala's side
