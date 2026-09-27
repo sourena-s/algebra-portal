@@ -673,7 +673,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <div class="rows">
       <div class="row" style="color:#4DA3FF"><span class="k"><i></i>NEU</span><span class="n">NeuN⁺ nuclei · neurons</span><span class="v" id="sNeu">0</span></div>
       <div class="row" style="color:#FF4A3D"><span class="k"><i></i>OLIG</span><span class="n">Olig2⁺ nuclei · oligodendrocytes</span><span class="v" id="sGlia">0</span></div>
-      <div class="row net" style="color:var(--bone)"><span class="k">LASER</span><span class="n nets"><i style="color:#000;box-shadow:0 0 0 1px var(--hair)" title="355 nm (UV)"></i><i style="color:#9F6BFF" title="405 nm"></i><i style="color:#38CCFF" title="488 nm"></i><i style="color:#E6FF1A" title="561 nm (yellow-green)"></i><i style="color:#FF4238" title="640 nm"></i></span><span class="v">355 · 405 · 488 · 561 · 640</span></div>
+      <div class="row net" style="color:var(--bone)"><span class="k">LASER</span><span class="n nets"><i style="color:#4A4A4A" title="355 nm (UV)"></i><i style="color:#9F6BFF" title="405 nm"></i><i style="color:#38CCFF" title="488 nm"></i><i style="color:#E6FF1A" title="561 nm (yellow-green)"></i><i style="color:#FF4238" title="640 nm"></i></span><span class="v">355 · 405 · 488 · 561 · 640</span></div>
     </div>
     <p class="note">Antibodies to NeuN and OLIG2 make each nucleus glow; its light at the lasers charges its droplet and the plates bend it into a tube. In the seed phase, 10 vulnerability markers (RELN the best) and 5 DNA-damage markers such as 53BP1 were also optimised.</p>
   </div>
@@ -1707,7 +1707,7 @@ function initParticles(){
         if (f < 2.) p.x = f < 1. ? -1. : 1.; else if (f < 4.) p.y = f < 3. ? -1. : 1.; else p.z = f < 5. ? -1. : 1.;
         return c + p*h;
       }
-      vec3 laserCol(float k){ return k < .5 ? vec3(0.) : k < 1.5 ? vec3(.62, .42, 1.) : k < 2.5 ? vec3(.22, .8, 1.) : k < 3.5 ? vec3(.93, 1., .08) : vec3(1., .26, .22); }   // (355 UV, drawn black: invisible light; 405; 488; 561; 640)
+      vec3 laserCol(float k){ return k < .5 ? vec3(.3) : k < 1.5 ? vec3(.62, .42, 1.) : k < 2.5 ? vec3(.22, .8, 1.) : k < 3.5 ? vec3(.93, 1., .08) : vec3(1., .26, .22); }   // (355 UV, drawn dark grey: light the eye cannot see; 405; 488; 561; 640)
       vec3 cellCol(float ty){ return ty < .5 ? uNeu : ty < 1.5 ? uGlia : vec3(.42, .45, .52); }
       // the sample tube, a round-bottomed 5 mL tube: first beside the brain, holding the amygdalae; then, smaller, tipped over the
       // sorter's funnel, pouring. Its liquid runs to the mouth as it tips (uTilt).
@@ -5115,7 +5115,7 @@ function buildSorterFx(){
     fragmentShader: `uniform float uOn, uT; uniform vec3 uC; varying vec2 vU; void main(){ float r = abs(vU.x - .5)*2.;
       gl_FragColor = vec4(uC, (exp(-r*r*6.)*.5 + .06)*uOn*(.9 + .1*sin(uT*40. + vU.y*30.))); }`,
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
-  [['#000000', .47], ['#9F6BFF', .435], ['#38CCFF', .40], ['#E6FF1A', .365], ['#FF4238', .33]].forEach(([c, y]) => {   // (355, 405, 488, 561, 640 nm)
+  [['#4A4A4A', .47], ['#9F6BFF', .435], ['#38CCFF', .40], ['#E6FF1A', .365], ['#FF4238', .33]].forEach(([c, y]) => {   // (355, 405, 488, 561, 640 nm)
     const b = new THREE.Mesh(new THREE.CylinderGeometry(.011, .011, 1.05, 12, 1, true), beamMat(col(c)));
     b.rotation.z = Math.PI/2; b.position.set(.525, y, 0); b.renderOrder = 6; sortFx.add(b);
   });
@@ -5365,7 +5365,7 @@ function presetSph(k){        // [elevation, distance] for each chapter
   if (k === ST.SORT) return [5*DEG, dSort];         // the sorter, nearly level
   if (k === ST.CELL) return [6*DEG, dNeu];          // one neuron, upright
   if (k === ST.CHROM) return [12*DEG, dChr];        // its nucleus
-  if (k === ST.SMRT) return [lerp(89.5, 40, smooth(smrtCam.on))*DEG, lerp(dSmrt0, dSmrt, smrtPan())];   // the chip face-on; the view swings down as the camera arrives, and only halfway through backs out and pans up to it
+  if (k === ST.SMRT) return [lerp(89.5, 30, smooth(smrtCam.on))*DEG, lerp(dSmrt0, dSmrt, smrtPan())];   // the chip face-on; the view swings down as the camera arrives, and only halfway through backs out and pans up to it
   if (k === ST.ZMW) return [11*DEG, dZmw];          // one well, cut away, from the side
   if (k === ST.DNA) return [24*DEG, dDna];
   if (k === ST.NET) return [0, dNet];               // square on to the flat map
@@ -5581,11 +5581,11 @@ renderer.setAnimationLoop(() => {
   } else if (SU.uSmrt.value){ SU.uSmrt.value = 0; SU.uZmw.value = 0; SU.uZF.value = 0; zmwFx.visible = false; if (zmwArr) zmwArr.visible = false; placeArrLabel(0, 1); if (zpol) zpol.material.uniforms.uOn.value = 0; }
   if (zpol) placeZmwLabels(clamp((mZm - .9)/.1, 0, 1)*clamp((.1 - mSm)/.1, 0, 1));
   { const C = smrtCam, here = mSm > .999 && mGw < .001 && settledStage() === ST.SMRT;   // the camera: two seconds after the cell has lit up
-    C.t = here ? C.t + dt : 0; const want = here && C.t > (RM ? 0 : 2) ? 1 : 0;
-    C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 2.4)) : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);
+    C.t = here ? C.t + dt : 0; C.after = here && C.on >= 1 ? (C.after || 0) + dt : 0; const want = here && C.t > (RM ? 0 : 2) ? 1 : 0;
+    C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 4)) : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);
     C.g.visible = C.on > .002; const k = smooth(C.on), fl = .92 + .08*Math.sin(U.uTime.value*3.1);
     if (here && C.on > 0 && C.on < 1 && !nav.busy){ const [e, d] = presetSph(ST.SMRT), tg = presetTarget(ST.SMRT);   // (the view settles with the camera's arrival)
-      controls.target.copy(tg); sph.setFromVector3(tmpV.copy(camera.position).sub(tg)); sph.phi = Math.PI/2 - e; sph.radius = d; camera.position.copy(tg).add(tmpV.setFromSpherical(sph)); }
+      controls.target.copy(tg); sph.setFromVector3(tmpV.copy(camera.position).sub(tg)); sph.theta = az.smrt; sph.phi = Math.PI/2 - e; sph.radius = d; camera.position.copy(tg).add(tmpV.setFromSpherical(sph)); }
     C.blue.opacity = k*.6; C.halo.opacity = k*.05*fl; C.fovM.uniforms.uOn.value = k; }
   placeSortLabels(); placeCellLabels(); cosmosFrame(dt, Sd);
   const em = easeIO(m1), ed = easeIO(mDna), eg = easeIO(mGw);
@@ -5705,7 +5705,8 @@ renderer.setAnimationLoop(() => {
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .002 && navSettle <= 0) ORB_IN.t = 0; }
     else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : 2)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1, force: true }; } } }
-  controls.autoRotate = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)];
+  controls.autoRotate = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
+  controls.autoRotateSpeed = .28*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1);   // (and then eases into its turn)
   if (!NV.live){
     controls.update();
     if (!inTransit && !camFly && intro.t >= 1){                     // a panned target stays within reach of the chapter's centre
