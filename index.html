@@ -5200,7 +5200,7 @@ function labelAt(e, sx, sy, o){
 }
 function placeSortLabels(){
   const vis = clamp((mSortG - .9)/.1, 0, 1)*(1 - clamp(mSmG/.08, 0, 1)), aIn = clamp((mAmyG - .8)/.2, 0, 1)*(1 - clamp(mSortG/.2, 0, 1));
-  const aLbl = smooth(clamp(mAmyG/.12, 0, 1))*(1 - clamp(mSortG/.05, 0, 1)), aLit = aIn*(1 - clamp(AMY.drop/.18, 0, 1)), aTube = aIn*clamp((AMY.drop - .8)/.2, 0, 1), el = $('sortLabels');
+  const aLbl = smooth(clamp(mAmyG/.12, 0, 1))*(1 - clamp(AMY.drop/.18, 0, 1)), aLit = aIn*(1 - clamp(AMY.drop/.18, 0, 1)), aTube = aIn*clamp((AMY.drop - .8)/.2, 0, 1), el = $('sortLabels');
   const any = vis > .02 || aLbl > .02 || aLit > .02 || aTube > .02;
   el.style.display = any ? 'block' : 'none'; if (!any) return;
   const put = (e, w, o, dy = 0) => { tmp3.set(w[0], w[1], w[2]).project(camera); labelAt(e, (tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight + dy, o*(tmp3.z < 1 ? 1 : 0)); };
