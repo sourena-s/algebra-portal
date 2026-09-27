@@ -858,7 +858,7 @@ const PAL = {
 const col = h => new THREE.Color(h);
 
 const ld = () => {};   // the splash says only "Loading…"
-function fail(msg){ $('ldTxt').textContent = msg; $('ldFill').style.transform = 'scaleX(0)'; }
+function fail(msg){ const t = $('ldTxt'); t.textContent = location.protocol === 'file:' ? 'Open this page through a web server, not as a file (see serve.ps1).' : msg; t.style.animation = 'none'; }
 if (!SAT) { fail('The orbit library could not load. Check your connection and reload.'); throw new Error('satellite.js missing'); }
 
 // ---------------------------------------------------------------- small UI helpers (microanimations)
@@ -4232,23 +4232,68 @@ const cosGroup = new THREE.Group(); cosGroup.visible = false; scene.add(cosGroup
 const cosEio = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
 const cosSm = (a, b, x) => { const t = clamp((x - a)/(b - a), 0, 1); return t*t*(3 - 2*t); };
 const COS_GLSL = `
-  uniform float uT, uS, uOn, uPR, uScale; varying vec3 vC; varying float vA;
+  uniform float uT, uS, uOn, uPR, uScale, uGP; varying vec3 vC; varying float vA;
   uint pcg(uint v){ uint s = v*747796405u + 2891336453u, w = ((s >> ((s >> 28u) + 4u)) ^ s)*277803737u; return (w >> 22u) ^ w; }
   float rn(float id, float k){ return float(pcg(uint(id)*8u + uint(k)))/4294967295.; }
   void sprite(vec3 P, float size, float lo, float hi, float a){        // size in the frame's own units; tiny sprites dimmed, not shrunk
     vec4 mv = modelViewMatrix*vec4(P, 1.); gl_Position = projectionMatrix*mv;
     float px = size*uS*uScale/max(-mv.z, 1e-3)*uPR, d = clamp(px, lo*uPR, hi*uPR);
     gl_PointSize = d; vA = a*uOn*min(1., px*px/(d*d))*step(0., -mv.z);
+  #ifdef GLOW
+    float w = smoothstep(6., 10., d/uPR); vA *= uGP > .5 ? w : 1. - w;  // a big glow goes to the half-size pass, a small one stays (crossfaded, so the sum is whole)
+  #endif
     if (vA < 1e-6) gl_PointSize = 0.;                                   // (a faded sprite costs nothing)
   }`;
 const COS_FRAG = `varying vec3 vC; varying float vA; void main(){ vec2 c = gl_PointCoord - .5; float d = dot(c, c)*4.; if (d > 1.) discard;
   gl_FragColor = vec4(vC, vA*(exp(-d*4.2) - .015)); }`;
-const cosMat = (vs, extra = {}) => new THREE.ShaderMaterial({ uniforms: { uT: U.uTime, uS: { value: 1 }, uOn: { value: 0 }, uPR: U.uPR, uScale: U.uScale, ...extra },
+const GLOW = { layer: 1, res: .5, pass: { value: 0 }, rt: null, quad: null };
+const cosMat = (vs, extra = {}) => new THREE.ShaderMaterial({ uniforms: { uT: U.uTime, uS: { value: 1 }, uOn: { value: 0 }, uPR: U.uPR, uScale: U.uScale, uGP: GLOW.pass, ...extra },
   vertexShader: COS_GLSL + vs, fragmentShader: COS_FRAG, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending });
 const cosPoints = (attrs, mat) => { const g = new THREE.BufferGeometry(); let n = 0;
   for (const [k, [a, s]] of Object.entries(attrs)){ g.setAttribute(k, new THREE.Float32BufferAttribute(a, s)); n = a.length/s; }
   if (!attrs.position) g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n*3), 3));   // (a draw needs a position; the shader builds its own)
   const p = new THREE.Points(g, mat); p.frustumCulled = false; p.renderOrder = -8; p.matrixAutoUpdate = true; return p; };
+
+// The soft glows (tens of thousands of faint sprites, up to 160 px across, all blended) are nearly all of the space chapters' cost.
+// Those drawn large go to a half-size buffer, added back under the rest (they are additive, so the order among them is free);
+// smooth gradients lose nothing to it. The glow sprites are moved to a child of their cloud, with a material of their own that
+// shares the cloud's uniforms and is drawn in both passes.
+function splitGlow(pts, isGlow){
+  const g = pts.geometry, K = g.attributes.aK, keep = [], glow = [];
+  for (let i = 0; i < K.count; i++) (isGlow(K.getX(i)) ? glow : keep).push(i);
+  const pick = idx => { const out = new THREE.BufferGeometry();
+    for (const [name, a] of Object.entries(g.attributes)){ const s = a.itemSize, src = a.array, arr = new Float32Array(idx.length*s);
+      for (let q = 0; q < idx.length; q++) for (let c = 0; c < s; c++) arr[q*s + c] = src[idx[q]*s + c];
+      out.setAttribute(name, new THREE.BufferAttribute(arr, s)); }
+    return out; };
+  const m = pts.material, gm = new THREE.ShaderMaterial({ uniforms: m.uniforms, vertexShader: m.vertexShader, fragmentShader: m.fragmentShader, defines: { GLOW: 1 },
+    transparent: true, depthWrite: false, depthTest: false, blending: m.blending });
+  const gp = new THREE.Points(pick(glow), gm); gp.frustumCulled = false; gp.renderOrder = pts.renderOrder; gp.layers.enable(GLOW.layer);
+  pts.geometry = pick(keep); g.dispose(); pts.add(gp); return gp;
+}
+function initGlow(){
+  GLOW.rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+  GLOW.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({ uniforms: { tGlow: { value: GLOW.rt.texture } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }`,
+    fragmentShader: `uniform sampler2D tGlow; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(tGlow, vUv).rgb, 1.); }`,
+    transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
+  GLOW.quad.frustumCulled = false; GLOW.quad.renderOrder = -8.5; GLOW.quad.visible = false; scene.add(GLOW.quad);
+  sizeGlow();
+}
+function sizeGlow(){
+  if (!GLOW.rt) return;
+  const s = renderer.getDrawingBufferSize(new THREE.Vector2());
+  GLOW.rt.setSize(Math.max(1, Math.ceil(s.x*GLOW.res)), Math.max(1, Math.ceil(s.y*GLOW.res)));
+}
+const _glowCC = new THREE.Color();
+function renderGlow(){
+  if (!GLOW.quad) return;
+  GLOW.quad.visible = cosGroup.visible; if (!cosGroup.visible) return;
+  const pr = U.uPR.value, mask = camera.layers.mask, ca = renderer.getClearAlpha(); renderer.getClearColor(_glowCC);
+  U.uPR.value = pr*GLOW.res; GLOW.pass.value = 1; camera.layers.set(GLOW.layer);
+  renderer.setRenderTarget(GLOW.rt); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, camera);
+  renderer.setRenderTarget(null); renderer.setClearColor(_glowCC, ca); camera.layers.mask = mask; GLOW.pass.value = 0; U.uPR.value = pr;
+}
 
 // Laniakea as the 2014 map drew it: thousands of golden flow lines, the paths its galaxies are falling along, sweeping in from all
 // over the basin to the Great Attractor and gathering into a few bright rivers on the way; the basin a translucent golden volume;
@@ -4615,6 +4660,10 @@ const ssEarth = (out = new THREE.Vector3()) => { const a = ssAngle(2, ssTime());
 
 function buildCosmos(){
   buildLaniakea(); buildMilkyWay(); buildSolarSystem();
+  splitGlow(COS.lan, k => (k > 1.5 && k < 2.5) || k > 5.5);     // the basin's glow, the blue outside, the glow over the rivers
+  splitGlow(COS.mw, k => k > 3.5 && k < 5.5);                    // the light between the stars, the core's glow
+  splitGlow(COS.ss, k => k > 1.5);                               // the Sun's glow
+  initGlow();
   const box = $('cosLabels'); box.hidden = true; const mk = (html, cls = 'c') => { const e = document.createElement('span'); e.className = 'zlabel ' + cls; e.innerHTML = html; box.appendChild(e); return e; };
   COS.labels = { lan: mk('Laniakea supercluster<br><b>some 100,000 galaxies · 520 million light-years</b>'), here: mk('You are here<br><b>the Milky Way</b>', 'l'),
     mw: mk('The Milky Way<br><b>100,000 light-years · 100 to 400 billion stars</b>'), sun: mk('The Sun<br><b>26,000 light-years from the centre</b>', 'l'), earth: mk('Earth', 'l'), moon: mk('The Moon', 'l') };
@@ -5262,7 +5311,7 @@ const az = { brain: 0, amy: 0, sort: 0, neu: 0, chr: 0, dna: 0, gwas: 0, net: 0,
 function fitDist(r){ const v = camera.fov/2*DEG, hz = Math.atan(Math.tan(v)*camera.aspect); return r / Math.sin(Math.min(v, hz)); }
 function resize(){
   const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false); composer.setSize(w, h);
+  renderer.setSize(w, h, false); composer.setSize(w, h); sizeGlow();
   camera.aspect = w / h; camera.updateProjectionMatrix();
   U.uScale.value = (h/2) / Math.tan(camera.fov/2*DEG);
   U.uPR.value = renderer.getPixelRatio();
@@ -5439,7 +5488,7 @@ renderer.setAnimationLoop(() => {
   const tNow = performance.now(), dt = Math.min(.05, (tNow - lastT)/1000); lastT = tNow;
   U.uTime.value += dt;
   runTweens(tNow);
-  if (!ready){ composer.render(); return; }
+  if (!ready){ renderGlow(); composer.render(); return; }
   frame++;
   const now = simNow(), gmst = SAT.gstime(new Date(now)), sun = sunDir(now);
   earth.rotation.y = gmst; earth.updateMatrixWorld(true);
@@ -5703,7 +5752,7 @@ renderer.setAnimationLoop(() => {
     setNum($('cLEO'), counts[0]); setNum($('cMEO'), counts[1]); setNum($('cGEO'), counts[2]); setNum($('cHEO'), counts[3]);
     if (m1 < .5) updateOverhead(now, gmst);
   }
-  composer.render();
+  renderGlow(); composer.render();
 });
 
 // place gene, chromosome and height labels; skip labels that would overlap a stronger one
