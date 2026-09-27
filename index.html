@@ -2849,18 +2849,22 @@ function navStage(tNow){
   return nav.from + (nav.to - nav.from)*(nav.soft ? .5 - .5*Math.cos(Math.PI*f) : nav.out ? 1 - Math.pow(1 - f, 3) : f < .5 ? 4*f*f*f : 1 - Math.pow(-2*f + 2, 3)/2);
 }
 document.querySelectorAll('#rail button').forEach(b => b.addEventListener('click', () => goChapter(+b.dataset.go)));
-$('stPrev').addEventListener('click', () => stepChapter(-1));
+$('stPrev').addEventListener('click', () => { if (nav.to === FIRST && !nav.busy){ COS.manual = true; COS.za = 0; return; } stepChapter(-1); });   // (in the opening chapter: back out to Laniakea)
 $('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
 let stepSwiped = false, stepSwipe = null;                        // a swipe across the buttons turns the page too
+// where the bar stands: the chapters, and in the opening one, one more stretch below for its zoom from Laniakea to the Milky Way
+const barPos = () => { const t = SCR.on ? SCR.target : S; return t <= FIRST + 1e-3 ? FIRST - 1 + COS.za : t; };
 // a finger drawn along the bar scrubs the story like a slider (right is forward, one bar's width a chapter); let go, and it stays there
-$('stepRow').addEventListener('pointerdown', e => { if (!ready) return; stepSwipe = { x: e.clientX, y: e.clientY, id: e.pointerId, s0: SCR.on ? SCR.target : S, m: 0 }; stepSwiped = false; });
+$('stepRow').addEventListener('pointerdown', e => { if (!ready) return; stepSwipe = { x: e.clientX, y: e.clientY, id: e.pointerId, s0: barPos(), m: 0 }; stepSwiped = false; });
 addEventListener('pointermove', e => {
   const W = stepSwipe; if (!W || e.pointerId !== W.id) return; const dx = e.clientX - W.x;
-  if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = SCR.on ? SCR.target : S; $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
+  if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = barPos(); $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
   if (!W.m) return;
   if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
   const w = $('stepRow').getBoundingClientRect().width;
-  SCR.target = clamp(W.s0 + (e.clientX - W.x)/Math.max(160, w), FIRST, LAST); SCR.on = true; SCR.hold = true; SCR.t = performance.now();
+  const v = clamp(W.s0 + (e.clientX - W.x)/Math.max(160, w), FIRST - 1, LAST);
+  COS.manual = true; COS.za = clamp(v - FIRST + 1, 0, 1);                              // (below the first chapter: the zoom out to Laniakea)
+  SCR.target = Math.max(FIRST, v); SCR.on = true; SCR.hold = true; SCR.t = performance.now();
   SCR.dir = e.clientX >= W.x ? 1 : -1; nav.busy = false; nav.out = false; nav.used = true; nav.to = Math.round(SCR.target);
 });
 for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => {
@@ -5590,7 +5594,7 @@ renderer.setAnimationLoop(() => {
   if (stepUI.to !== nav.to){
     stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
     $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = NEXT[nav.to];
-    $('stPrev').disabled = nav.to === FIRST; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
+    $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
