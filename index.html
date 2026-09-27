@@ -255,7 +255,17 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 #strip .sa::before{content:"";width:7px;height:7px;border-right:1.5px solid var(--bone);border-bottom:1.5px solid var(--bone);transform:translateY(-2px) rotate(45deg);animation:saNudge 2.4s ease-in-out infinite}
 #strip .sa.up::before{transform:translateY(2px) rotate(-135deg);animation-delay:1.2s}
 #strip .sa:hover::before{border-color:var(--ember)}
-@media (pointer:coarse){ #strip{top:calc(50% - 34vh);height:68vh;width:34px;right:0;border-radius:17px 0 0 17px;border-right:0} }
+/* on a touch screen the side strip gives way to a slim glass bar at the bottom: back, and the next chapter by name */
+@media (pointer:coarse){
+  #strip,#scue{display:none}
+  #stepRow{display:flex!important;gap:0;border:1px solid rgba(236,230,218,.16);border-radius:22px;background:rgba(12,16,26,.28);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);overflow:hidden}
+  #stepRow .step-b,#stepRow .step-next{border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;min-height:40px}
+  #stepRow .step-b{width:42px;border-right:1px solid rgba(236,230,218,.12)}
+  #stepRow .step-next{min-width:0;padding:6px 14px 7px 12px;gap:10px}
+  #stepRow .step-t b{font-size:8px;letter-spacing:.22em}
+  #stepRow .step-t small{font-size:11.5px}
+  .rail{opacity:.55}
+}
 @media (max-height:760px) and (pointer:fine){ #strip{top:auto;bottom:70px;height:120px} }
 @keyframes saNudge{0%,100%{opacity:.35;translate:0 0}50%{opacity:.9;translate:0 2px}}
 .rail{position:fixed;z-index:3;right:10px;top:50%;translate:0 -50%;display:grid;gap:22px;padding:6px 0}
@@ -772,7 +782,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <div class="step-row" id="stepRow">
       <button class="step-b" id="stPrev" type="button" aria-label="Previous chapter" title="Previous chapter (←)" disabled><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
       <button class="step-next first" id="stNext" type="button" title="Next chapter (→ or Space)">
-        <span class="step-n"><b id="stNum">I</b>/ XI</span>
+        <span class="step-n"><b id="stNum">I</b>/ XII</span>
         <span class="step-t"><b id="cueB">Next</b><small id="cueS">Fold the orbit into a brain</small></span>
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>
         <i class="step-bar" id="stBar"></i>
@@ -5565,7 +5575,7 @@ renderer.setAnimationLoop(() => {
   // the step buttons name where Next goes, and fill a hairline while a chapter turns
   if (stepUI.to !== nav.to){
     stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
-    $('stNum').textContent = ROMAN9[nav.to]; $('cueB').textContent = nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = NEXT[nav.to];
+    $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = NEXT[nav.to];
     $('stPrev').disabled = nav.to === FIRST; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
