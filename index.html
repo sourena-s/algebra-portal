@@ -272,7 +272,8 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow.auto .st-pp{width:10px;height:12px;margin:0;border:0;background:linear-gradient(90deg,var(--bone) 0 3.5px,transparent 3.5px 6.5px,var(--bone) 6.5px 10px)}
   #stepRow .step-next{flex:1;align-self:stretch;min-width:0;min-height:0;margin:0 4px;padding:0;border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;position:relative;display:block;overflow:visible}
   #stepRow .step-next > svg,#stepRow .step-n,#stepRow .step-t{display:none}
-  #stepRow .st-lbl{position:absolute;left:0;right:0;top:9px;text-align:center;font:600 8px var(--sans);letter-spacing:.34em;text-transform:uppercase;color:rgba(236,230,218,.42);pointer-events:none}
+  #stepRow .st-lbl{position:absolute;left:0;right:0;top:50%;translate:0 -50%;text-align:center;font:600 10px var(--sans);letter-spacing:.4em;text-transform:uppercase;color:rgba(236,230,218,.42);pointer-events:none}
+  #stepRow .st-track{display:none!important}
   #stepRow .st-track{position:absolute;left:6px;right:6px;top:30px;height:2px;border-radius:1px;background:rgba(236,230,218,.16);pointer-events:none}
   #stepRow .st-fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pos,0)*100%);border-radius:1px;background:linear-gradient(90deg,rgba(236,230,218,.5),var(--ember))}
   #stepRow .st-tk{position:absolute;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;border-radius:50%;background:rgba(236,230,218,.45)}
@@ -280,7 +281,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow .st-thumb{position:absolute;top:50%;left:calc(var(--pos,0)*100%);width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--bone);box-shadow:0 0 0 3px rgba(255,91,58,.35),0 0 12px rgba(255,91,58,.55);transition:transform .2s}
   #stepRow.scrub .st-thumb{transform:scale(1.25)}
   #stepRow .step-bar{left:6px;right:6px;bottom:6px;height:1px;opacity:.7}
-  #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:26px;translate:-50% -50%;font-size:15px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
+  #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:15px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
   #stepRow.auto::after{display:none}
   #stepRow.hint::after{animation:barHint 1.5s ease-in-out .6s 3}
   @keyframes barHint{0%{opacity:0;transform:translateX(-34px)}35%,65%{opacity:1}100%{opacity:0;transform:translateX(34px)}}
@@ -2831,7 +2832,7 @@ $('stPlay').addEventListener('click', () => autoPlay(!AUTO.on));
 { const T = $('stTrack'); for (const k of [0, 1]){ const i = document.createElement('i'); i.className = 'st-tk'; i.style.left = `${k*100}%`; T.appendChild(i); } }
 let barTapX = 0; $('stNext').addEventListener('pointerdown', e => { barTapX = e.clientX; });
 function barJump(){
-  const r = $('stTrack').getBoundingClientRect(), f = clamp((barTapX - r.left)/r.width, 0, .999), v = Math.min(LAST, Math.floor(barPos() + 1e-4) + f);
+  const r = $('stNext').getBoundingClientRect(), f = clamp((barTapX - r.left)/r.width, 0, .999), v = Math.min(LAST, Math.floor(barPos() + 1e-4) + f);
   if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
   COS.manual = true; COS.za = clamp(v - FIRST + 1, 0, 1);
   SCR.target = Math.max(FIRST, v); SCR.on = true; SCR.hold = !AUTO.on; SCR.dir = 1; SCR.t = performance.now(); nav.busy = false; nav.used = true; nav.to = Math.round(SCR.target);
@@ -2859,7 +2860,7 @@ addEventListener('pointermove', e => {
   if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = barPos(); $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
   if (!W.m) return;
   if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
-  const w = $('stTrack').getBoundingClientRect().width;
+  const w = $('stNext').getBoundingClientRect().width;
   const v = clamp(W.s0 + (e.clientX - W.x)/Math.max(80, w), FIRST - 1, LAST);
   COS.manual = true; COS.za = clamp(v - FIRST + 1, 0, 1);                              // (below the first chapter: the zoom out to Laniakea)
   SCR.target = Math.max(FIRST, v); SCR.on = true; SCR.hold = true; SCR.t = performance.now();
