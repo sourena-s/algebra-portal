@@ -1,13 +1,13 @@
 # ALGEBRA
 
-**ALGEBRA: Alzheimer's disease and genomic breakdown in ageing.** A single-page interactive 3D website (Three.js / WebGL). It zooms from the Laniakea supercluster and the Milky Way down to Earth, then into the human brain and its seven resting-state networks, the amygdalae and their nuclei, a single neuron's nucleus and DNA, PacBio SMRT Cell sequencing, a 3D Manhattan plot of Alzheimer's disease GWAS, an all-atom DNA double helix with ageing-related lesions, and DNA repair genes.
+**ALGEBRA: Alzheimer's disease and genomic breakdown in ageing.** A single-page interactive 3D website (Three.js / WebGL). It zooms from the Laniakea supercluster and the Milky Way down to Earth and its circulating atmosphere, then into the human brain and its seven resting-state networks, the amygdalae and their nuclei, a single neuron's nucleus and DNA, PacBio SMRT Cell sequencing, a 3D Manhattan plot of Alzheimer's disease GWAS, an all-atom DNA double helix with ageing-related lesions, and DNA repair genes.
 
 ## Layout
 
 The page and its code are in `index.html` (~580 KB). Large assets live beside it. There is no build step.
 
 - `assets/*.jpg`: Earth day, night and clouds, the planets (Mercury to Neptune, no Earth) and the Moon; `assets/saturn-rings.png`; `assets/moons/*.jpg`, the moons' maps (credits in `assets/moons/CREDITS.md`).
-- `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (fetched in parallel at start via `BIN`) and `tle`, the satellite snapshot (fetched only if the live feeds fail). Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
+- `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (fetched in parallel at start via `BIN`) and `tle`, an old satellite snapshot, no longer used. Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
 - `window.NOOS_DATA` (one long line near the import map) keeps only the small inline data: the `net` and `land` datasets, their metadata, and the time-zone table.
@@ -20,10 +20,9 @@ The page and its code are in `index.html` (~580 KB). Large assets live beside it
 - **Never read the file whole, and never print the long data lines.** Some lines are tens of KB. Use `grep -n` to find code, and read with `offset`/`limit`. Pipe output through `cut -c1-200` when a match could land on a data line.
 - Edit with small, exact replacements. Leave the base64/gzip blobs untouched unless you are replacing an asset on purpose.
 - **External dependencies:**
-  - three.js 0.170.0 and satellite.js 5.0.0 (jsDelivr)
+  - three.js 0.170.0 (jsDelivr)
   - pako 2.1.0 (cdnjs)
   - Exo 2 (Google Fonts)
-  - Live satellite TLEs from CelesTrak, with a GitHub mirror as fallback
   - IP geolocation (geojs / ipapi / ipwho.is) as a best-effort lookup
 - Font: Univia Pro (licensed, Adobe Fonts) when installed, otherwise Exo 2 as fallback.
 
