@@ -5538,10 +5538,10 @@ const EARTH_FACE = (() => { const la = 42*DEG, lo = 58*DEG; return new THREE.Vec
 const ORB_IN = { done: true, t: -1 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
 const earthFaceDir = g => EARTH_FACE.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), g);
 const EARTH_SPIN = .015;                                     // (radians a second: a turn in about seven minutes)
-const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns)
-function visitorCamDir(gmstAngle){
+const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y, ORB_IN.done) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns)
+function visitorCamDir(gmstAngle, over = false){             // (on the equator at the visitor's longitude; over: straight above the tag)
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
-  const a = Math.atan2(v.x, v.z), el = 0;                      // (on the equator, at the visitor's longitude, looking in at the tag)
+  const a = Math.atan2(v.x, v.z), el = over ? clamp(Math.asin(v.y), -80*DEG, 80*DEG) : 0;
   return new THREE.Vector3(Math.sin(a)*Math.cos(el), Math.sin(el), Math.cos(a)*Math.cos(el));
 }
 
@@ -5833,14 +5833,14 @@ renderer.setAnimationLoop(() => {
   } else if (fly && (!userMoved || fly.force) && mode === 0){
     if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); }
     fly.t = Math.min(1, fly.t + dt/(fly.dur || 2.6));
-    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(gmst) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(fly.d));
+    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(earth.rotation.y, true) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(fly.d));
     if (fly.t >= 1) fly = null;
   }
   if (Sd < -.5){ ORB_IN.done = false; ORB_IN.t = -1; }
   else if (!ORB_IN.done){
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .002 && navSettle <= 0) ORB_IN.t = 0; }
-    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : 2)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1, force: true }; } } }
+    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : 2)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 3.5, force: true }; } } }
   { const want = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
     arEase += ((want ? 1 : 0) - arEase)*Math.min(1, dt*(want ? 1.6 : 5));          // (the turn eases in and out, never stops or starts dead)
     controls.autoRotate = arEase > .002; controls.autoRotateSpeed = .28*arEase*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1); }   // (and then eases into its turn)
