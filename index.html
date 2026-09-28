@@ -270,6 +270,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow.auto .st-pp{border-color:rgba(255,91,58,.85);box-shadow:0 0 10px rgba(255,91,58,.4)}
   #stepRow.auto .st-pp::before{width:7px;height:9px;margin:0;border:0;background:linear-gradient(90deg,var(--bone) 0 2.5px,transparent 2.5px 4.5px,var(--bone) 4.5px 7px)}
   #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:17px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
+  #stepRow.auto::after{display:none}
   #stepRow.hint::after{animation:barHint 1.5s ease-in-out .6s 3}
   @keyframes barHint{0%{opacity:0;transform:translateX(-28px)}35%,65%{opacity:1}100%{opacity:0;transform:translateX(28px)}}
   #stepRow .step-b{width:42px;border-right:1px solid rgba(236,230,218,.12)}
@@ -2873,7 +2874,7 @@ $('stPrev').addEventListener('click', () => { if (nav.to === FIRST && !nav.busy)
 $('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (COARSE){ autoPlay(!AUTO.on); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
 $('stFwd').addEventListener('click', () => nav.to >= LAST ? goChapter(FIRST) : stepChapter(1));
 // play: the chapters follow one another on their own, each held a few seconds once it has arrived; the middle of the bar turns it on and off
-const AUTO = { on: false, t: 0, dwell: 5 };
+const AUTO = { on: false, t: 0, dwell: 5 }; let arEase = 0;
 function autoPlay(on){
   AUTO.on = on; AUTO.t = 0; const r = $('stepRow'); r.classList.toggle('auto', on);
   $('stNext').setAttribute('aria-pressed', String(on)); $('stNext').title = on ? 'Pause' : 'Play the chapters';
@@ -5751,7 +5752,7 @@ renderer.setAnimationLoop(() => {
   if (stepUI.to !== nav.to){
     stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
     $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = COARSE ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
-    if (COARSE){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
+    if (COARSE && !AUTO.on){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
     $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
@@ -5794,7 +5795,7 @@ renderer.setAnimationLoop(() => {
   if (zpol) placeZmwLabels(clamp((mZm - .9)/.1, 0, 1)*clamp((.1 - mSm)/.1, 0, 1));
   { const C = smrtCam, here = mSm > .999 && mGw < .001 && settledStage() === ST.SMRT;   // the camera: two seconds after the cell has lit up
     C.t = here ? C.t + dt : 0; C.after = here && C.on >= 1 ? (C.after || 0) + dt : 0; const want = here && C.t > (RM ? 0 : 2) ? 1 : 0;
-    C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 4)) : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);
+    C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 4)) : mSm > .9 && mGw > .001 && mGw < .999 ? C.on : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);   // (on the way to the Manhattan plot it holds, so the view it leaves never jumps)
     C.g.visible = C.on > .002; const k = smooth(C.on), fl = .92 + .08*Math.sin(U.uTime.value*3.1);
     if (C.on <= 0) C.s0 = null;
     if (here && C.on > 0 && C.on < 1 && !nav.busy){ const [e, d] = presetSph(ST.SMRT), tg = presetTarget(ST.SMRT);   // (the view settles with the camera's arrival)
@@ -5921,8 +5922,9 @@ renderer.setAnimationLoop(() => {
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .002 && navSettle <= 0) ORB_IN.t = 0; }
     else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : 2)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1, force: true }; } } }
-  controls.autoRotate = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
-  controls.autoRotateSpeed = .28*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1);   // (and then eases into its turn)
+  { const want = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
+    arEase += ((want ? 1 : 0) - arEase)*Math.min(1, dt*(want ? 1.6 : 5));          // (the turn eases in and out, never stops or starts dead)
+    controls.autoRotate = arEase > .002; controls.autoRotateSpeed = .28*arEase*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1); }   // (and then eases into its turn)
   if (!NV.live){
     controls.update();
     if (!inTransit && !camFly && intro.t >= 1){                     // a panned target stays within reach of the chapter's centre
