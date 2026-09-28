@@ -6,7 +6,7 @@
 
 The page and its code are in `index.html` (~580 KB). Large assets live beside it. There is no build step.
 
-- `assets/*.jpg`: Earth day, night and clouds, the planets (Mercury to Neptune, no Earth) and the Moon.
+- `assets/*.jpg`: Earth day, night and clouds, the planets (Mercury to Neptune, no Earth) and the Moon; `assets/saturn-rings.png`; `assets/moons/*.jpg`, the moons' maps (credits in `assets/moons/CREDITS.md`).
 - `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (fetched in parallel at start via `BIN`) and `tle`, the satellite snapshot (fetched only if the live feeds fail). Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
