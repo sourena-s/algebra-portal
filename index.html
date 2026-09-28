@@ -4795,12 +4795,7 @@ function cosmosFrame(dt, Sd){
     E.mesh.visible = E.halo.visible = on > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on;
     if (on > .003){
       E.grp.position.copy(earth.position); E.grp.scale.setScalar(earth.scale.x);
-      // the photograph's orientation: its Europe-Asia face toward the camera, its north toward the sky; at the orbit chapter this is
-      // exactly the globe's own turn, so the handover is seamless
-      const toC = _tv[0].copy(camera.position).sub(earth.position).normalize(), e1w = _tv[1].set(0, 1, 0).cross(toC).normalize(), e2w = _tv[2].copy(toC).cross(e1w);
-      const F = EARTH_FACE, e1l = _tv[3].set(0, 1, 0).cross(F).normalize(), e2l = new THREE.Vector3().copy(F).cross(e1l);
-      const Bw = _m4a.makeBasis(e1w, e2w, toC), Bl = _m4b.makeBasis(e1l, e2l, F).transpose(); E.grp.quaternion.setFromRotationMatrix(Bw.multiply(Bl));
-      { const k = here ? turnB : hand; if (k > 0) E.grp.quaternion.slerp(earth.quaternion, k); }   // (arrived: exactly as the Earth stands now, so the tag is where the visitor is)
+      E.grp.quaternion.copy(earth.quaternion);                     // (the photograph turns exactly as the Earth does, all the way in)
       // its sunlight: the real Sun as it stands over that face now, turned with the photograph
       E.mesh.material.uniforms.uSun.value.copy(U.uSun.value).applyAxisAngle(_tv[3].set(0, 1, 0), -earth.rotation.y).applyQuaternion(E.grp.quaternion);
       E.mesh.material.depthTest = true;
@@ -5542,7 +5537,8 @@ controls.addEventListener('start', () => { userMoved = true; camFly = null; });
 const EARTH_FACE = (() => { const la = 42*DEG, lo = 58*DEG; return new THREE.Vector3(Math.cos(la)*Math.cos(lo), Math.sin(la), -Math.cos(la)*Math.sin(lo)); })();   // (Europe and Asia, the side the flight in from space always shows)
 const ORB_IN = { done: true, t: -1 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
 const earthFaceDir = g => EARTH_FACE.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), g);
-const orbitDir = () => !ORB_IN.done ? earthFaceDir(earth.rotation.y) : visitor ? visitorCamDir(earth.rotation.y) : dirAt(0, 24*DEG);
+const EARTH_SPIN = .015;                                     // (radians a second: a turn in about seven minutes)
+const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns)
 function visitorCamDir(gmstAngle){
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
   const a = Math.atan2(v.x, v.z) - .24, el = clamp(Math.asin(v.y)*.8 + 6*DEG, -26*DEG, 30*DEG);
@@ -5623,7 +5619,7 @@ renderer.setAnimationLoop(() => {
   if (!ready){ renderGlow(); composer.render(); return; }
   frame++;
   const now = simNow(), gmst = gmstOf(now), sun = sunDir(now);
-  earth.rotation.y = gmst; earth.updateMatrixWorld(true);
+  earth.rotation.y = gmst + U.uTime.value*EARTH_SPIN; earth.updateMatrixWorld(true);   // (the real turn, and a slow visible one on top, so the Earth always turns)
   U.uSun.value.set(sun[0], sun[2], -sun[1]);
   simTicker.set(new Date(now).toISOString().slice(11, 19));
 
@@ -5745,7 +5741,7 @@ renderer.setAnimationLoop(() => {
   gwasGroup.updateMatrixWorld(true);
 
   // satellites: full SGP4 budget while they are on screen, a trickle otherwise
-  updateSatellites(now, sun, 0, dt, gmst);
+  updateSatellites(now, sun, 0, dt, earth.rotation.y);
 
   if (m1 > .55 && mAmy < .5){
     pulseClock += dt;
