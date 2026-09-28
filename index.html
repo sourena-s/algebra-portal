@@ -675,16 +675,6 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 </section>
 
 <section class="hud hud-br anim" style="--d:760ms">
-  <div class="legend" data-ch="0">
-    <div class="lg-title">The atmosphere in motion</div>
-    <div class="rows">
-      <div class="row" tabindex="0" data-focus="0" style="color:var(--leo)"><span class="k"><i></i>TRADE</span><span class="n">Easterlies, 0–30°</span><span class="v" id="cLEO">0</span></div>
-      <div class="row" tabindex="0" data-focus="1" style="color:var(--meo)"><span class="k"><i></i>WEST</span><span class="n">Westerlies, 30–60°</span><span class="v" id="cMEO">0</span></div>
-      <div class="row" tabindex="0" data-focus="2" style="color:var(--geo)"><span class="k"><i></i>POLAR</span><span class="n">Easterlies, 60–90°</span><span class="v" id="cGEO">0</span></div>
-      <div class="row" tabindex="0" data-focus="3" style="color:var(--heo)"><span class="k"><i></i>JET</span><span class="n">Jet streams, 9–12 km</span><span class="v" id="cHEO">0</span></div>
-    </div>
-    <p class="note">Hover a row to isolate it.</p>
-  </div>
   <div class="legend" data-ch="1">
     <div class="lg-title">FreeSurfer fsaverage · MNI305</div>
     <div class="rows">
@@ -788,7 +778,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 <div id="strip" role="group" aria-label="Chapters: slide or scroll here"><button class="sa up" type="button" aria-label="Previous chapter"></button><span class="grip"><i></i><i></i><i></i></span><b>Slide · chapters</b><span class="grip"><i></i><i></i><i></i></span><button class="sa dn" type="button" aria-label="Next chapter"></button></div>
 <nav class="rail" id="rail" aria-label="Chapters">
   <button data-go="-1" class="on"><span>I · Universe</span><i></i></button>
-  <button data-go="0"><span>II · Orbit</span><i></i></button>
+  <button data-go="0"><span>II · Earth</span><i></i></button>
   <button data-go="1"><span>III · Brain</span><i></i></button>
   <button data-go="2"><span>IV · Amygdala</span><i></i></button>
   <button data-go="3"><span>V · Sorting</span><i></i></button>
@@ -1287,53 +1277,27 @@ const visitorLocal = new THREE.Vector3(1, 0, 0);
 function placeBeacon(v){
   const la = v.lat*DEG, lo = v.lon*DEG;
   visitorLocal.set(Math.cos(la)*Math.cos(lo), Math.sin(la), -Math.cos(la)*Math.sin(lo));
-  beacon.position.copy(visitorLocal);
+  beacon.position.copy(visitorLocal).multiplyScalar(1.008); beacon.traverse(o => o.renderOrder = 8);   // (just above the photograph of the Earth)
   beacon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), visitorLocal);
 }
 
-// ---------------------------------------------------------------- the atmosphere: air in motion round the Earth
-// A particle simulation of the general circulation, illustrative: parcels in a thin shell (its depth exaggerated) carried by the
-// easterly trade winds up to 30 degrees, the westerlies to 60, the polar easterlies beyond, and the meandering jet streams aloft,
-// with a weak overturning and eddies. The parcels turn with the Earth, sit dimmer on its night side, and are the points that fold
-// into the brain in the next chapter. Band per parcel: 0 trades, 1 westerlies, 2 polar, 3 jet (the legend's rows and colours).
-let NS = 0, regime, valid, AT;
+// ---------------------------------------------------------------- the Earth's points: the same particles as the brain's, first spread
+// over the Earth's surface under its photograph; as the brain chapter begins they lift off it and fly together into the brain
+let NS = 0, regime, valid;
 let texW = 256, texH = 1, satTex, texData;
 const counts = [0, 0, 0, 0];
-const atmBand = lat => { const a = Math.abs(lat); return a < 30*DEG ? 0 : a < 60*DEG ? 1 : 2; };
-function initAtmosphere(n){
-  NS = n; regime = new Uint8Array(NS); valid = new Uint8Array(NS).fill(1);
-  AT = { lat: new Float32Array(NS), lon: new Float32Array(NS), h: new Float32Array(NS), jet: new Uint8Array(NS), ph: new Float32Array(NS) };
-  const R = mulberry(8128); for (let i = 0; i < NS; i++) atmSpawn(i, R);
-  AT.R = R; texH = Math.ceil(NS / texW);
+function initEarthPoints(n){
+  NS = n; regime = new Uint8Array(NS).fill(2); valid = new Uint8Array(NS).fill(1); texH = Math.ceil(NS / texW);
   texData = new Float32Array(texW*texH*4).fill(-1);
   satTex = new THREE.DataTexture(texData, texW, texH, THREE.RGBAFormat, THREE.FloatType);
   satTex.minFilter = satTex.magFilter = THREE.NearestFilter; satTex.needsUpdate = true;
 }
-function atmSpawn(i, R){
-  const jet = R() < .14 ? 1 : 0, s = R() < .5 ? -1 : 1;
-  AT.lat[i] = jet ? s*(R() < .5 ? 30 : 52 + 8*R())*DEG : Math.asin(2*R() - 1);
-  AT.lon[i] = R()*TAU; AT.h[i] = jet ? .75 + .2*R() : R()*R()*.7; AT.jet[i] = jet; AT.ph[i] = R()*TAU;
-  regime[i] = jet ? 3 : atmBand(AT.lat[i]);
-}
 function updateSatellites(now, sun, budget, dt = 1/60, gm = 0){
-  const R = AT.R, t = now/1000, [sx, sz, sy] = [sun[0], -sun[1], sun[2]];   // (the Sun in the scene's frame: x, z, -y)
-  const cg = Math.cos(gm), sg = Math.sin(gm); counts.fill(0);
-  for (let i = 0; i < NS; i++){
-    let la = AT.lat[i], lo = AT.lon[i];
-    const a = Math.abs(la), sgn = la < 0 ? -1 : 1, jet = AT.jet[i];
-    let u, v;                                                           // (east and north, radians a second on the sphere)
-    if (jet){ const c = (a < 42*DEG ? 30 : 52)*DEG + 7*DEG*Math.sin(3*lo + t*.05 + (a < 42*DEG ? 0 : 1.7));
-      u = .16 + .05*Math.sin(t*.3 + AT.ph[i]); v = sgn*(c - a)*.6 + .05*Math.cos(3*lo + t*.05); }
-    else { u = a < 30*DEG ? -.045*Math.sin(a/30*DEG*Math.PI/DEG) - .01 : a < 60*DEG ? .07*Math.sin((a - 30*DEG)/(30*DEG)*Math.PI) + .01 : -.035*Math.sin((a - 60*DEG)/(30*DEG)*Math.PI);
-      v = sgn*(a < 30*DEG ? -.012 : a < 60*DEG ? .008 : -.006)*Math.sin(a*6)          // (the three cells' surface flow)
-        + .02*Math.sin(2.3*lo + 3*la + t*.07 + AT.ph[i]) + .012*Math.cos(4.1*lo - 2*la - t*.05); }   // (eddies)
-    lo += u*dt/Math.max(.08, Math.cos(la))*.6; la += v*dt*.6;
-    if (la > 1.52 || la < -1.52 || R() < dt*.008) { atmSpawn(i, R); la = AT.lat[i]; lo = AT.lon[i]; }
-    AT.lat[i] = la; AT.lon[i] = lo % TAU; if (!jet) regime[i] = atmBand(la);
-    const r = 1.012 + .055*AT.h[i], cl = Math.cos(la), x0 = r*cl*Math.cos(lo), y = r*Math.sin(la), z0 = -r*cl*Math.sin(lo);
-    const x = x0*cg + z0*sg, z = -x0*sg + z0*cg, o = i*4;              // (turned with the Earth)
-    const shade = x*sx + y*sy + z*sz < 0 ? .5 : 0;
-    texData[o] = x; texData[o+1] = y; texData[o+2] = z; texData[o+3] = regime[i] + shade; counts[regime[i]]++;
+  const [sx, sz, sy] = [sun[0], -sun[1], sun[2]], cg = Math.cos(gm), sg = Math.sin(gm), G = Math.PI*(3 - Math.sqrt(5));
+  for (let i = 0; i < NS; i++){                                     // (points spread evenly over the Earth's surface, turning with it)
+    const y = 1 - 2*(i + .5)/NS, rr = Math.sqrt(1 - y*y), lo = i*G, x0 = rr*Math.cos(lo), z0 = -rr*Math.sin(lo);
+    const x = x0*cg + z0*sg, z = -x0*sg + z0*cg, o = i*4;
+    texData[o] = x; texData[o+1] = y; texData[o+2] = z; texData[o+3] = 2 + (x*sx + y*sy + z*sz < 0 ? .5 : 0);
   }
   satTex.needsUpdate = true;
 }
@@ -2113,8 +2077,8 @@ function initParticles(){
         // orbit
         vec3 sc = reg < .5 ? uLEO : reg < 1.5 ? uMEO : reg < 2.5 ? uGEO : uHEO;
         sc *= mix(1., .3, shade);
-        float orbA = aPrim*ok*(reg > 2.5 ? 1. : .85);
-        float orbS = reg > 2.5 ? .015 : .012;
+        float orbA = aPrim*ok*.8*smoothstep(0., .1, uMorph);           // (the Earth's points: only once they start for the brain, as the photograph fades)
+        float orbS = .011;
         // brain
         float gy = smoothstep(.95, -.85, aInfo.x);
         vec3 V = normalize(cameraPosition - bP);
@@ -4825,10 +4789,10 @@ function cosmosFrame(dt, Sd){
   // globe is turned now, and only then does the photograph turn to its Europe-Asia face
   const back = here && (ORB_IN.done || ORB_IN.t >= 0), gB = back ? cosSm(.9, .955, f)*hand : 0, turnB = back ? cosSm(.82, .9, f) : 0;
   const sats = here ? (back ? cosSm(.96, .995, f)*(ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1))) : 0) : ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1));   // (the satellites only once the globe is there)
-  earth.visible = (!here && hand > 0) || gB > .003; for (const c of earth.children) c.visible = true;
+  earth.visible = !here && hand > .5; for (const c of earth.children) c.visible = c === beacon;   // (of the old globe only the red tag is left, on the photograph)
   U.uCosV.value = sats;
-  { const on = here ? cosSm(2.05, 2.25, z)*(1 - gB) : 1 - hand, E = EARTH_PHOTO;
-    E.mesh.visible = E.halo.visible = on > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on*(here ? 1 : 1 - hand);
+  { const on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp(U.uMorph.value/.2, 0, 1)), E = EARTH_PHOTO;   // (the photograph is the Earth chapter's Earth; it gives way to its points as they leave for the brain)
+    E.mesh.visible = E.halo.visible = on > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on;
     if (on > .003){
       E.grp.position.copy(earth.position); E.grp.scale.setScalar(earth.scale.x);
       // the photograph's orientation: its Europe-Asia face toward the camera, its north toward the sky; at the orbit chapter this is
@@ -4836,10 +4800,10 @@ function cosmosFrame(dt, Sd){
       const toC = _tv[0].copy(camera.position).sub(earth.position).normalize(), e1w = _tv[1].set(0, 1, 0).cross(toC).normalize(), e2w = _tv[2].copy(toC).cross(e1w);
       const F = EARTH_FACE, e1l = _tv[3].set(0, 1, 0).cross(F).normalize(), e2l = new THREE.Vector3().copy(F).cross(e1l);
       const Bw = _m4a.makeBasis(e1w, e2w, toC), Bl = _m4b.makeBasis(e1l, e2l, F).transpose(); E.grp.quaternion.setFromRotationMatrix(Bw.multiply(Bl));
-      if (turnB > 0) E.grp.quaternion.slerp(earth.quaternion, turnB);                   // (on the way back: first exactly as the globe stands)
+      { const k = here ? turnB : hand; if (k > 0) E.grp.quaternion.slerp(earth.quaternion, k); }   // (arrived: exactly as the Earth stands now, so the tag is where the visitor is)
       // its sunlight: the real Sun as it stands over that face now, turned with the photograph
       E.mesh.material.uniforms.uSun.value.copy(U.uSun.value).applyAxisAngle(_tv[3].set(0, 1, 0), -earth.rotation.y).applyQuaternion(E.grp.quaternion);
-      E.mesh.material.depthTest = here && gB <= .003;           // (over the globe as it hands over, never through it)
+      E.mesh.material.depthTest = true;
     } }
   earth.updateMatrixWorld(true);
   $('cosLabels').style.display = 'none';
@@ -5546,7 +5510,7 @@ function presetSph(k){        // [elevation, distance] for each chapter
 const dateFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const stampFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false });
 const simTicker = new Ticker($('simClock'), new Set([0, 1, 3, 4]));
-function renderSource(){ $('src').innerHTML = 'Winds: <b>general circulation</b>, illustrative'; }
+function renderSource(){ $('src').innerHTML = '&nbsp;'; }
 function renderVisitor(v){
   $('place').textContent = [v.city, v.country].filter(Boolean).join(', ') || 'Somewhere on Earth';
   const ns = v.lat >= 0 ? 'N' : 'S', ew = v.lon >= 0 ? 'E' : 'W';
@@ -5603,7 +5567,7 @@ async function boot(){
   const locP = locate().then(v => { visitor = v; placeBeacon(v); renderVisitor(v); return v; });
   if (!geoConsent()) setTimeout(askConsent, RM ? 400 : 2600);
   renderSource();
-  initAtmosphere(12000);
+  initEarthPoints(12000);
   ld(.8, 'Unpacking cortex, cerebellum and brainstem'); await initBrain();
   ld(.86, 'Unpacking B-DNA'); await initDna();
   ld(.9, 'Unpacking the Alzheimer\'s GWAS');
@@ -5928,7 +5892,6 @@ renderer.setAnimationLoop(() => {
     $('realClock').innerHTML = `Real time <b>${new Date().toISOString().slice(11, 19)}</b> UTC`;
     if (mZm > .5) setNum($('zCount'), ZMW.count);
     if (mSort > .5){ setNum($('sNeu'), sortCounts[0]); setNum($('sGlia'), sortCounts[1]); }
-    setNum($('cLEO'), counts[0]); setNum($('cMEO'), counts[1]); setNum($('cGEO'), counts[2]); setNum($('cHEO'), counts[3]);
   }
   renderGlow(); composer.render();
 });
