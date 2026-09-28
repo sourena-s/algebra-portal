@@ -5839,8 +5839,8 @@ renderer.setAnimationLoop(() => {
   if (Sd < -.5){ ORB_IN.done = false; ORB_IN.t = -1; }
   else if (!ORB_IN.done){
     if (Sd > .5) ORB_IN.done = true;
-    else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .002 && navSettle <= 0) ORB_IN.t = 0; }
-    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : 2)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 3.5, force: true }; } } }
+    else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .01) ORB_IN.t = 0; }   // (as soon as the Earth is reached)
+    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : .3)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 3.5, force: true }; } } }
   { const want = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
     arEase += ((want ? 1 : 0) - arEase)*Math.min(1, dt*(want ? 1.6 : 5));          // (the turn eases in and out, never stops or starts dead)
     controls.autoRotate = arEase > .002; controls.autoRotateSpeed = .28*arEase*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1); }   // (and then eases into its turn)
