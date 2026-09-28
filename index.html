@@ -4302,7 +4302,7 @@ $('snd').setAttribute('aria-pressed', SND.on);
 // Three nested frames, each drawn at its own scale and handed to the next by a zoom about the point where the next one lies:
 // the supercluster (L), the galaxy at its edge (M), the Sun's system in that galaxy (S), and last the Earth itself, which is the
 // scene's own globe. z runs 0 (Laniakea) -> 1 (the Milky Way) -> 2 (the Solar System) -> 3 (Earth, the orbit chapter).
-const COS = { za: 0, zs: 0, manual: false, lan: null, mw: null, ss: null, auto: 0, z: 0, F1: null, labels: null, sunA: 2.2, earthA: .8, rot: 0, free: false, qW: 0, fb: { w: 0, dir: new THREE.Vector3(), c: new THREE.Vector3(), base: null, baseT: null } };
+const COS = { za: 0, zs: 0, manual: false, lan: null, mw: null, ss: null, auto: 0, z: 0, F1: null, labels: null, sunA: 2.2, earthA: .8, rot: 0, free: false, qW: 0, fb: { R: new THREE.Quaternion() } };
 const COS_RE = .003, COS_K = [1e6, 20000, 1/COS_RE];     // (deep into Laniakea's filament before the Milky Way; Earth's true size against its orbit is far smaller still)                 // the zoom from each frame into the next; Earth's radius in the S frame
 const cosGroup = new THREE.Group(); cosGroup.visible = false; scene.add(cosGroup);
 const cosEio = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
@@ -4851,7 +4851,6 @@ function cosTurn(z, out){
 const cosLabel = (e, w, o, dy = 0) => { tmp3.copy(w).project(camera); const on = tmp3.z < 1 && Math.abs(tmp3.x) < 1.1 && Math.abs(tmp3.y) < 1.1 ? o : 0;
   labelAt(e, (tmp3.x*.5 + .5)*innerWidth + (e.classList.contains('l') ? 14 : 0), (1 - (tmp3.y*.5 + .5))*innerHeight + dy, on); };
 function cosmosFrame(dt, Sd){
-  COS.fb.w = 0;
   COS.rot += dt*MW_SPIN*(innerHeight > innerWidth ? 1 : -1);   // the Milky Way turns three quarters of a turn a minute, anticlockwise on the screen (a tall screen sees it from the other face)
   const f = clamp(Sd + 1, 0, 1), here = f < 1 - 1e-4;
   if (Sd <= -.999 && !SCR.on && !nav.busy) COS.auto += dt; else if (f > .02){ COS.auto = Math.max(COS.auto, 9.5); COS.za = 1; }
@@ -4929,16 +4928,17 @@ function cosmosFrame(dt, Sd){
   // the Moon: where it really is now (a low-precision lunar ephemeris), at its real distance from the Earth, its near side toward
   // the Earth and lit by the real Sun. The camera's approach is laid out round it (COS.fb), so the zoom carries it past the camera.
   { const mw = moonDirW(simNow()), D = mw.km/RE*pl.sE, eW = _tv[0].copy(pl.oE).applyQuaternion(Q), C = Math.max(1e-6, camera.position.distanceTo(eW));
-    const mOn = cosSm(2.12, 2.3, z);
-    COS.moon.visible = mOn > .003 && z < 2.995; COS.moon.position.copy(pl.oE).add(_tv[1].copy(mw.dir).multiplyScalar(D).applyQuaternion(Qi)); COS.moon.scale.setScalar(.2727*pl.sE);
-    cosGroup.updateMatrixWorld(true); COS.moon.up.set(0, 1, 0); COS.moon.lookAt(eW);   // (the near side, the photographed face, toward the Earth)
-    const MoU = COS.moon.material.uniforms; MoU.uOn.value = mOn; MoU.uR.value = .2727*pl.sE; MoU.uLightW.value.copy(U.uSun.value);
-    // the approach: in along a line just beside the Earth-Moon line (a few Moon radii off it), then, once the Moon is past, back to
-    // the orbit chapter's own view
-    const pass = Math.log(Math.max(D/C, 1e-6)), w = cosSm(2.08, 2.3, z)*(1 - smooth(clamp((pass - .35)/1.6, 0, 1)))*(here && !COS.free ? 1 : 0);
-    // (offset toward the Sun's side of the Moon, so the camera catches its sunlit limb as it goes by)
-    const side = _tv[2].copy(U.uSun.value).addScaledVector(mw.dir, -U.uSun.value.dot(mw.dir)); if (side.lengthSq() < 1e-4) side.crossVectors(mw.dir, _tv[3].set(0, 1, 0)); side.normalize();
-    COS.fb.w = w; COS.fb.dir.copy(mw.dir).addScaledVector(side, .09).normalize(); COS.fb.c.copy(eW); }
+    // the fly-by: once the Earth holds the centre, the space round it turns (never the camera) so that the Moon, at its true place in
+    // that space, comes in just beside the line of sight and passes the camera; after it has gone by, the space turns back, so the
+    // orbit chapter's Earth and sky are exactly as they are
+    const pass = Math.log(Math.max(D/C, 1e-6)), w = smooth(cosSm(2.42, 2.6, z)*(1 - clamp((pass - .3)/1.4, 0, 1)))*(COS.free ? 0 : 1);
+    const toCam = _tv[1].copy(camera.position).sub(eW).normalize(), side = _tv[2].set(1, 0, 0).applyQuaternion(camera.quaternion), up = _tv[3].set(0, 1, 0).applyQuaternion(camera.quaternion);
+    const aim = toCam.clone().addScaledVector(side, -.07).addScaledVector(up, .03).normalize();
+    const R = COS.fb.R.identity().slerp(new THREE.Quaternion().setFromUnitVectors(mw.dir, aim), w);
+    const mdir = mw.dir.clone().applyQuaternion(R), mOn = cosSm(2.12, 2.3, z);
+    COS.moon.visible = mOn > .003 && z < 2.995; COS.moon.position.copy(pl.oE).add(mdir.clone().multiplyScalar(D).applyQuaternion(Qi)); COS.moon.scale.setScalar(.2727*pl.sE);
+    cosGroup.updateMatrixWorld(true); COS.moon.up.set(0, 1, 0).applyQuaternion(R); COS.moon.lookAt(eW);   // (the near side, the photographed face, toward the Earth)
+    const MoU = COS.moon.material.uniforms; MoU.uOn.value = mOn; MoU.uR.value = .2727*pl.sE; MoU.uLightW.value.copy(U.uSun.value).applyQuaternion(R); }
   cosGroup.updateMatrixWorld(true);
 }
 
@@ -5912,7 +5912,6 @@ renderer.setAnimationLoop(() => {
   } else if (inTransit && !COS.free){
     // keep whatever angle the viewer (or auto-rotation) has reached; ease only elevation, distance and focus point
     camFly = null; controls.enabled = true;
-    const FB = COS.fb; if (FB.base){ camera.position.copy(FB.base); controls.target.copy(FB.baseT); FB.base = null; }   // (the fly-by's swing is laid on afresh each frame)
     const i = Math.min(LAST - 1, Math.floor(Sd)), f = easeIO(Sd - i), [ea, da] = presetSph(i), [eb, db] = presetSph(i + 1);
     const tgt = presetTarget(i).lerp(presetTarget(i + 1), f), k = Math.min(1, dt*4.5);
     controls.target.lerp(tgt, k);
@@ -5924,9 +5923,7 @@ renderer.setAnimationLoop(() => {
     camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph));
     // once the chapter has turned, keep easing until the camera has arrived (on a slow device it can lag behind), then let go
     if (!nav.busy && Math.abs(sph.radius - da)/da < .003 && Math.abs(sph.phi - (Math.PI/2 - ea)) < .002 && Math.abs(dTh) < .002 && controls.target.distanceTo(tgt) < .004) navSettle = 0;
-    if (FB.w > .001 && Sd < 0){ FB.base = camera.position.clone(); FB.baseT = controls.target.clone();   // the Moon's fly-by: the whole view turns round the Earth onto the line in past the Moon
-      const q = new THREE.Quaternion().slerp(new THREE.Quaternion().setFromUnitVectors(tmpV.copy(camera.position).sub(FB.c).normalize(), FB.dir), smooth(FB.w));
-      camera.position.sub(FB.c).applyQuaternion(q).add(FB.c); controls.target.sub(FB.c).applyQuaternion(q).add(FB.c); }
+
     fly = null;
   } else if (fly && (!userMoved || fly.force) && mode === 0){
     if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); }
