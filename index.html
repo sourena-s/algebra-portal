@@ -4789,7 +4789,7 @@ function cosmosFrame(dt, Sd){
   // globe is turned now, and only then does the photograph turn to its Europe-Asia face
   const back = here && (ORB_IN.done || ORB_IN.t >= 0), gB = back ? cosSm(.9, .955, f)*hand : 0, turnB = back ? cosSm(.82, .9, f) : 0;
   const sats = here ? (back ? cosSm(.96, .995, f)*(ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1))) : 0) : ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1));   // (the satellites only once the globe is there)
-  earth.visible = !here && hand > .5; for (const c of earth.children) c.visible = c === beacon;   // (of the old globe only the red tag is left, on the photograph)
+  earth.visible = here ? z > 2.6 : true; for (const c of earth.children) c.visible = c === beacon;   // (the tag is on the Earth before it is reached)   // (of the old globe only the red tag is left, on the photograph)
   U.uCosV.value = sats;
   { const on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp(U.uMorph.value/.2, 0, 1)), E = EARTH_PHOTO;   // (the photograph is the Earth chapter's Earth; it gives way to its points as they leave for the brain)
     E.mesh.visible = E.halo.visible = on > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on;
@@ -5541,7 +5541,7 @@ const EARTH_SPIN = .015;                                     // (radians a secon
 const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns)
 function visitorCamDir(gmstAngle){
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
-  const a = Math.atan2(v.x, v.z) - .24, el = clamp(Math.asin(v.y)*.8 + 6*DEG, -26*DEG, 30*DEG);
+  const a = Math.atan2(v.x, v.z), el = 0;                      // (on the equator, at the visitor's longitude, looking in at the tag)
   return new THREE.Vector3(Math.sin(a)*Math.cos(el), Math.sin(el), Math.cos(a)*Math.cos(el));
 }
 
@@ -5728,7 +5728,7 @@ renderer.setAnimationLoop(() => {
   U.uFocusId.value = focusId; U.uFocusAmt.value = focusAmt;
   EU.uOpacity.value = 1 - clamp(m1/.45, 0, 1);
   ocean.visible = EU.uOpacity.value > .01; ocean.material.depthWrite = EU.uOpacity.value > .6;
-  BU.uOpacity.value = (visitor ? 1 : 0)*(1 - clamp(m1/.2, 0, 1))*(intro.t >= 1 ? 1 : intro.t)*U.uCosV.value;
+  BU.uOpacity.value = (visitor ? 1 : 0)*(1 - clamp(m1/.2, 0, 1))*(intro.t >= 1 ? 1 : intro.t)*(Sd < 0 ? clamp((COS.z - 2.6)/.2, 0, 1) : 1);   // (the tag is there as the Earth comes close)
   BRU.uOpacity.value = clamp((m1 - .55)/.45, 0, 1)*(1 - clamp(mSort/.3, 0, 1));   // the glass dims as the block comes out
   if (brain) brain.meshes.forEach(m => m.visible = BRU.uOpacity.value > .01);
   { const fi = clamp(Math.floor(Sd), FIRST, LAST - 1); let bs = .58 + BLOOM_BUMP[fi]*Math.sin(Math.PI*(Sd - fi));
@@ -5874,7 +5874,7 @@ renderer.setAnimationLoop(() => {
     tmpV.copy(camera.position).sub(tmpW);
     const facing = tmpV.dot(tmpW) / (tmpV.length()*tmpW.length());
     const s = tmpW.clone().project(camera), tag = $('youTag');
-    tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value).toFixed(3);
+    tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value * clamp(1 + Sd/.03, 0, 1)).toFixed(3);   // (its label once the Earth is reached)
     tag.style.transform = `translate(${((s.x*.5 + .5)*innerWidth + 8).toFixed(1)}px, ${((1 - (s.y*.5 + .5))*innerHeight - 10).toFixed(1)}px)`;
   }
   const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) - .06*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
