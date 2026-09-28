@@ -5195,8 +5195,8 @@ function buildSorterFx(){
   sLabels = [[-.38, 1.73, 0, 'Sample · amygdala nuclei', 'r'], [.06, .66, 0, 'Nozzle', 'l'], [1.36, .58, 0, 'Laser', 'r'], [-.62, .56, 0, 'Detectors', 'c'],
     [.34, -.2, 0, 'Deflection plates', 'l'], [-.86, -1.52, 0, 'Neurons', 'r'], [.86, -1.52, 0, 'Oligodendrocytes', 'l'],
     [-.24, 1.1, 0, 'Funnel', 'r'], [.98, 1.5, 0, 'Events · live', 'c'], [.98, .76, 0, 'NeuN →', 'c'], [.59, 1.1, 0, 'Olig2 →', 'r'],
-    [1.14, 1.08, 0, 'Neurons', 'c', '#4DA3FF'], [.8, 1.38, 0, 'Oligodendrocytes', 'c', '#FF4A3D']]
-    .map(([x, y, z, t, al, c]) => { const e = document.createElement('span'); e.className = 'zlabel ' + al; e.textContent = t; if (c) e.style.color = c; $('sortLabels').appendChild(e); return { p: [x, y, z], e }; });
+    [1.14, 1.08, 0, 'Neurons', 'c', '#4DA3FF'], [.8, 1.33, 0, 'Oligodendrocytes', 'c', '#FF4A3D']]
+    .map(([x, y, z, t, al, c]) => { const e = document.createElement('span'); e.className = 'zlabel ' + al; e.textContent = t; if (c){ e.style.color = c; e.classList.add('keep'); } $('sortLabels').appendChild(e); return { p: [x, y, z], e }; });
   { // one label, outside the brain, with a glowing line to the right amygdala
     const e = document.createElement('span'); e.className = 'zlabel amy'; e.textContent = 'Amygdala'; const ln = document.createElement('i'); ln.className = 'amy-line';
     $('sortLabels').append(ln, e); amyLabels = [e, ln]; }
@@ -5517,7 +5517,7 @@ async function boot(){
   camera.position.copy(dirAt(.7, 34*DEG).multiplyScalar(dCos*1.6));
 }
 // labels in the scene step out of the way of the chapter's own text and panels: any that would sit under them is hidden
-// (not the amygdala's: it picks a corner clear of them itself, so it never blinks as the chapter's text slides in)
+// (not the scatter plot's two gate names, which sit inside the plot; nor the amygdala's: it picks a corner clear of them itself, so it never blinks as the chapter's text slides in)
 const hudObs = [];
 setInterval(() => {
   const obs = [], all = hudObs; all.length = 0;
@@ -5525,7 +5525,7 @@ setInterval(() => {
     const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
     const r = el.getBoundingClientRect(); if (r.width > 2 && r.height > 2){ all.push(r); if (+cs.opacity >= .3) obs.push(r); }
   }
-  for (const el of document.querySelectorAll('#labels > *, #zmwLabels > *, #sortLabels > :not(.amy-line):not(.amy), #cellLabels > *, #arrLabels > *')){
+  for (const el of document.querySelectorAll('#labels > *, #zmwLabels > *, #sortLabels > :not(.amy-line):not(.amy):not(.keep), #cellLabels > *, #arrLabels > *')){
     const r = el.getBoundingClientRect(), hit = r.width > 0 && obs.some(o => r.left < o.right + 4 && r.right > o.left - 4 && r.top < o.bottom + 3 && r.bottom > o.top - 3);
     el.classList.toggle('occl', hit);
   }
