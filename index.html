@@ -255,28 +255,35 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 #strip .sa::before{content:"";width:7px;height:7px;border-right:1.5px solid var(--bone);border-bottom:1.5px solid var(--bone);transform:translateY(-2px) rotate(45deg);animation:saNudge 2.4s ease-in-out infinite}
 #strip .sa.up::before{transform:translateY(2px) rotate(-135deg);animation-delay:1.2s}
 #strip .sa:hover::before{border-color:var(--ember)}
-/* on a touch screen the side strip gives way to a slim glass bar at the bottom: back, and the next chapter by name */
+/* on a touch screen the side strip gives way to a glass player at the bottom: back, play, a track through the whole story to slide
+   along (the Laniakea zoom, then a tick for each chapter), and forward */
 @media (pointer:coarse){
   #strip,#scue{display:none}
-  #stepRow{display:flex!important;gap:0;border:1px solid rgba(236,230,218,.16);border-radius:22px;background:rgba(12,16,26,.28);-webkit-backdrop-filter:blur(16px) saturate(1.2);backdrop-filter:blur(16px) saturate(1.2);overflow:hidden}
-  #stepRow .step-b,#stepRow .step-next{border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;min-height:40px}
-  #stepRow{position:relative;touch-action:none}
-  #stepRow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:calc(var(--f,0)*100%);background:linear-gradient(90deg,rgba(236,230,218,.04),rgba(255,91,58,.22));border-right:1.5px solid rgba(255,91,58,.85);opacity:calc(var(--f,0)*40);max-width:100%;pointer-events:none;transition:opacity .3s}
-  #stepRow.scrub{border-color:rgba(255,91,58,.45)}
-  #stepRow .step-next > svg{display:none}
-  #stepRow #stFwd{border-right:0;border-left:1px solid rgba(236,230,218,.12)}
-  #stepRow .st-pp{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid rgba(236,230,218,.4);display:grid;place-items:center;transition:border-color .3s,box-shadow .3s}
-  #stepRow .st-pp::before{content:'';width:0;height:0;margin-left:2px;border-left:7px solid var(--bone);border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
-  #stepRow.auto .st-pp{border-color:rgba(255,91,58,.85);box-shadow:0 0 10px rgba(255,91,58,.4)}
-  #stepRow.auto .st-pp::before{width:7px;height:9px;margin:0;border:0;background:linear-gradient(90deg,var(--bone) 0 2.5px,transparent 2.5px 4.5px,var(--bone) 4.5px 7px)}
-  #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:17px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
+  #stepRow{display:flex!important;position:relative;align-items:center;gap:4px;height:52px;padding:0 5px;box-sizing:border-box;touch-action:none;
+    border:1px solid rgba(236,230,218,.14);border-radius:26px;background:linear-gradient(180deg,rgba(28,34,48,.42),rgba(10,13,22,.5));
+    -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 30px rgba(0,0,0,.35);transition:border-color .3s}
+  #stepRow.scrub{border-color:rgba(255,91,58,.4)}
+  #stepRow .step-b{flex:none;width:40px;height:40px;min-height:0;padding:0;border:0;border-radius:50%;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:rgba(236,230,218,.8);display:grid;place-items:center;transition:background .2s,color .2s}
+  #stepRow .step-b:active{background:rgba(236,230,218,.1)}
+  #stepRow .step-b svg{width:13px;height:13px;stroke-width:1.6}
+  #stepRow #stPlay{width:40px;height:40px;background:rgba(236,230,218,.08);box-shadow:inset 0 0 0 1px rgba(236,230,218,.18)}
+  #stepRow.auto #stPlay{background:rgba(255,91,58,.16);box-shadow:inset 0 0 0 1px rgba(255,91,58,.6),0 0 14px rgba(255,91,58,.3)}
+  #stepRow .st-pp{display:block;width:0;height:0;margin-left:3px;border-left:10px solid var(--bone);border-top:6.5px solid transparent;border-bottom:6.5px solid transparent}
+  #stepRow.auto .st-pp{width:10px;height:12px;margin:0;border:0;background:linear-gradient(90deg,var(--bone) 0 3.5px,transparent 3.5px 6.5px,var(--bone) 6.5px 10px)}
+  #stepRow .step-next{flex:1;align-self:stretch;min-width:0;min-height:0;margin:0 4px;padding:0;border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;position:relative;display:block;overflow:visible}
+  #stepRow .step-next > svg,#stepRow .step-n,#stepRow .step-t{display:none}
+  #stepRow .st-lbl{position:absolute;left:0;right:0;top:9px;text-align:center;font:600 8px var(--sans);letter-spacing:.34em;text-transform:uppercase;color:rgba(236,230,218,.42);pointer-events:none}
+  #stepRow .st-track{position:absolute;left:6px;right:6px;top:30px;height:2px;border-radius:1px;background:rgba(236,230,218,.16);pointer-events:none}
+  #stepRow .st-fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pos,0)*100%);border-radius:1px;background:linear-gradient(90deg,rgba(236,230,218,.5),var(--ember))}
+  #stepRow .st-tk{position:absolute;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;border-radius:50%;background:rgba(236,230,218,.45)}
+  #stepRow .st-tk.lan{width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:none;box-shadow:inset 0 0 0 1px rgba(236,230,218,.45)}
+  #stepRow .st-thumb{position:absolute;top:50%;left:calc(var(--pos,0)*100%);width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--bone);box-shadow:0 0 0 3px rgba(255,91,58,.35),0 0 12px rgba(255,91,58,.55);transition:transform .2s}
+  #stepRow.scrub .st-thumb{transform:scale(1.25)}
+  #stepRow .step-bar{left:6px;right:6px;bottom:6px;height:1px;opacity:.7}
+  #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:26px;translate:-50% -50%;font-size:15px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
   #stepRow.auto::after{display:none}
   #stepRow.hint::after{animation:barHint 1.5s ease-in-out .6s 3}
-  @keyframes barHint{0%{opacity:0;transform:translateX(-28px)}35%,65%{opacity:1}100%{opacity:0;transform:translateX(28px)}}
-  #stepRow .step-b{width:42px;border-right:1px solid rgba(236,230,218,.12)}
-  #stepRow .step-next{min-width:0;padding:6px 14px 7px 12px;gap:10px}
-  #stepRow .step-t b{font-size:8px;letter-spacing:.22em}
-  #stepRow .step-t small{font-size:11.5px}
+  @keyframes barHint{0%{opacity:0;transform:translateX(-34px)}35%,65%{opacity:1}100%{opacity:0;transform:translateX(34px)}}
   .rail{opacity:.55}
 }
 @media (max-height:760px) and (pointer:fine){ #strip{top:auto;bottom:70px;height:120px} }
@@ -803,8 +810,9 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <small class="step-h" id="cueH"></small>
     <div class="step-row hint" id="stepRow">
       <button class="step-b" id="stPrev" type="button" aria-label="Previous chapter" title="Previous chapter (←)" disabled><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
+      <button class="step-b" id="stPlay" type="button" aria-label="Play the chapters" aria-pressed="false"><i class="st-pp" aria-hidden="true"></i></button>
       <button class="step-next first" id="stNext" type="button" title="Next chapter (→ or Space)">
-        <i class="st-pp" aria-hidden="true"></i><span class="step-n"><b id="stNum">I</b>/ XII</span>
+        <em class="st-lbl" aria-hidden="true">Slide</em><span class="st-track" id="stTrack" aria-hidden="true"><i class="st-fill"></i><i class="st-thumb"></i></span><span class="step-n"><b id="stNum">I</b>/ XII</span>
         <span class="step-t"><b id="cueB">Next</b><small id="cueS">Fold the orbit into a brain</small></span>
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>
         <i class="step-bar" id="stBar"></i>
@@ -2879,13 +2887,21 @@ function navStage(tNow){
 }
 document.querySelectorAll('#rail button').forEach(b => b.addEventListener('click', () => goChapter(+b.dataset.go)));
 $('stPrev').addEventListener('click', () => { if (nav.to === FIRST && !nav.busy){ COS.manual = true; COS.za = 0; return; } stepChapter(-1); });   // (in the opening chapter: back out to Laniakea)
-$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (COARSE){ autoPlay(!AUTO.on); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
+$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (COARSE){ barJump(); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
 $('stFwd').addEventListener('click', () => nav.to >= LAST ? goChapter(FIRST) : stepChapter(1));
 // play: the chapters follow one another on their own, each held a few seconds once it has arrived; the middle of the bar turns it on and off
 const AUTO = { on: false, t: 0, dwell: 5 }; let arEase = 0;
+$('stPlay').addEventListener('click', () => autoPlay(!AUTO.on));
+// the track: the Laniakea zoom, then one tick per chapter; a tap on it goes to the chapter nearest the tap
+{ const T = $('stTrack'); for (let k = 0; k <= LAST - FIRST + 1; k++){ const i = document.createElement('i'); i.className = 'st-tk' + (k ? '' : ' lan'); i.style.left = `${(k/(LAST - FIRST + 1)*100).toFixed(2)}%`; T.appendChild(i); } }
+let barTapX = 0; $('stNext').addEventListener('pointerdown', e => { barTapX = e.clientX; });
+function barJump(){
+  const r = $('stTrack').getBoundingClientRect(), v = FIRST - 1 + clamp((barTapX - r.left)/r.width, 0, 1)*(LAST - FIRST + 1);
+  if (v < FIRST - .5){ goChapter(FIRST); COS.manual = true; COS.za = 0; } else { if (Math.round(v) === FIRST){ COS.manual = true; COS.za = 1; } goChapter(Math.round(v)); }
+}
 function autoPlay(on){
   AUTO.on = on; AUTO.t = 0; const r = $('stepRow'); r.classList.toggle('auto', on);
-  $('stNext').setAttribute('aria-pressed', String(on)); $('stNext').title = on ? 'Pause' : 'Play the chapters';
+  $('stPlay').setAttribute('aria-pressed', String(on)); $('stPlay').setAttribute('aria-label', on ? 'Pause' : 'Play the chapters');
   $('cueB').textContent = on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next';
   if (on && SCR.hold){ SCR.hold = false; SCR.dir = 1; }                           // (from a paused point: on to the chapter ahead)
   if (on && nav.to >= LAST) goChapter(FIRST);
@@ -5771,6 +5787,7 @@ renderer.setAnimationLoop(() => {
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
   autoFrame(dt);
+  if (COARSE) $('stepRow').style.setProperty('--pos', (clamp(barPos() - FIRST + 1, 0, LAST - FIRST + 1)/(LAST - FIRST + 1)).toFixed(4));   // (where the story stands, on the track)
   $('stBar').style.setProperty('--p', nav.busy ? clamp((tNow - nav.t0)/nav.dur, 0, 1).toFixed(3) : AUTO.on ? (AUTO.t/AUTO.dwell).toFixed(3) : '0');   // (playing: the wait before the next chapter)
   // chapter text, legends and panels crossfade with the scroll
   for (const el of chEls){
