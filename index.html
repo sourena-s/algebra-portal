@@ -263,7 +263,12 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow{position:relative;touch-action:none}
   #stepRow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:calc(var(--f,0)*100%);background:linear-gradient(90deg,rgba(236,230,218,.04),rgba(255,91,58,.22));border-right:1.5px solid rgba(255,91,58,.85);opacity:calc(var(--f,0)*40);max-width:100%;pointer-events:none;transition:opacity .3s}
   #stepRow.scrub{border-color:rgba(255,91,58,.45)}
-  #stepRow .step-next svg{box-sizing:content-box;align-self:stretch;height:auto;padding:0 15px;margin:-6px -14px -7px auto;border-left:1px solid rgba(236,230,218,.12)}
+  #stepRow .step-next > svg{display:none}
+  #stepRow #stFwd{border-right:0;border-left:1px solid rgba(236,230,218,.12)}
+  #stepRow .st-pp{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid rgba(236,230,218,.4);display:grid;place-items:center;transition:border-color .3s,box-shadow .3s}
+  #stepRow .st-pp::before{content:'';width:0;height:0;margin-left:2px;border-left:7px solid var(--bone);border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+  #stepRow.auto .st-pp{border-color:rgba(255,91,58,.85);box-shadow:0 0 10px rgba(255,91,58,.4)}
+  #stepRow.auto .st-pp::before{width:7px;height:9px;margin:0;border:0;background:linear-gradient(90deg,var(--bone) 0 2.5px,transparent 2.5px 4.5px,var(--bone) 4.5px 7px)}
   #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:17px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
   #stepRow.hint::after{animation:barHint 1.5s ease-in-out .6s 3}
   @keyframes barHint{0%{opacity:0;transform:translateX(-28px)}35%,65%{opacity:1}100%{opacity:0;transform:translateX(28px)}}
@@ -798,11 +803,12 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <div class="step-row hint" id="stepRow">
       <button class="step-b" id="stPrev" type="button" aria-label="Previous chapter" title="Previous chapter (←)" disabled><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
       <button class="step-next first" id="stNext" type="button" title="Next chapter (→ or Space)">
-        <span class="step-n"><b id="stNum">I</b>/ XII</span>
+        <i class="st-pp" aria-hidden="true"></i><span class="step-n"><b id="stNum">I</b>/ XII</span>
         <span class="step-t"><b id="cueB">Next</b><small id="cueS">Fold the orbit into a brain</small></span>
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>
         <i class="step-bar" id="stBar"></i>
       </button>
+      <button class="step-b" id="stFwd" type="button" aria-label="Next chapter" title="Next chapter"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></button>
     </div>
   </div>
 </nav>
@@ -1722,7 +1728,7 @@ function initParticles(){
         }
       }
       // IV: a fluorescence-activated sorter, drawn in points. Units: the sample tube is .4 across, the stream runs down the axis,
-      // the Cytek Aurora's five lasers cross it from the right at y ≈ .4, charged plates below steer droplets into two tubes (neurons left, glia right)
+      // the Cytek Aurora's five lasers cross it from the left at y ≈ .4, charged plates below steer droplets into two tubes (neurons left, glia right)
       vec3 boxPoint(vec3 c, vec3 h, float a, float b, float d){
         vec3 u = vec3(b, d, fract(b*7.31 + d*3.17))*2. - 1.;
         if (a < .35){                                   // on an edge
@@ -1815,13 +1821,13 @@ function initParticles(){
         } else if (r4 < .21){                             // the flow cell: a small quartz cuvette where the lasers meet the stream
           P = boxPoint(vec3(0., .42, 0.), vec3(.07, .14, .07), r1, r2, r3); C = vec3(.78, .88, 1.); A = .36; S = .0046;
         } else if (r4 < .26){                             // the three laser heads
-          float k = floor(r1*5.); P = boxPoint(vec3(1.2, .47 - k*.035, 0.), vec3(.15, .014, .03), r2, r3, r5); C = laserCol(k)*.55 + .25; A = .5; S = .005;
+          float k = floor(r1*5.); P = boxPoint(vec3(-1.2, .47 - k*.035, 0.), vec3(.15, .014, .03), r2, r3, r5); C = laserCol(k)*.55 + .25; A = .5; S = .005;
         } else if (r4 < .35){                             // their beams
-          float k = floor(r1*5.), x = r2*1.05; P = vec3(x, .47 - k*.035, 0.) + (vec3(0., r3, r5) - .5)*.007;
+          float k = floor(r1*5.), x = -r2*1.05; P = vec3(x, .47 - k*.035, 0.) + (vec3(0., r3, r5) - .5)*.007;
           C = laserCol(k); A = .5; S = .0045;
         } else if (r4 < .41){                             // collection optics opposite: a lens and the detector block
-          if (r1 < .5){ float a = r2*6.2832; P = vec3(-.3, .4 + .11*cos(a), .11*sin(a)); C = vec3(.8, .88, 1.); A = .45; S = .0048; }
-          else { P = boxPoint(vec3(-.62, .4, 0.), vec3(.16, .09, .09), r2, r3, r5); C = GL; A = .32; S = .005; }
+          if (r1 < .5){ float a = r2*6.2832; P = vec3(.3, .4 + .11*cos(a), .11*sin(a)); C = vec3(.8, .88, 1.); A = .45; S = .0048; }
+          else { P = boxPoint(vec3(.62, .4, 0.), vec3(.16, .09, .09), r2, r3, r5); C = GL; A = .32; S = .005; }
         } else if (r4 < .57){                             // the deflection plates, charged plus and minus
           float side = r1 < .5 ? -1. : 1.;
           P = boxPoint(vec3(side*.3, -.55, 0.), vec3(.012, .3, .16), r2, r3, r5);
@@ -2864,7 +2870,23 @@ function navStage(tNow){
 }
 document.querySelectorAll('#rail button').forEach(b => b.addEventListener('click', () => goChapter(+b.dataset.go)));
 $('stPrev').addEventListener('click', () => { if (nav.to === FIRST && !nav.busy){ COS.manual = true; COS.za = 0; return; } stepChapter(-1); });   // (in the opening chapter: back out to Laniakea)
-$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
+$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (COARSE){ autoPlay(!AUTO.on); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
+$('stFwd').addEventListener('click', () => nav.to >= LAST ? goChapter(FIRST) : stepChapter(1));
+// play: the chapters follow one another on their own, each held a few seconds once it has arrived; the middle of the bar turns it on and off
+const AUTO = { on: false, t: 0, dwell: 5 };
+function autoPlay(on){
+  AUTO.on = on; AUTO.t = 0; const r = $('stepRow'); r.classList.toggle('auto', on);
+  $('stNext').setAttribute('aria-pressed', String(on)); $('stNext').title = on ? 'Pause' : 'Play the chapters';
+  $('cueB').textContent = on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next';
+  if (on && SCR.hold){ SCR.hold = false; SCR.dir = 1; }                           // (from a paused point: on to the chapter ahead)
+  if (on && nav.to >= LAST) goChapter(FIRST);
+}
+function autoFrame(dt){
+  if (!AUTO.on) return;
+  const still = !nav.busy && !SCR.on && navSettle <= 0 && !(stepSwipe && stepSwipe.m) && (nav.to !== FIRST || COS.za >= .999);
+  AUTO.t = still ? AUTO.t + dt : 0;
+  if (AUTO.t >= AUTO.dwell){ AUTO.t = 0; if (nav.to >= LAST) autoPlay(false); else stepChapter(1); }
+}
 let stepSwiped = false, stepSwipe = null;                        // a swipe across the buttons turns the page too
 // where the bar stands: the chapters, and in the opening one, one more stretch below for its zoom from Laniakea to the Milky Way
 const barPos = () => { const t = SCR.on ? SCR.target : S; return t <= FIRST + 1e-3 ? FIRST - 1 + COS.za : t; };
@@ -2883,7 +2905,7 @@ addEventListener('pointermove', e => {
 });
 for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => {
   const W = stepSwipe; if (!W || e.pointerId !== W.id) return; stepSwipe = null; $('stepRow').classList.remove('scrub');
-  if (W.m){ stepSwiped = true; setTimeout(() => stepSwiped = false, 350); }
+  if (W.m){ stepSwiped = true; setTimeout(() => stepSwiped = false, 350); if (AUTO.on){ SCR.hold = false; SCR.dir = 1; } }   // (playing: let go, and it eases on to the chapter ahead)
 });
 addEventListener('keydown', e => {
   if (e.target.closest?.('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -5281,7 +5303,7 @@ function buildSorterFx(){
     transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
   [['#4A4A4A', .47], ['#9F6BFF', .435], ['#38CCFF', .40], ['#E6FF1A', .365], ['#FF4238', .33]].forEach(([c, y]) => {   // (355, 405, 488, 561, 640 nm)
     const b = new THREE.Mesh(new THREE.CylinderGeometry(.011, .011, 1.05, 12, 1, true), beamMat(col(c)));
-    b.rotation.z = Math.PI/2; b.position.set(.525, y, 0); b.renderOrder = 6; sortFx.add(b);
+    b.rotation.z = Math.PI/2; b.position.set(-.525, y, 0); b.renderOrder = 6; sortFx.add(b);
   });
   const sprite = (x, y, size, frag) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([x, y, 0]), 3));
     const pts = new THREE.Points(g, new THREE.ShaderMaterial({ uniforms: { ...sortU, uPR: U.uPR, uScale: U.uScale, uSize: { value: size } },
@@ -5297,7 +5319,7 @@ function buildSorterFx(){
       fragmentShader: `uniform float uOn, uF; uniform vec3 uFC; varying vec2 vU; void main(){ float r = abs(vU.x - .5)*2.;
         gl_FragColor = vec4(mix(vec3(.8, .85, 1.), uFC, .8), (.03 + .55*uF)*uOn*(1. - r*r)*(.35 + .65*vU.y)); }`,
       transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
-    m.rotation.z = -Math.PI/2; m.position.set(-.23, .4, 0); m.renderOrder = 6; sortFx.add(m); }
+    m.rotation.z = Math.PI/2; m.position.set(.23, .4, 0); m.renderOrder = 6; sortFx.add(m); }
   // real glass for the sample tube and the two collection tubes: clear walls, bright only where they turn away from the eye
   const glassProfile = (R, y0, y1) => { const pts = []; for (let k = 0; k <= 12; k++){ const an = -Math.PI/2 + k/12*Math.PI/2; pts.push(new THREE.Vector2(Math.max(1e-3, R*Math.cos(an)), y0 + R*Math.sin(an))); }
     pts.push(new THREE.Vector2(R, y1)); return new THREE.LatheGeometry(pts, 64); };
@@ -5325,9 +5347,9 @@ function buildSorterFx(){
   const tubeGlow = (x, c) => sprite(x, -1.68, .45, `uniform float uOn, uFill; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard;
     gl_FragColor = vec4(${c}, exp(-d*d*4.)*.16*uOn*min(1., uFill*3.)); }`);
   tubeGlow(-.72, 'vec3(.3, .64, 1.)'); tubeGlow(.72, 'vec3(1., .29, .24)');
-  sLabels = [[-.38, 1.73, 0, 'Sample · amygdala nuclei', 'r'], [.06, .66, 0, 'Nozzle', 'l'], [1.36, .58, 0, 'Laser', 'r'], [-.62, .56, 0, 'Detectors', 'c'],
+  sLabels = [[-.38, 1.73, 0, 'Sample · amygdala nuclei', 'r'], [-1.36, .58, 0, 'Laser', 'l'], [.62, .56, 0, 'Detectors', 'c'],
     [.34, -.2, 0, 'Deflection plates', 'l'], [-.86, -1.52, 0, 'Neurons', 'r'], [.86, -1.52, 0, 'Oligodendrocytes', 'l'],
-    [-.24, 1.1, 0, 'Funnel', 'r'], [.98, .76, 0, 'NeuN', 'c'], [.59, 1.1, 0, 'Olig2', 'r'],
+    [.98, .76, 0, 'NeuN', 'c'], [.59, 1.1, 0, 'Olig2', 'r'],
     [1.14, 1.08, 0, 'Neurons', 'c', '#4DA3FF'], [.8, 1.33, 0, 'Oligodendrocytes', 'c', '#FF4A3D']]
     .map(([x, y, z, t, al, c]) => { const e = document.createElement('span'); e.className = 'zlabel ' + al; e.textContent = t; if (c){ e.style.color = c; e.classList.add('keep'); } $('sortLabels').appendChild(e); return { p: [x, y, z], e }; });
   { // one label, outside the brain, with a glowing line to the right amygdala
@@ -5728,13 +5750,14 @@ renderer.setAnimationLoop(() => {
   // the step buttons name where Next goes, and fill a hairline while a chapter turns
   if (stepUI.to !== nav.to){
     stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
-    $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = COARSE ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
+    $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = COARSE ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
     if (COARSE){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
     $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
-  $('stBar').style.setProperty('--p', nav.busy ? clamp((tNow - nav.t0)/nav.dur, 0, 1).toFixed(3) : '0');
+  autoFrame(dt);
+  $('stBar').style.setProperty('--p', nav.busy ? clamp((tNow - nav.t0)/nav.dur, 0, 1).toFixed(3) : AUTO.on ? (AUTO.t/AUTO.dwell).toFixed(3) : '0');   // (playing: the wait before the next chapter)
   // chapter text, legends and panels crossfade with the scroll
   for (const el of chEls){
     const k = +el.dataset.ch, o = clamp(1 - Math.abs(Sd - k)*(k === ST.ORBIT && Sd < 0 ? 25 : 2.4), 0, 1), off = o <= .6;   // (the orbit's panels only once the Earth is reached)
