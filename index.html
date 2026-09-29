@@ -1082,7 +1082,7 @@ composer.addPass(new OutputPass());
 const U = {
   uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
   uSun: { value: new THREE.Vector3(1, 0, 0) }, uFocusId: { value: -1 }, uFocusAmt: { value: 0 },
-  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
+  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGHide: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
 };
 
 // ---------------------------------------------------------------- backdrop
@@ -1580,7 +1580,7 @@ function initParticles(){
     uniforms: {
       uSat: { value: satTex }, uSatW: { value: texW }, uNSat: { value: NS },
       uCosV: U.uCosV, uTime: U.uTime, uMorph: U.uMorph, uDna: U.uDna, uGw: U.uGw, uPR: U.uPR, uScale: U.uScale, uFocusId: U.uFocusId, uFocusAmt: U.uFocusAmt,
-      uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uGFlat: U.uGFlat, ...GU,
+      uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uGFlat: U.uGFlat, uGHide: U.uGHide, ...GU,
       uBrainMat: { value: brainGroup.matrixWorld }, uDnaMat: { value: dnaGroup.matrixWorld }, uGwasMat: { value: gwasGroup.matrixWorld }, uNetMat: { value: netGroup.matrixWorld }, ...NU, ...SU, ...AU, ...CU,
       uPulse: { value: pulseArr }, uNet: { value: netU.pos }, uNetId: { value: netU.id }, uNetC: { value: netU.col },
       uReadBp: { value: 0 }, uReadOn: { value: 0 }, uNbp: { value: dna.nbp }, uLes: lesU, uCamD: { value: 5 },
@@ -1599,6 +1599,7 @@ function initParticles(){
       uniform mat4 uBrainMat, uDnaMat, uGwasMat, uNetMat; uniform float uNetM, uNetFocus, uNetFocusAmt, uNetSelAmt, uNetT, uNetZs; uniform sampler2D uOrb; uniform vec3 uPC[26]; uniform vec4 uPulse[${PULSES}]; uniform vec4 uNet[2]; uniform float uNetId[2]; uniform vec3 uNetC[2]; uniform float uLes[6];
       uniform vec3 uLEO, uMEO, uGEO, uHEO, uGyri, uSulci, uHot1, uHot2, uElC, uElN, uElO, uElP, uElH, uChA, uChB, uSig1, uSig2, uSig3, uBA, uBC, uBG, uBT, uZap;
       ${GLSL_LAYOUT}
+      uniform float uGHide;
       uniform int uNSat; attribute vec4 aRnd; attribute vec3 aBrain; attribute vec3 aNorm; attribute vec3 aInfo;
       attribute vec3 aDna; attribute vec3 aDnaInfo; attribute vec3 aGP; attribute vec4 aGI; attribute vec4 aN1; attribute vec4 aN2;
       varying vec3 vC; varying float vA; varying float vRing; varying float vHalo;
@@ -2164,7 +2165,7 @@ function initParticles(){
         col = mix(col, gc, eg); al = mix(al, gA, eg); sz = mix(sz, gS*(1. + fly3*.4), eg);
         col = mix(col, ac, ed); al = mix(al, atA, ed); sz = mix(sz, atS*(1. + 3.4*dnaHalo)*(1. + fly2*.6), ed);
         col = mix(col, nc, en); al = mix(al, nA, en); sz = mix(sz, nS*(1. + fly4*.5), en);
-        vC = col; vA = al*uCosV;                           // (hidden while the story is still out among the galaxies)
+        vC = col; vA = al*uCosV*(1. - uGHide*uGw);         // (hidden while the story is still out among the galaxies; and while the skyline stands in for the plot)
         vHalo = max(max(dnaHalo, hB*(1. - eam)), mem*ea*(.75 - .5*edp)*(1. - eS*step(.5, uSort))*(1. - es));
         vRing = cons*step(.5, eg)*aPrim*(1. - step(.5, ed));
 
@@ -3136,7 +3137,7 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
-const GINTRO = { t: 0, done: false, chosen: false, lf: 1 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
+const GINTRO = { t: 0, done: false, chosen: false, lf: 1, sky: !RM, hide: 0, cam: 0 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
 const labelsEl = $('labels');
 // a finger that lands on a label is a tap on that label, unless a second finger joins it: then both go to the scene, so a
 // two-finger pan or pinch works wherever it starts. (Labels sit above the canvas and would otherwise swallow the gesture.)
@@ -5014,6 +5015,104 @@ function buildZmwArray(){
   zmwArr = new THREE.Points(g, m); zmwArr.frustumCulled = false; zmwArr.visible = false; zmwArr.renderOrder = 3; smrtGroup.add(zmwArr);
   arrLabel = document.createElement('span'); arrLabel.className = 'zlabel c arr'; arrLabel.innerHTML = 'The same well, again and again<br><b>25 million on one SMRT Cell</b>'; $('arrLabels').appendChild(arrLabel);
 }
+// Into the genome: the SMRT Cell, laid flat and running on to the horizon, still reading; out of its wells a point cloud of Manhattan
+// rises, skyscraper by skyscraper (the Twin Towers downtown, the Empire State, the Chrysler and the new towers of Midtown); then the
+// skyline falls into the flat ring of the Manhattan plot. Built in the chip's own frame (smrtGroup), so its wells are the chip's
+// wells; each point of the skyline lands on one variant of the plot (gwasGroup), where the plot's own points take over.
+const SKY = { pts: null, G: null, m: null }, SKY_T = 8.8;   // (the skyline's part of the genome chapter's arrival, in seconds)
+function buildSkyline(){
+  if (SKY.pts){ scene.remove(SKY.pts); SKY.pts.geometry.dispose(); }
+  const P = [], T = [], I = [], R = mulberry(77), pitch = 2*1.3/63, m = 31, tv = new THREE.Vector3();
+  const add = (x, y, z, k, w, h, st) => { P.push(x, y, z); I.push(k, w, h, st); T.push(0, 0, 0); };
+  // the chip as the SMRT chapter draws it: 63 x 63 wells, a ring of eight and the pulse at the heart of each, on the same clock
+  for (let j = 0; j < 63; j++) for (let i = 0; i < 63; i++){ const w = j*63 + i, cx = (i - m)*pitch, cz = (j - m)*pitch;
+    for (let k = 0; k < 8; k++){ const a = k/8*TAU; add(cx + pitch*.3*Math.cos(a), 0, cz + pitch*.3*Math.sin(a), 0, w, 0, 0); }
+    add(cx, -.004, cz, 1, w, 0, 0); }
+  // and beyond it the same wells on to the horizon, one point each
+  const NX = Math.round(5.2/pitch);
+  for (let j = -NX; j <= NX; j++) for (let i = -NX; i <= NX; i++){
+    if (Math.abs(i) <= m && Math.abs(j) <= m) continue; if (Math.hypot(i, j)*pitch > 5.2) continue;
+    add(i*pitch, 0, j*pitch, 2, 5000 + (j + NX)*(2*NX + 1) + (i + NX), 0, 0); }
+  // Manhattan, the island along x (the Battery at -x, Harlem at +x), its skyline facing +z; heights in units of 350 m
+  const cs = pitch/2, zc = x => .08*Math.sin(x*1.3), hw = x => .42*smooth(clamp((x + 2.05)/.45, 0, 1));
+  const tower = (x, z, st, parts, K = 3) => {      // parts: [y0, y1, width (x), depth (z), width at y1 (a taper)]; a column of points above each well it stands on (K 4: an ordinary block)
+    x *= .78;
+    for (const [y0, y1, w0, d0, w1 = w0] of parts){
+      const n = Math.max(1, Math.round((y1 - y0)/(cs*1.1)));
+      for (let r = 0; r <= n; r++){ const y = y0 + (y1 - y0)*r/n, s = w1/w0 + (1 - w1/w0)*(1 - r/n), w = w0*s, d = d0*s;
+        const ix0 = Math.round((x - w/2)/cs), ix1 = Math.max(ix0, Math.round((x + w/2)/cs)), iz0 = Math.round((z - d/2)/cs), iz1 = Math.max(iz0, Math.round((z + d/2)/cs));
+        for (let ix = ix0; ix <= ix1; ix++) for (let iz = iz0; iz <= iz1; iz++){
+          const edge = ix === ix0 || ix === ix1 || iz === iz0 || iz === iz1, roof = r === n;
+          if (K === 3 ? edge || (roof && R() < .6) : edge && (ix + iz + r) % 2 === 0) add(ix*cs, y, iz*cs, K, ix*977 + iz*131 + 90000, y1, st);
+        } } } };
+  const st = x => .05 + .3*(x + 2)/4.2 + R()*.08;   // (a wave of growth up the island)
+  // downtown
+  tower(-1.55, .06, st(-1.55) + .1, [[0, 1.19, .13, .13], [1.19, 1.5, .012, .012]]);   // the North Tower and its antenna
+  tower(-1.36, -.11, st(-1.36) + .1, [[0, 1.186, .13, .13]]);                          // the South Tower
+  tower(-1.12, .16, st(-1.12), [[0, .6, .09, .07], [.6, .69, .09, .07, .02]]);          // the Woolworth Building
+  tower(-1.7, -.04, st(-1.7), [[0, .7, .08, .08], [.7, .81, .08, .08, .015]]);          // 40 Wall Street
+  tower(-1.62, -.26, st(-1.62), [[0, .72, .07, .06], [.72, .81, .03, .03, .005]]);      // 70 Pine
+  // Midtown
+  tower(.35, .05, st(.35) + .12, [[0, .25, .22, .16], [.25, .73, .15, .11], [.73, .92, .1, .08], [.92, 1, .06, .06], [1, 1.26, .02, .02, .008]]);   // the Empire State
+  tower(.72, -.05, st(.72) + .1, [[0, .5, .1, .1], [.5, .72, .075, .075], [.72, .86, .075, .075, .02], [.86, .91, .01, .01, .003]]);                  // the Chrysler Building
+  tower(.62, .15, st(.62) + .1, [[0, 1.22, .11, .09, .045]]);                          // One Vanderbilt
+  tower(1.02, -.08, st(1.02) + .1, [[0, 1.22, .045, .045]]);                           // 432 Park Avenue
+  tower(1.3, .06, st(1.3) + .1, [[0, 1.35, .075, .06]]);                               // Central Park Tower
+  tower(1.24, -.13, st(1.24) + .1, [[0, 1.1, .03, .06], [1.1, 1.24, .03, .06, .01]]);  // 111 West 57th
+  tower(1.17, .16, st(1.17), [[0, .87, .07, .06]]);                                    // One57
+  tower(.52, -.16, st(.52), [[0, .78, .09, .08], [.78, 1.05, .012, .012]]);            // the Bank of America Tower
+  tower(.95, .16, st(.95), [[0, .74, .14, .05]]);                                      // 30 Rockefeller Plaza
+  tower(.1, .24, st(.1), [[0, 1.11, .1, .08, .07]]);                                   // 30 Hudson Yards
+  // the rest of the island: tall downtown and in Midtown, low between, Central Park open, low again uptown
+  for (let q = 0; q < 620; q++){
+    const x = -2 + R()*4.1, z = zc(x) + (R()*2 - 1)*hw(x);
+    const park = x > 1.45 && x < 1.95 && Math.abs(z - zc(x)) < .26;
+    if (park) continue;
+    const dt = Math.exp(-Math.pow((x + 1.45)/.35, 2)), mt = Math.exp(-Math.pow((x - .75)/.55, 2)), h = .06 + .12*R() + (.5*dt + .55*mt)*Math.pow(R(), 1.5);
+    const w = .04 + .06*R(), d = .04 + .05*R();
+    tower(x, z, st(x), [[0, h, w, d]], 4);
+  }
+  // each point of the skyline lands on one variant of the flat ring (its outward peak)
+  const nS = P.length/3;
+  for (let q = 0; q < nS; q++) if (I[q*4] > 2.5 && G){ const i = Math.floor(R()*G.N); gLayoutJS(G.u[i], G.y[i], G.d[i], 0, 1, tv, 1); T[q*3] = tv.x; T[q*3+1] = tv.y; T[q*3+2] = tv.z; }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aT', new THREE.Float32BufferAttribute(T, 3)); g.setAttribute('aI', new THREE.Float32BufferAttribute(I, 4));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uOn: { value: 0 }, uExt: { value: 0 }, uGrow: { value: 0 }, uMorph: { value: 0 }, uCellT: SU.uCellT, uPR: U.uPR, uScale: U.uScale,
+      uSm: { value: smrtGroup.matrixWorld }, uGm: { value: gwasGroup.matrixWorld }, uEmb: { value: col(PAL.ember) },
+      uBA: { value: col(PAL.baseA) }, uBC: { value: col(PAL.baseC) }, uBG: { value: col(PAL.baseG) }, uBT: { value: col(PAL.baseT) } },
+    vertexShader: `attribute vec3 aT; attribute vec4 aI; uniform float uOn, uExt, uGrow, uMorph, uCellT, uPR, uScale; uniform mat4 uSm, uGm; uniform vec3 uEmb, uBA, uBC, uBG, uBT;
+      varying vec3 vC; varying float vA;
+      uint pcg(uint v){ uint s = v*747796405u + 2891336453u, w = ((s >> ((s >> 28u) + 4u)) ^ s)*277803737u; return (w >> 22u) ^ w; }
+      float rn(float id, float k){ return float(pcg(uint(id)*8u + uint(k)))/4294967295.; }
+      vec3 baseCol(float g){ return g < .5 ? uBA : g < 1.5 ? uBC : g < 2.5 ? uBG : uBT; }
+      float eio(float t){ return t < .5 ? 4.*t*t*t : 1. - pow(-2.*t + 2., 3.)*.5; }
+      void main(){
+        float K = aI.x, w = aI.y, bH = aI.z, st = aI.w, loaded = step(rn(w, 1.), .45), cyc = uCellT*(1.6 + 3.2*rn(w, 2.)) + rn(w, 3.)*9.;
+        float F = loaded*exp(-fract(cyc)*5.5); vec3 lc = baseCol(floor(rn(w + floor(cyc)*4099., 4.)*4.)), P = position, C; float A, S;
+        if (K < .5){ C = mix(vec3(.46, .52, .62), lc, F); A = .34 + .66*F + .08*loaded; S = .0062*(1. + .9*F); }              // the chip's wells
+        else if (K < 1.5){ C = mix(lc, vec3(1.), .15); A = 1.5*F; S = .0062*(1.6 + 3.2*F); }                                  // their pulses
+        else if (K < 2.5){ float r = length(P.xz), Rx = mix(1.32, 5.2, uExt);                                                   // the wells beyond, to the horizon
+          C = mix(vec3(.46, .52, .62), lc, F); A = (.22 + 1.1*F)*(1. - smoothstep(Rx - .35, Rx, r))*(1. - .75*smoothstep(1.6, 5.2, r)); S = .0062*(1.4 + 2.4*F); }
+        else {                                                                                                                  // the skyline
+          float g = eio(clamp((uGrow - st)/.5, 0., 1.)), top = bH*g, lit = exp(-abs(top - P.y)*60.)*(1. - g*g);
+          float icon = step(K, 3.5); C = mix(mix(vec3(.72, .8, .96), lc, F*.7), vec3(1.), lit*.5);
+          A = (mix(.18, .4, icon) + mix(.4, .8, icon)*F + .9*lit)*step(P.y, top + .003)*step(.002, g); S = .0066*(1. + .8*F + .6*lit);
+        }
+        vec3 W = (uSm*vec4(P, 1.)).xyz;
+        if (K > 2.5){ float e = eio(clamp((uMorph - st*.5 - rn(w + P.y*97., 5.)*.25)/.5, 0., 1.)); vec3 Tg = (uGm*vec4(aT, 1.)).xyz;
+          vec3 mid = .5*(W + Tg) + vec3(0., .35*length(Tg - W), 0.); W = mix(mix(W, mid, e), mix(mid, Tg, e), e);
+          C = mix(C, uEmb, e); A = mix(A, .5 + .3*rn(w, 6.), e); S = mix(S, .0075, e); }
+        else A *= 1. - smoothstep(0., .45, uMorph);
+        vec4 mv = viewMatrix*vec4(W, 1.); gl_Position = projectionMatrix*mv;
+        float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 1.5, 14.*uPR); gl_PointSize = drawn; vC = C; vA = A*uOn*min(1., px*px/(drawn*drawn));
+      }`,
+    fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*d*3.)); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  SKY.pts = new THREE.Points(g, mat); SKY.pts.frustumCulled = false; SKY.pts.visible = false; SKY.pts.renderOrder = 3; scene.add(SKY.pts);
+  SKY.G = G; SKY.m = mat.uniforms;
+  return nS;
+}
 function buildZmw(){
   // the template's path: through the polymerase on the floor of the well, up the well as a narrow pair, out into a circle above
   const s = .06, yb = -.535, Rc = .55, yc = .72, V = (x, y) => new THREE.Vector3(x, y, 0);
@@ -5453,7 +5552,8 @@ function gExtent(){
 // the ring's view: flat, straight down onto it and all of it in frame; standing, from nearly level (flat 1 -> 0 as it rises)
 function gwasRingSph(){
   const e = gExtent(), f = U.uGFlat.value, sm = portrait ? .86 : 1;   // (on a phone, clear of the chapter strip at the right edge)
-  return [lerp(8, 89.5, f)*DEG, lerp(fitDist((G_R0 + .5)/sm), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
+  const c = GINTRO.cam, ring = [lerp(8, 89.5, f)*DEG, lerp(fitDist((G_R0 + .5)/sm), fitDist((e.r + .15)/sm), Math.sqrt(f))];
+  return c > 0 ? [lerp(ring[0], 6*DEG, c), lerp(ring[1], fitDist(portrait ? 1.75 : 2.1), c)] : ring;   // (the skyline: from nearly level, all of the island in view)   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
 }
 function presetPos(k, lay = layoutT){
   if (k === ST.ORBIT) return orbitDir().multiplyScalar(lerp(dEarth, dEarthNear, orbitLand()));
@@ -5475,7 +5575,7 @@ function dnaTarget(){
   return new THREE.Vector3(Math.cos(a), 0, -Math.sin(a)).multiplyScalar(sx*wpp).add(new THREE.Vector3(0, sy*wpp, 0));
 }
 function presetTarget(k){
-  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - U.uGFlat.value), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
+  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : lerp(clamp(.42*gExtent().y, .5, 1)*(1 - U.uGFlat.value), .62, GINTRO.cam), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
     : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.4 : -.36, 0) : new THREE.Vector3();
 }
 const sph = new THREE.Spherical();
@@ -5688,26 +5788,40 @@ renderer.setAnimationLoop(() => {
   layoutV += (layoutT - layoutV)*Math.min(1, dt*2.2); if (Math.abs(layoutT - layoutV) < 1e-4) layoutV = layoutT; U.uLayout.value = easeIO(layoutV);
   gwasGroup.rotation.y = lerp(gYaw, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
   growT = Math.min(1, growT + dt/2.2); U.uGGrow.value = easeOut(growT);
-  // each time the chapter is reached, from either side: the plot arrives as a flat ring, its peaks lying outward from the circle; once
-  // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
-  // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
-  if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
-    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
-    $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
-  }
+  // each time the chapter is reached. From the SMRT Cell: the chip lies flat and runs on to the horizon, still reading; a point cloud
+  // of Manhattan rises out of its wells; the skyline falls into the flat ring (SKY_T). From either side: the flat ring holds 3 s, its
+  // peaks rise into the standing ring, and 3 s later the ring unrolls into a line (unless the viewer has already chosen a layout or
+  // a locus). Once the plot is wholly out of sight, it is made ready to play again, the skyline only if it is to be reached from below.
+  if (Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95){ const sky = !RM && Sd < ST.GWAS;
+    if (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1 || GINTRO.sky !== sky){
+      Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1, sky }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+      $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
+    } }
+  const SK = GINTRO.sky ? SKY_T : 0;
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
-    GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 2.4, T = GINTRO.t - HOLD;   // (the flat ring holds 3 s before it rises)
+    GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 2.4, T = GINTRO.t - SK - HOLD;   // (the flat ring holds 3 s before it rises)
     // the labels first fade out (the last moment of the hold), then the ring stands up, and only once it stands do they fade back in
-    GINTRO.lf = RM ? 1 : T < RISE ? 1 - smooth(clamp((T + .9)/.6, 0, 1)) : smooth(clamp((T - RISE - .15)/.6, 0, 1));
+    // (after the skyline they stay out until the ring stands)
+    GINTRO.lf = RM ? 1 : T < RISE ? (SK ? 0 : 1 - smooth(clamp((T + .9)/.6, 0, 1))) : smooth(clamp((T - RISE - .15)/.6, 0, 1));
     U.uGFlat.value = RISE ? .5 + .5*Math.cos(Math.PI*clamp(T/RISE, 0, 1)) : 0;   // (a soft ease: no sudden start or stop)
-    // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
-    if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
+    // the camera follows: low over the skyline, then up over the flat ring as the skyline falls into it; from straight above the
+    // flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
+    if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*(GINTRO.t < SK ? 2.5 : 4));
       sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
       sph.phi = lerp(sph.phi, Math.PI/2 - e, k); sph.radius = lerp(sph.radius, d, k); camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph)); }
     if (T >= RISE + 3){ GINTRO.done = true;   // (the standing ring holds 3 s before it unrolls)
       if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
   }
-  U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
+  // the skyline's own clock: the chip runs on to the horizon, the towers rise, hold, then fall into the ring; the plot's points take over
+  { const S = GINTRO.t, x = SK ? smooth(clamp((S - SKY_T + .7)/.7, 0, 1)) : 1, away = clamp(mDna/.2, 0, 1);
+    GINTRO.cam = SK ? 1 - smooth(clamp((S - 5.9)/2.4, 0, 1)) : 0;
+    GINTRO.hide = SK ? 1 - x : 0; U.uGHide.value = GINTRO.hide*(1 - away);
+    const on = SK ? smooth(clamp((mGw - .05)/.6, 0, 1))*(1 - x)*(1 - away) : 0;
+    if (on > .003 && G && (!SKY.pts || SKY.G !== G)) buildSkyline();
+    if (SKY.pts){ SKY.pts.visible = on > .003;
+      if (on > .003){ SKY.m.uOn.value = on; SKY.m.uExt.value = smooth(clamp(S/1.6, 0, 1)); SKY.m.uGrow.value = clamp((S - 1)/3.4, 0, 1)*1.15;
+        SKY.m.uMorph.value = clamp((S - 5.9)/2.2, 0, 1)*1.1; if (mGw >= 1) SU.uCellT.value += dt; } } }
+  U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1))*(1 - GINTRO.hide);
   // the repair system: orbits, focus and selection
   netGroup.updateMatrixWorld(true);
   if (NET) netFrame(dt, mNet);
