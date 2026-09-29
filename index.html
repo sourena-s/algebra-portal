@@ -5442,6 +5442,17 @@ function resize(){
 }
 addEventListener('resize', () => { resize(); inspRect = null; document.querySelectorAll('.zlabel').forEach(e => e._w = 0); });
 function dirAt(a, el){ return new THREE.Vector3(Math.sin(a)*Math.cos(el), Math.sin(el), Math.cos(a)*Math.cos(el)); }
+// the genome's ring: how far its flat form reaches from the centre, and how tall it stands (from the data, cached per model)
+function gExtent(){
+  if (gExtent.G !== G){ let r = G_R0 + .4, y = 1; if (G) for (let i = 0; i < G.N; i++){ r = Math.max(r, G_R0 + Math.max(0, G.d[i]) + G.y[i]); y = Math.max(y, G.y[i]); }
+    gExtent.G = G; gExtent.v = { r, y }; }
+  return gExtent.v;
+}
+// the ring's view: flat, straight down onto it and all of it in frame; standing, from nearly level (flat 1 -> 0 as it rises)
+function gwasRingSph(){
+  const e = gExtent(), f = U.uGFlat.value, sm = portrait ? .86 : 1;   // (on a phone, clear of the chapter strip at the right edge)
+  return [lerp(8, 89.5, f)*DEG, lerp(fitDist((G_R0 + .5)/sm), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
+}
 function presetPos(k, lay = layoutT){
   if (k === ST.ORBIT) return orbitDir().multiplyScalar(dEarth);
   if (k === ST.BRAIN) return dirAt(az.brain, 7*DEG).multiplyScalar(dBrain);
@@ -5452,7 +5463,7 @@ function presetPos(k, lay = layoutT){
   if (k === ST.SMRT){ const [e, d] = presetSph(k); return presetTarget(k).add(dirAt(az.smrt, e).multiplyScalar(d)); }
   if (k === ST.ZMW) return presetTarget(k).add(dirAt(az.smrt, 11*DEG).multiplyScalar(dZmw));
   if (k === ST.GWAS && lay > .5){ const hz = Math.atan(Math.tan(camera.fov/2*DEG)*camera.aspect), frac = Math.max(.45, (innerWidth - panelR)/innerWidth); return presetTarget(k).add(dirAt(0, 14*DEG).multiplyScalar(G_LX*.54/(Math.tan(hz)*frac))); }
-  if (k === ST.GWAS) return presetTarget(k).add(dirAt(az.gwas, 30*DEG).multiplyScalar(dGwas));
+  if (k === ST.GWAS){ const [e, d] = gwasRingSph(); return presetTarget(k).add(dirAt(az.gwas, e).multiplyScalar(d)); }
   if (k === ST.DNA) return dnaTarget().add(dirAt(az.dna, 24*DEG).multiplyScalar(dDna));
   return dirAt(az.net, 0).multiplyScalar(dNet);
 }
@@ -5462,7 +5473,7 @@ function dnaTarget(){
   return new THREE.Vector3(Math.cos(a), 0, -Math.sin(a)).multiplyScalar(sx*wpp).add(new THREE.Vector3(0, sy*wpp, 0));
 }
 function presetTarget(k){
-  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, .75, 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
+  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - U.uGFlat.value), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
     : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.12 : -.27, 0) : new THREE.Vector3();
 }
 const sph = new THREE.Spherical();
@@ -5478,6 +5489,7 @@ function presetSph(k){        // [elevation, distance] for each chapter
   if (k === ST.ZMW) return [11*DEG, dZmw];          // one well, cut away, from the side
   if (k === ST.DNA) return [24*DEG, dDna];
   if (k === ST.NET) return [0, dNet];               // square on to the flat map
+  if (layoutT <= .5) return gwasRingSph();
   const pp = presetPos(ST.GWAS), t = presetTarget(ST.GWAS), d = pp.distanceTo(t); return [Math.asin((pp.y - t.y)/d), d];
 }
 
@@ -5683,6 +5695,10 @@ renderer.setAnimationLoop(() => {
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
     GINTRO.t += dt; const RISE = RM ? 0 : 1.8;
     U.uGFlat.value = RISE ? 1 - easeIO(clamp(GINTRO.t/RISE, 0, 1)) : 0;
+    // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
+    if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
+      sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
+      sph.phi = lerp(sph.phi, Math.PI/2 - e, k); sph.radius = lerp(sph.radius, d, k); camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph)); }
     if (GINTRO.t >= RISE + 2){ GINTRO.done = true; if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
   }
   U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
@@ -5873,7 +5889,7 @@ renderer.setAnimationLoop(() => {
     tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value * clamp(1 + Sd/.03, 0, 1)).toFixed(3);   // (its label once the Earth is reached)
     tag.style.transform = `translate(${((s.x*.5 + .5)*innerWidth + 8).toFixed(1)}px, ${((1 - (s.y*.5 + .5))*innerHeight - 10).toFixed(1)}px)`;
   }
-  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) - .06*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
+  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, -.06, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
   const offX = -panelR/2*(stageW(ST.GWAS) + stageW(ST.NET)) + (panelR ? 28 : 0)*stageW(ST.NET);
   if (Math.abs(offX) + Math.abs(offY) > .5) camera.setViewOffset(innerWidth, innerHeight, offX, offY, innerWidth, innerHeight);
   else if (camera.view && camera.view.enabled) camera.clearViewOffset();
