@@ -5428,7 +5428,7 @@ function resize(){
   U.uPR.value = renderer.getPixelRatio();
   if (U.uAspect) U.uAspect.value = w / h;
   portrait = w / h < .8;
-  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); { const w = .8*Math.tan(camera.fov/2*DEG)*camera.aspect; dEarthNear = portrait ? Math.sqrt(1 + 1/(w*w)) : dEarth; }  /* (a phone lands closer: the globe 80% of the width) */ dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
+  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); { const w = .8*Math.tan(camera.fov/2*DEG)*camera.aspect; dEarthNear = portrait ? Math.sqrt(1 + 1/(w*w)) : dEarth; }  /* (a phone lands closer: the globe 80% of the width) */ dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02)/.9; dChr = fitDist(portrait ? 1.82 : 1.9);
   { const gut = clamp(w*.024, 16, 32); panelR = w > 760 ? gut + Math.min(340, w - 2*gut) + 16 : 0; }   // the panel's resting width, maximized or not
   { // the repair system is a flat disc seen square on; fit every planet into the free part of the screen
     let aw, ah;
@@ -5688,20 +5688,21 @@ renderer.setAnimationLoop(() => {
   gwasGroup.rotation.y = lerp(gYaw, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
   growT = Math.min(1, growT + dt/2.2); U.uGGrow.value = easeOut(growT);
   // each time the chapter is reached, from either side: the plot arrives as a flat ring, its peaks lying outward from the circle; once
-  // the chapter settles they rise into the ring, and two seconds later the ring unrolls into a line (unless the viewer has already
+  // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
   // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
   if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
     Object.assign(GINTRO, { t: 0, done: false, chosen: false }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
-    GINTRO.t += dt; const RISE = RM ? 0 : 1.8;
-    U.uGFlat.value = RISE ? 1 - easeIO(clamp(GINTRO.t/RISE, 0, 1)) : 0;
+    GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 1.8, T = GINTRO.t - HOLD;   // (the flat ring holds 3 s before it rises)
+    U.uGFlat.value = RISE ? 1 - easeIO(clamp(T/RISE, 0, 1)) : 0;
     // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
     if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
       sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
       sph.phi = lerp(sph.phi, Math.PI/2 - e, k); sph.radius = lerp(sph.radius, d, k); camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph)); }
-    if (GINTRO.t >= RISE + 2){ GINTRO.done = true; if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
+    if (T >= RISE + 3){ GINTRO.done = true;   // (the standing ring holds 3 s before it unrolls)
+      if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
   }
   U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
   // the repair system: orbits, focus and selection
