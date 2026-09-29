@@ -2816,7 +2816,8 @@ function autoPlay(on){
 }
 function autoFrame(dt){
   if (!AUTO.on) return;
-  const still = !nav.busy && !SCR.on && navSettle <= 0 && !(stepSwipe && stepSwipe.m) && (nav.to !== FIRST || COS.za >= .999);
+  const still = !nav.busy && !SCR.on && navSettle <= 0 && !(stepSwipe && stepSwipe.m) && (nav.to !== FIRST || COS.za >= .999)
+    && (nav.to !== ST.GWAS || GINTRO.done && Math.abs(layoutV - layoutT) < 1e-3);   // (the genome: its wait starts once the ring has become the line)
   AUTO.t = still ? AUTO.t + dt : 0;
   if (AUTO.t >= AUTO.dwell){ AUTO.t = 0; if (nav.to >= LAST) autoPlay(false); else stepChapter(1); }
 }
