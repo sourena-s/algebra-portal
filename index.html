@@ -454,6 +454,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .clabel{position:absolute;left:0;top:0;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--dust);pointer-events:none;translate:-50% -50%}
 .hlabel{position:absolute;left:0;top:0;font-size:9.5px;font-weight:500;letter-spacing:.06em;color:var(--dust);white-space:nowrap;pointer-events:none;translate:calc(-100% - 8px) -50%}
 .hlabel.thr{color:var(--ember);font-weight:600}
+@media (max-width:760px){ .glabel .pv,.glabel small.pvo,.hlabel{display:none} }   /* on a phone the 3D plot prints no p-values */
 .you-tag{position:fixed;z-index:3;left:0;top:0;pointer-events:none;display:flex;align-items:center;gap:8px;font-size:14px;letter-spacing:.02em;white-space:nowrap;transition:opacity .4s}
 .you-tag::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,transparent,var(--ember))}
 
@@ -3171,7 +3172,7 @@ function buildLabels(){
   labelsEl.textContent = '';
   gLabels = G.loci.map((l, k) => {
     const b = document.createElement('button'); b.className = 'glabel' + (G.L[l.lead] >= SIG ? '' : ' sub') + (l.nw ? ' nw' : '');
-    b.innerHTML = `<b>${esc(l.name)}</b><small>${l.nw ? '<em>new</em> · ' : ''}${pFmt(G.L[l.lead])}</small>`;
+    b.innerHTML = `<b>${esc(l.name)}</b><small${l.nw ? '' : ' class="pvo"'}>${l.nw ? '<em>new</em>' : ''}<span class="pv">${l.nw ? ' · ' : ''}${pFmt(G.L[l.lead])}</span></small>`;   // (pv: the p-value, left out on a phone)
     b.addEventListener('click', e => { e.stopPropagation(); if (labelDragged){ labelDragged = false; return; } focusLocus(focusK === k ? -1 : k); });
     labelsEl.appendChild(b); return b;
   });
