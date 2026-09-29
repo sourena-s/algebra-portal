@@ -566,7 +566,6 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 <header class="hud hud-tl">
   <h1 class="mark" aria-label="ALGEBRA"><span style="--i:0;color:var(--ember)">A</span><span style="--i:1">L</span><span style="--i:2">G</span><span style="--i:3">E</span><span style="--i:4">B</span><span style="--i:5">R</span><span style="--i:6">A</span></h1>
   <div class="tag anim" style="--d:360ms"><b>AL</b>zheimer's disease and <b>GE</b>nomic <b>BR</b>eakdown in <b>A</b>geing</div>
-  <div class="credit anim" style="--d:390ms">by Sourena Soheili-Nezhad</div>
   <div class="plate anim" style="--d:420ms">
     <span class="st-cosmos" data-split>The ageing universe</span>
     <span class="st-orbit" data-split>You are here</span>
@@ -582,7 +581,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <span class="st-repair" data-split>The repair system</span>
   </div>
   <div class="lede anim" style="--d:520ms">
-    <p data-ch="-1" id="ledeCosmos">Maps lead us to discovery. Where none exist, exploration draws them.</p>
+    <p data-ch="-1" id="ledeCosmos">Maps lead to discovery. Beyond them, we explore.</p>
     <p data-ch="0" id="ledeOrbit"></p>
     <p data-ch="1" id="ledeCortex">An ageing brain. Does its DNA break down in Alzheimer's disease?</p>
     <p data-ch="2" id="ledeAmy">From 90 donors, the most vulnerable tissue first: the amygdalae.</p>
@@ -1088,7 +1087,7 @@ composer.addPass(new OutputPass());
 const U = {
   uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
   uSun: { value: new THREE.Vector3(1, 0, 0) }, uFocusId: { value: -1 }, uFocusAmt: { value: 0 },
-  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
+  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
 };
 
 // ---------------------------------------------------------------- backdrop
@@ -1478,24 +1477,25 @@ function buildModel(raw){
   const nFm = raw.cs ? raw.cs.reduce((a, b) => a + b, 0) : 0;
   return { ...raw, N, gene, gd, k, loci, u, y, d, chrSpan, windowed, nSig, nFm, maxL };
 }
-function gLayoutJS(u, y, d, lay, grow, out){
+function gLayoutJS(u, y, d, lay, grow, out, flat = U.uGFlat.value){
   const th = Math.PI/2 - u*Math.PI*2;          // (counter-clockwise from above: chromosome 1 in front, 2 to its right)
-  out.set(lerp((G_R0 + d)*Math.cos(th), (u - .5)*G_LX, lay), y*grow, lerp((G_R0 + d)*Math.sin(th), d*1.2, lay));
+  const h = y*grow, a = flat*Math.PI/2, rr = G_R0 + d + h*Math.sin(a);   // (flat: the peaks lie outward from the circle; they rise on a hinge at its edge)
+  out.set(lerp(rr*Math.cos(th), (u - .5)*G_LX, lay), lerp(h*Math.cos(a), h, lay), lerp(rr*Math.sin(th), d*1.2, lay));
   return out;
 }
 
 // the plot's scaffolding: chromosome track, height guides, locus stems
 const gwasGroup = new THREE.Group(); scene.add(gwasGroup);
 const GLSL_LAYOUT = `
-  uniform float uLayout, uR0, uLx, uGGrow;
-  vec3 gLayout(vec3 g){ float th = 1.5707963 - g.x*6.2831853;
-    vec3 r = vec3((uR0 + g.z)*cos(th), g.y*uGGrow, (uR0 + g.z)*sin(th));
+  uniform float uLayout, uR0, uLx, uGGrow, uGFlat;
+  vec3 gLayout(vec3 g){ float th = 1.5707963 - g.x*6.2831853, h = g.y*uGGrow, a = uGFlat*1.5707963, rr = uR0 + g.z + h*sin(a);
+    vec3 r = vec3(rr*cos(th), h*cos(a), rr*sin(th));
     vec3 l = vec3((g.x - .5)*uLx, g.y*uGGrow, g.z*1.2);
     return mix(r, l, uLayout); }`;
 let gTrack = null, gGuides = null, gStems = null;
 function buildScaffold(){
   for (const o of [gTrack, gGuides, gStems]) if (o){ gwasGroup.remove(o); o.geometry.dispose(); }
-  const base = { uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uVis: U.uGVis, uFocusU: U.uFocusU };
+  const base = { uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uGFlat: U.uGFlat, uVis: U.uGVis, uFocusU: U.uFocusU };
   { const pos = [], at = [], idx = [];
     G.chrSpan.forEach(([c, a, b, has]) => {
       const n = Math.max(3, Math.ceil((b - a)*400)), v0 = pos.length/3;
@@ -1574,7 +1574,7 @@ function initParticles(){
     uniforms: {
       uSat: { value: satTex }, uSatW: { value: texW }, uNSat: { value: NS },
       uCosV: U.uCosV, uTime: U.uTime, uMorph: U.uMorph, uDna: U.uDna, uGw: U.uGw, uPR: U.uPR, uScale: U.uScale, uFocusId: U.uFocusId, uFocusAmt: U.uFocusAmt,
-      uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, ...GU,
+      uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uGFlat: U.uGFlat, ...GU,
       uBrainMat: { value: brainGroup.matrixWorld }, uDnaMat: { value: dnaGroup.matrixWorld }, uGwasMat: { value: gwasGroup.matrixWorld }, uNetMat: { value: netGroup.matrixWorld }, ...NU, ...SU, ...AU, ...CU,
       uPulse: { value: pulseArr }, uNet: { value: netU.pos }, uNetId: { value: netU.id }, uNetC: { value: netU.col },
       uReadBp: { value: 0 }, uReadOn: { value: 0 }, uNbp: { value: dna.nbp }, uLes: lesU, uCamD: { value: 5 },
@@ -2255,7 +2255,7 @@ function buildOrders(){
   buildGwasOrder();
 }
 function buildGwasOrder(){
-  ordGwas = bandOrder(G.N, (i, v) => { gLayoutJS(G.u[i], G.y[i], G.d[i], 0, 1, tmp3); v[0] = tmp3.x; v[1] = tmp3.y - .6; v[2] = tmp3.z; });
+  ordGwas = bandOrder(G.N, (i, v) => { gLayoutJS(G.u[i], G.y[i], G.d[i], 0, 1, tmp3, 0); v[0] = tmp3.x; v[1] = tmp3.y - .6; v[2] = tmp3.z; });
 }
 // satellites: sort the primaries by direction, each followed by its copies
 function satOrder(){
@@ -3129,6 +3129,7 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
+const GINTRO = { t: 0, done: false, chosen: false };      // the Manhattan plot's first arrival: flat ring, rise, then line
 const labelsEl = $('labels');
 // a finger that lands on a label is a tap on that label, unless a second finger joins it: then both go to the scene, so a
 // two-finger pan or pinch works wherever it starts. (Labels sit above the canvas and would otherwise swallow the gesture.)
@@ -3206,8 +3207,8 @@ function setLayout(v){
   layoutT = v; $('layRing').setAttribute('aria-pressed', String(v === 0)); $('layLine').setAttribute('aria-pressed', String(v === 1));
   if (focusK >= 0) setTimeout(() => focusLocus(focusK, { keepPin: true }), 1200); else flyTo(presetPos(ST.GWAS, v), presetTarget(ST.GWAS));
 }
-$('layRing').addEventListener('click', () => setLayout(0));
-$('layLine').addEventListener('click', () => setLayout(1));
+$('layRing').addEventListener('click', () => { GINTRO.chosen = true; setLayout(0); });
+$('layLine').addEventListener('click', () => { GINTRO.chosen = true; setLayout(1); });
 $('exReset').addEventListener('click', () => { $('exThr').value = 0; GU.uGThresh.value = 0; $('exThrV').textContent = '0.0'; $('exFm').checked = false; GU.uGFm.value = 0; pinned = null; focusLocus(-1); });
 $('exThr').addEventListener('input', e => { GU.uGThresh.value = +e.target.value; $('exThrV').textContent = (+e.target.value).toFixed(1); });
 $('exFm').addEventListener('change', e => { GU.uGFm.value = e.target.checked ? 1 : 0; });
@@ -5538,10 +5539,10 @@ const EARTH_FACE = (() => { const la = 42*DEG, lo = 58*DEG; return new THREE.Vec
 const ORB_IN = { done: true, t: -1 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
 const earthFaceDir = g => EARTH_FACE.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), g);
 const EARTH_SPIN = .015;                                     // (radians a second: a turn in about seven minutes)
-const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y, ORB_IN.done) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns)
-function visitorCamDir(gmstAngle, over = false){             // (on the equator at the visitor's longitude; over: straight above the tag)
+const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y, ORB_IN.done ? 1 : smooth(clamp((Sd + .15)/.15, 0, 1))) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns; over the last 15% of the zoom it curves up from the equator to over the tag)
+function visitorCamDir(gmstAngle, over = 0){                 // (on the equator at the visitor's longitude; over: 0..1 of the way up to straight above the tag)
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
-  const a = Math.atan2(v.x, v.z), el = over ? clamp(Math.asin(v.y), -80*DEG, 80*DEG) : 0;
+  const a = Math.atan2(v.x, v.z), el = +over*clamp(Math.asin(v.y), -80*DEG, 80*DEG);
   return new THREE.Vector3(Math.sin(a)*Math.cos(el), Math.sin(el), Math.cos(a)*Math.cos(el));
 }
 
@@ -5689,6 +5690,13 @@ renderer.setAnimationLoop(() => {
   layoutV += (layoutT - layoutV)*Math.min(1, dt*2.2); if (Math.abs(layoutT - layoutV) < 1e-4) layoutV = layoutT; U.uLayout.value = easeIO(layoutV);
   gwasGroup.rotation.y = lerp(gYaw, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
   growT = Math.min(1, growT + dt/2.2); U.uGGrow.value = easeOut(growT);
+  // once a visit: the plot arrives as a flat ring, its peaks lying outward from the circle; once the chapter settles they rise into the
+  // ring, and two seconds later the ring unrolls into a line (unless the viewer has already chosen a layout or a locus)
+  if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
+    GINTRO.t += dt; const RISE = RM ? 0 : 1.8;
+    U.uGFlat.value = RISE ? 1 - easeIO(clamp(GINTRO.t/RISE, 0, 1)) : 0;
+    if (GINTRO.t >= RISE + 2){ GINTRO.done = true; if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
+  }
   U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
   // the repair system: orbits, focus and selection
   netGroup.updateMatrixWorld(true);
@@ -5840,7 +5848,7 @@ renderer.setAnimationLoop(() => {
   else if (!ORB_IN.done){
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .01) ORB_IN.t = 0; }   // (as soon as the Earth is reached)
-    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : .3)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 3.5, force: true }; } } }
+    else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : .3)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1.2, force: true }; } } }   // (only tidies up any lag: the approach has already curved over the tag)
   { const want = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
     arEase += ((want ? 1 : 0) - arEase)*Math.min(1, dt*(want ? 1.6 : 5));          // (the turn eases in and out, never stops or starts dead)
     controls.autoRotate = arEase > .002; controls.autoRotateSpeed = .28*arEase*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1); }   // (and then eases into its turn)

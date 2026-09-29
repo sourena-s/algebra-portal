@@ -38,4 +38,4 @@ Then open http://localhost:8080. `serve.ps1` is a dependency-free static server,
 
 - The splash says only "Loading…"; `ld()` is a no-op.
 - IP geolocation runs only after consent from the privacy notice (`#consent`, localStorage key `algebra-geo`); without it, `locate()` falls back to the time zone.
-- Developer credit: Sourena Soheili-Nezhad (`<meta name="author">` and `.credit` under the tagline).
+- Developer credit: Sourena Soheili-Nezhad, in `<meta name="author">` only (not in the chapter titles).
