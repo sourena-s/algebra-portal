@@ -3135,7 +3135,7 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
-const GINTRO = { t: 0, done: false, chosen: false };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
+const GINTRO = { t: 0, done: false, chosen: false, lf: 1 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
 const labelsEl = $('labels');
 // a finger that lands on a label is a tap on that label, unless a second finger joins it: then both go to the scene, so a
 // two-finger pan or pinch works wherever it starts. (Labels sit above the canvas and would otherwise swallow the gesture.)
@@ -5475,7 +5475,7 @@ function dnaTarget(){
 }
 function presetTarget(k){
   return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - U.uGFlat.value), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
-    : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.12 : -.27, 0) : new THREE.Vector3();
+    : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.4 : -.36, 0) : new THREE.Vector3();
 }
 const sph = new THREE.Spherical();
 function presetSph(k){        // [elevation, distance] for each chapter
@@ -5691,11 +5691,13 @@ renderer.setAnimationLoop(() => {
   // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
   // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
   if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
-    Object.assign(GINTRO, { t: 0, done: false, chosen: false }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
     GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 2.4, T = GINTRO.t - HOLD;   // (the flat ring holds 3 s before it rises)
+    // the labels first fade out (the last moment of the hold), then the ring stands up, and only once it stands do they fade back in
+    GINTRO.lf = RM ? 1 : T < RISE ? 1 - smooth(clamp((T + .9)/.6, 0, 1)) : smooth(clamp((T - RISE - .15)/.6, 0, 1));
     U.uGFlat.value = RISE ? .5 + .5*Math.cos(Math.PI*clamp(T/RISE, 0, 1)) : 0;   // (a soft ease: no sudden start or stop)
     // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
     if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
@@ -5916,7 +5918,7 @@ function placeGenomeLabels(gv){
   const m = gwasGroup.matrixWorld.elements, lay = U.uLayout.value, grow = U.uGGrow.value, cam = camera.position;
   const tNow = performance.now(), kf = Math.min(1, (tNow - (placeGenomeLabels.t || tNow))/1000*8); placeGenomeLabels.t = tNow;
   // while the ring stands up its labels would point nowhere useful: they fade out, and back in once it stands
-  const fa = Math.abs(U.uGFlat.value - .5)*2; gv *= smooth(clamp((fa - .3)/.6, 0, 1));
+  gv *= GINTRO.lf;
   const ctr = xform(m, [0, .35, 0], 0), dC = Math.hypot(ctr[0] - cam.x, ctr[2] - cam.z);
   boxes.length = 0;
   const order = G.loci.map((l, k) => k).sort((a, b) => G.L[G.loci[b].lead] - G.L[G.loci[a].lead]);
