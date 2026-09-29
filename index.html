@@ -98,7 +98,6 @@ body[data-mode=dna] #dmgEv.on{opacity:1;transform:none}
 
 /* top right: simulated clock */
 .hud-tr{top:calc(var(--gut) + env(safe-area-inset-top,0px));right:var(--gut);text-align:right;display:grid;gap:5px;justify-items:end}
-.sim-label{display:flex;align-items:center;gap:10px;font-size:9.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--dust)}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px 4px 7px;border:1px solid rgba(255,91,58,.45);border-radius:999px;color:var(--bone);letter-spacing:.08em;font-weight:600}
 .chip i{width:5px;height:5px;border-radius:50%;background:var(--ember);box-shadow:0 0 8px var(--ember);animation:blink 1.1s ease-in-out infinite}
 @keyframes blink{50%{opacity:.25;scale:.7}}
@@ -220,10 +219,6 @@ input[type=range]{flex:1;accent-color:var(--ember);height:18px;min-width:0}
 .row .n{color:var(--dust);font-size:10.5px}
 .row .v{text-align:right;color:var(--bone)}
 .note{margin:8px 0 0;font-size:10px;line-height:1.55;color:var(--dust)}
-.snd{width:22px;height:20px;padding:0;margin-right:8px;border:0;background:none;color:rgba(236,230,218,.55);cursor:pointer;vertical-align:middle;transition:color .3s}
-.snd:hover{color:var(--bone)}
-.snd svg{width:14px;height:12px;fill:none;stroke:currentColor;stroke-width:1.1;stroke-linejoin:round;stroke-linecap:round}
-.snd[aria-pressed=false] .w{opacity:.15}
 /* chapter X: the polymerase's kinetics, a live trace */
 .kin{top:calc(var(--gut) + 150px + env(safe-area-inset-top,0px));right:var(--gut);width:min(344px,calc(50vw - var(--gut)));box-sizing:border-box;padding:12px 14px;border:1px solid var(--hair);background:rgba(7,11,21,.34);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .kin-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
@@ -602,7 +597,6 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 </header>
 
 <div class="hud hud-tr">
-  <div class="sim-label anim" style="--d:300ms"><button class="snd" id="snd" type="button" aria-label="Sound" aria-pressed="true" title="Sound"><svg viewBox="0 0 14 12" aria-hidden="true"><path d="M1.5 4.2h2.4L7 1.6v8.8L3.9 7.8H1.5z"/><path class="w" d="M9.4 3.6a3.2 3.2 0 0 1 0 4.8M11.2 2a5.6 5.6 0 0 1 0 8"/></svg></button></div>
   <div class="clock anim" id="simClock" hidden></div>
   <div class="meta anim" id="simDate" hidden>&nbsp;</div>
   <div class="meta anim" id="realClock" hidden>&nbsp;</div>
@@ -868,7 +862,7 @@ const simNow = () => simT0 + (performance.now() - perfT0) * SPEED;
 
 const RE = 6371.0, MU = 398600.4418, DEG = Math.PI / 180;
 const BRAIN_HALF = 1.3, DNA_HALF = 1.08;
-const EARTH_FRAME = 2.55, BRAIN_FRAME = 1.85, DNA_FRAME = 1.62, GWAS_FRAME = 2.3;
+const BRAIN_FRAME = 1.85, DNA_FRAME = 1.62, GWAS_FRAME = 2.3;
 const G_R0 = 1.45, G_LX = 5.4;
 const PAL = {
   leo:'#FFC98A', meo:'#7FD6FF', geo:'#E4EEFF', heo:'#FF7C9E', ember:'#FF5B3A', bone:'#ECE6DA',
@@ -1482,10 +1476,12 @@ function buildModel(raw){
 // ring (lay 0: counter-clockwise from above, chromosome 1 in front, 2 to its right) to line (lay 1). The ring is cut in front, where
 // chromosome 1 meets 22, and unrolled: the genome stays one arc whose curvature falls to nothing as it opens, turning half a turn about
 // its middle, so it never crosses itself. Flat: the peaks lie outward from the circle; they rise on a hinge at its edge.
+// (sin x/x and (1 - cos x)/x, by series when x is small: dividing by a vanishing curvature would shake on a GPU's rough sin and cos)
+const sincA = x => Math.abs(x) < .5 ? 1 - x*x/6 + x*x*x*x/120 : Math.sin(x)/x, cosA = x => Math.abs(x) < .5 ? x/2 - x*x*x/24 + x*x*x*x*x/720 : (1 - Math.cos(x))/x;
 function gLayoutJS(u, y, d, lay, grow, out, flat = U.uGFlat.value){
-  const h = y*grow, fa = flat*Math.PI/2, L = lerp(2*Math.PI*G_R0, G_LX, lay), k = Math.max(1e-4, (1 - lay)/G_R0), s = (u - .5)*L, ks = k*s;
-  const dd = d*lerp(1, 1.2, lay) + h*Math.sin(fa)*(1 - lay), hc = (1 - Math.cos(k*L/2))/k/2;
-  const a = Math.sin(ks)/k + Math.sin(ks)*dd, b = (1 - Math.cos(ks))/k - Math.cos(ks)*dd - hc, ph = Math.PI*lay, tx = -Math.cos(ph), tz = -Math.sin(ph);
+  const h = y*grow, fa = flat*Math.PI/2, L = lerp(2*Math.PI*G_R0, G_LX, lay), k = (1 - lay)/G_R0, s = (u - .5)*L, ks = k*s;
+  const dd = d*lerp(1, 1.2, lay) + h*Math.sin(fa)*(1 - lay), hc = L/4*cosA(k*L/2);
+  const a = s*sincA(ks) + Math.sin(ks)*dd, b = s*cosA(ks) - Math.cos(ks)*dd - hc, ph = Math.PI*lay, tx = -Math.cos(ph), tz = -Math.sin(ph);
   out.set(a*tx + b*tz, h*lerp(Math.cos(fa), 1, lay), a*tz - b*tx);
   return out;
 }
@@ -1494,10 +1490,12 @@ function gLayoutJS(u, y, d, lay, grow, out, flat = U.uGFlat.value){
 const gwasGroup = new THREE.Group(); scene.add(gwasGroup);
 const GLSL_LAYOUT = `
   uniform float uLayout, uR0, uLx, uGGrow, uGFlat;
+  float sincA(float x){ float q = x*x; return abs(x) < .5 ? 1. - q/6. + q*q/120. : sin(x)/x; }
+  float cosA(float x){ float q = x*x; return abs(x) < .5 ? x*(.5 - q/24. + q*q/720.) : (1. - cos(x))/x; }
   vec3 gLayout(vec3 g){      // (as gLayoutJS: the ring unrolls into the line as one opening arc)
-    float h = g.y*uGGrow, fa = uGFlat*1.5707963, L = mix(6.2831853*uR0, uLx, uLayout), k = max(1e-4, (1. - uLayout)/uR0), ks = k*(g.x - .5)*L;
-    float dd = g.z*mix(1., 1.2, uLayout) + h*sin(fa)*(1. - uLayout), hc = (1. - cos(k*L*.5))/k*.5;
-    float a = sin(ks)/k + sin(ks)*dd, b = (1. - cos(ks))/k - cos(ks)*dd - hc, ph = 3.1415927*uLayout, tx = -cos(ph), tz = -sin(ph);
+    float h = g.y*uGGrow, fa = uGFlat*1.5707963, L = mix(6.2831853*uR0, uLx, uLayout), k = (1. - uLayout)/uR0, s = (g.x - .5)*L, ks = k*s;
+    float dd = g.z*mix(1., 1.2, uLayout) + h*sin(fa)*(1. - uLayout), hc = L*.25*cosA(k*L*.5);
+    float a = s*sincA(ks) + sin(ks)*dd, b = s*cosA(ks) - cos(ks)*dd - hc, ph = 3.1415927*uLayout, tx = -cos(ph), tz = -sin(ph);
     return vec3(a*tx + b*tz, h*mix(cos(fa), 1., uLayout), a*tz - b*tx); }`;
 let gTrack = null, gGuides = null, gStems = null;
 function buildScaffold(){
@@ -2595,7 +2593,7 @@ function igniteLesion(L){
   L.t0 = U.uTime.value; L.t1 = L.t0 + HOLD;
   const T = LESION_TYPES[L.type], strand = L.type === 'dsb' ? 'both strands' : `strand ${L.strand + 1}`;
   $('dmgTxt').innerHTML = `DNA damage · <b>${T.name}</b> · bp ${fmt(L.bp + 1)}, ${strand}`;
-  $('dmgEv').classList.add('on'); sfx('stall');
+  $('dmgEv').classList.add('on');
 }
 function updateDamage(show, readOn){
   const t = U.uTime.value; let any = false;
@@ -3136,7 +3134,7 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
-const GINTRO = { t: 0, done: false, chosen: false };      // the Manhattan plot's first arrival: flat ring, rise, then line
+const GINTRO = { t: 0, done: false, chosen: false };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
 const labelsEl = $('labels');
 // a finger that lands on a label is a tap on that label, unless a second finger joins it: then both go to the scene, so a
 // two-finger pan or pinch works wherever it starts. (Labels sit above the canvas and would otherwise swallow the gesture.)
@@ -4192,32 +4190,6 @@ function placeCellLabels(){
 }
 
 
-// ---------------------------------------------------------------- sound: a few quiet, synthesised clicks
-// Nothing plays until the page is touched or a key pressed (browsers ask for that); the speaker by the clock silences it.
-const SND = { ctx: null, bus: null, on: true };
-try { SND.on = localStorage.getItem('algebra-sound') !== 'off'; } catch (e) {}
-function sndWake(){
-  if (!SND.ctx){ try { const C = window.AudioContext || window.webkitAudioContext; SND.ctx = new C(); SND.bus = SND.ctx.createGain(); SND.bus.gain.value = .55;
-    const lp = SND.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 6000; SND.bus.connect(lp).connect(SND.ctx.destination); } catch (e) { return; } }
-  if (SND.ctx.state === 'suspended') SND.ctx.resume();
-}
-function sndTone(f0, f1, dur, gain, type = 'sine', delay = 0){
-  const c = SND.ctx, t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
-  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + .005); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-  o.connect(g).connect(SND.bus); o.start(t); o.stop(t + dur + .03);
-}
-const SFX = {
-  click(){ sndTone(2300, 1500, .05, .045, 'triangle'); sndTone(4600, 3000, .018, .012); },                              // a button: a small wooden tick
-  page(dir){ const a = dir > 0 ? [587, 880] : [880, 587];                                                                 // a chapter turns: two soft notes
-    sndTone(a[0], a[0]*.998, .5, .028); sndTone(a[1], a[1]*.998, .6, .022, 'sine', .07); sndTone(a[1]*2, a[1]*2, .25, .006, 'sine', .07); },
-  stall(){ sndTone(330, 250, .22, .03, 'sine'); sndTone(660, 500, .12, .01, 'triangle'); }                              // the polymerase stalls on a lesion
-};
-const sfx = (k, ...a) => { if (SND.on && SND.ctx && SND.ctx.state === 'running' && !document.hidden) try { SFX[k](...a); } catch (e) {} };
-for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, sndWake, { capture: true, passive: true });
-addEventListener('click', e => { if (e.target.closest?.('button:not(#snd), .row[tabindex], .chipb, .plabel, .lc, [data-gene], .nets i')) sfx('click'); }, true);
-$('snd').addEventListener('click', () => { SND.on = !SND.on; $('snd').setAttribute('aria-pressed', SND.on); try { localStorage.setItem('algebra-sound', SND.on ? 'on' : 'off'); } catch (e) {} if (SND.on){ sndWake(); setTimeout(() => sfx('click'), 30); } });
-$('snd').setAttribute('aria-pressed', SND.on);
 
 // ---------------------------------------------------------------- 0: Laniakea, the Milky Way, and through the Solar System to Earth
 // Three nested frames, each drawn at its own scale and handed to the next by a zoom about the point where the next one lies:
@@ -5455,7 +5427,7 @@ function resize(){
   U.uPR.value = renderer.getPixelRatio();
   if (U.uAspect) U.uAspect.value = w / h;
   portrait = w / h < .8;
-  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
+  dCos = fitDist(portrait ? 2.25 : 2.35); { const tv = Math.tan(camera.fov/2*DEG), w = Math.min(.8*tv*camera.aspect, .9*tv); dEarth = Math.sqrt(1 + 1/(w*w)); }   // (the globe spans 80% of the screen's width; on a wide screen, 90% of its height, so it is never cut) dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
   { const gut = clamp(w*.024, 16, 32); panelR = w > 760 ? gut + Math.min(340, w - 2*gut) + 16 : 0; }   // the panel's resting width, maximized or not
   { // the repair system is a flat disc seen square on; fit every planet into the free part of the screen
     let aw, ah;
@@ -5545,7 +5517,7 @@ controls.addEventListener('start', () => { userMoved = true; camFly = null; });
 const EARTH_FACE = (() => { const la = 42*DEG, lo = 58*DEG; return new THREE.Vector3(Math.cos(la)*Math.cos(lo), Math.sin(la), -Math.cos(la)*Math.sin(lo)); })();   // (Europe and Asia, the side the flight in from space always shows)
 const ORB_IN = { done: true, t: -1 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
 const earthFaceDir = g => EARTH_FACE.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), g);
-const EARTH_SPIN = .015;                                     // (radians a second: a turn in about seven minutes)
+const EARTH_SPIN = .045;                                     // (radians a second: a turn in about two and a half minutes, day and night sweeping across)
 const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y, ORB_IN.done ? 1 : smooth(clamp((Sd + .15)/.15, 0, 1))) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns; over the last 15% of the zoom it curves up from the equator to over the tag)
 function visitorCamDir(gmstAngle, over = 0){                 // (on the equator at the visitor's longitude; over: 0..1 of the way up to straight above the tag)
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
@@ -5697,8 +5669,13 @@ renderer.setAnimationLoop(() => {
   layoutV += (layoutT - layoutV)*Math.min(1, dt*2.2); if (Math.abs(layoutT - layoutV) < 1e-4) layoutV = layoutT; U.uLayout.value = easeIO(layoutV);
   gwasGroup.rotation.y = lerp(gYaw, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
   growT = Math.min(1, growT + dt/2.2); U.uGGrow.value = easeOut(growT);
-  // once a visit: the plot arrives as a flat ring, its peaks lying outward from the circle; once the chapter settles they rise into the
-  // ring, and two seconds later the ring unrolls into a line (unless the viewer has already chosen a layout or a locus)
+  // each time the chapter is reached, from either side: the plot arrives as a flat ring, its peaks lying outward from the circle; once
+  // the chapter settles they rise into the ring, and two seconds later the ring unrolls into a line (unless the viewer has already
+  // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
+  if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
+    Object.assign(GINTRO, { t: 0, done: false, chosen: false }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+    $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
+  }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
     GINTRO.t += dt; const RISE = RM ? 0 : 1.8;
     U.uGFlat.value = RISE ? 1 - easeIO(clamp(GINTRO.t/RISE, 0, 1)) : 0;
