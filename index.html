@@ -324,6 +324,8 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 @keyframes nudge{0%,100%{box-shadow:0 0 0 0 rgba(255,91,58,0)}35%{box-shadow:0 0 0 5px rgba(255,91,58,.2),0 0 22px rgba(255,91,58,.18)}}
 
 /* chapter V: the repair system */
+.slabel.sun{color:#FFD27A;text-shadow:0 0 14px rgba(255,190,90,.8),0 0 4px rgba(255,170,60,.9)}
+@media (max-width:760px){ #netZoom{display:none} }   /* on a phone the repair map zooms and pans by hand alone */
 .slabel{position:absolute;left:0;top:0;translate:-50% -100%;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#EDEDED;white-space:nowrap;pointer-events:none;text-shadow:0 0 14px rgba(255,255,255,.35),0 0 4px rgba(4,6,11,1)}
 .rlabel{position:absolute;left:0;top:0;font-size:8.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#A8A8A8;white-space:nowrap;pointer-events:none;text-shadow:0 0 6px rgba(4,6,11,1),0 0 2px rgba(4,6,11,1);transition:opacity .35s}
 .plabel.on{color:#fff!important}
@@ -2051,8 +2053,8 @@ function initParticles(){
           float dimAll = max(uNetFocusAmt, uNetSelAmt);
           if (kind < .5){                                   // the genome, as the sun
             nLocal = aN1.xyz*(1. + .06*sin(uTime*.8 + aRnd.y*6.283));
-            nc = mix(vec3(.7), vec3(1.), smoothstep(.36, .04, length(aN1.xyz)));
-            nA = .36*mix(1., .45, dimAll); nS = .0115*uNetZs;
+            nc = mix(vec3(1., .62, .22), vec3(1., .93, .7), smoothstep(.36, .04, length(aN1.xyz)));   // (sunlight: gold, white-hot at the heart)
+            nA = .42*mix(1., .45, dimAll); nS = .0115*uNetZs;
           } else if (kind < 1.5){                           // a pathway planet
             int k = int(aN1.w + .5);
             nLocal = planetAt(k) + aN1.xyz;
@@ -3401,7 +3403,7 @@ function buildNetScene(){
     uniforms: { uPR: U.uPR, uScale: U.uScale, uOn: { value: 0 } },
     vertexShader: `uniform float uPR, uScale; void main(){ vec4 mv = modelViewMatrix*vec4(position, 1.); gl_Position = projectionMatrix*mv; gl_PointSize = min(1.6*uScale/-mv.z, 1400.)*uPR; }`,
     fragmentShader: `uniform float uOn; void main(){ vec2 c = gl_PointCoord - .5; float d = length(c)*2.; if (d > 1.) discard;
-      gl_FragColor = vec4(vec3(.9, .9, .92), (exp(-d*d*9.)*.3 + exp(-d*3.)*.07)*uOn); }`,
+      gl_FragColor = vec4(vec3(1., .72, .32), (exp(-d*d*9.)*.42 + exp(-d*3.)*.1)*uOn); }`,
     transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
   }));
   sunGlow.frustumCulled = false; sunGlow.renderOrder = -5; netGroup.add(sunGlow);
@@ -3468,7 +3470,7 @@ function assignNet(){
 // labels: the sun, the rings, every planet (always) and moons (red ones when there is room, all of them once zoomed in)
 function buildNetLabels(){
   netLabelsEl.textContent = '';
-  sunLabel = document.createElement('span'); sunLabel.className = 'slabel'; sunLabel.textContent = 'The genome'; netLabelsEl.appendChild(sunLabel);
+  sunLabel = document.createElement('span'); sunLabel.className = 'slabel sun'; sunLabel.textContent = 'DNA'; netLabelsEl.appendChild(sunLabel);
   rLabels = RINGS.map((r, ri) => { const s = document.createElement('span'); s.className = 'rlabel'; s.textContent = `${ROMAN[ri]} · ${r.name}`; netLabelsEl.appendChild(s); return s; });
   nLabels = NET.genes.map((g, i) => {
     const s = document.createElement('span'); s.className = 'nlabel' + (NET.neuro.has(i) ? ' nd' : ''); s.textContent = g.s; netLabelsEl.appendChild(s); return s;
