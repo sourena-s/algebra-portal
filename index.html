@@ -3218,7 +3218,26 @@ function setLayout(v){
 }
 // the buttons: the ring is the flat ring, seen from straight above (zoom and pan, no turning); the line can be turned as well.
 // (a press ends the arrival's sequence where it stands)
-const layBtn = v => { Object.assign(GINTRO, { chosen: true, done: true, lf: 1 }); gFlatT = 1; setLayout(v); };
+// every change of layout: the labels fade out quickly, the plot changes shape (and the view with it), then the labels fade back in
+const TG = { ph: 0, t: 0, v: 0, flat: 1, lf: 1 };                // (ph: 0 still, 1 labels out, 2 the shape changing, 3 labels in)
+const toggleLayout = (v, flat) => Object.assign(TG, { ph: 1, t: 0, v, flat });
+// the flat ring turns only about its own centre, clockwise or anticlockwise, under a two-finger twist (as a pinch zooms it)
+let flatRingNow = false; const TW = new Map();
+const twAng = () => { const [a, b] = [...TW.values()]; return Math.atan2(b.y - a.y, b.x - a.x); };
+addEventListener('pointerdown', e => { if (e.pointerType === 'touch' && e.target === canvas){ TW.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (TW.size === 2) TW.a = twAng(); } }, true);
+addEventListener('pointermove', e => {
+  if (!TW.has(e.pointerId)) return; TW.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (TW.size !== 2) return; const a = twAng(), d = wrapA(a - TW.a); TW.a = a;
+  if (flatRingNow) gYaw -= d;                                      // (seen from above, the ring follows the fingers round)
+}, true);
+for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => { TW.delete(e.pointerId); if (TW.size === 2) TW.a = twAng(); }, true);
+function toggleFrame(dt){
+  if (!TG.ph) return; TG.t += dt;
+  if (TG.ph === 1){ TG.lf = 1 - smooth(clamp(TG.t/.22, 0, 1)); if (TG.t >= .26){ gFlatT = TG.flat; setLayout(TG.v); Object.assign(TG, { ph: 2, t: 0 }); } }
+  else if (TG.ph === 2){ TG.lf = 0; if (TG.t > .3 && Math.abs(layoutV - layoutT) < .03 && Math.abs(U.uGFlat.value - gFlatT) < .03 && !camFly) Object.assign(TG, { ph: 3, t: 0 }); }
+  else { TG.lf = smooth(clamp(TG.t/.22, 0, 1)); if (TG.t >= .22) Object.assign(TG, { ph: 0, lf: 1 }); }
+}
+const layBtn = v => { Object.assign(GINTRO, { chosen: true, done: true, lf: 1 }); if (v !== layoutT || gFlatT !== 1 || TG.ph) toggleLayout(v, 1); };
 $('layRing').addEventListener('click', () => layBtn(0));
 $('layLine').addEventListener('click', () => layBtn(1));
 $('exReset').addEventListener('click', () => { $('exThr').value = 0; GU.uGThresh.value = 0; $('exThrV').textContent = '0.0'; $('exFm').checked = false; GU.uGFm.value = 0; pinned = null; focusLocus(-1); });
@@ -5697,7 +5716,7 @@ renderer.setAnimationLoop(() => {
   // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
   // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
   if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
-    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); gFlatT = 1; layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); Object.assign(TG, { ph: 0, lf: 1 }); gFlatT = 1; layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
@@ -5710,8 +5729,9 @@ renderer.setAnimationLoop(() => {
       sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
       sph.phi = lerp(sph.phi, Math.PI/2 - e, k); sph.radius = lerp(sph.radius, d, k); camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph)); }
     if (T >= RISE + 3){ GINTRO.done = true; gFlatT = U.uGFlat.value;   // (the standing ring holds 3 s before it unrolls)
-      if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
+      if (!GINTRO.chosen && layoutT === 0 && focusK < 0) toggleLayout(1, U.uGFlat.value); }
   }
+  toggleFrame(dt);
   if (GINTRO.done) U.uGFlat.value += (gFlatT - U.uGFlat.value)*Math.min(1, dt*2.5);   // (the ring button lays the ring down flat)
   U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
   // the repair system: orbits, focus and selection
@@ -5865,7 +5885,7 @@ renderer.setAnimationLoop(() => {
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .01) ORB_IN.t = 0; }   // (as soon as the Earth is reached)
     else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : .3)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1.2, force: true }; } } }   // (only tidies up any lag: the approach has already curved over the tag)
-  const flatRing = Math.abs(Sd - ST.GWAS) < .5 && layoutT === 0 && GINTRO.done && gFlatT > .5;   // (the flat ring: zoom and pan, no turning)
+  const flatRing = flatRingNow = Math.abs(Sd - ST.GWAS) < .5 && layoutT === 0 && GINTRO.done && gFlatT > .5 && !TG.ph;   // (the flat ring: zoom and pan, no turning)
   controls.enableRotate = !flatRing;                                              // (a drag there pans instead: a finger, or the left button)
   controls.mouseButtons.LEFT = flatRing ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE; controls.touches.ONE = flatRing ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
   { const want = !RM && !flatRing && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
@@ -5926,9 +5946,9 @@ function screenOf(x, y, z){ tmp3.set(x, y, z).project(camera); return [(tmp3.x*.
 const labelFade = (el, o, k) => { el._o = el._o == null ? o : el._o + (o - el._o)*k; el.style.opacity = el._o < .005 ? '0' : el._o.toFixed(3); };
 function placeGenomeLabels(gv){
   const m = gwasGroup.matrixWorld.elements, lay = U.uLayout.value, grow = U.uGGrow.value, cam = camera.position;
-  const tNow = performance.now(), kf = Math.min(1, (tNow - (placeGenomeLabels.t || tNow))/1000*8); placeGenomeLabels.t = tNow;
+  const tNow = performance.now(), kf = Math.min(1, (tNow - (placeGenomeLabels.t || tNow))/1000*14); placeGenomeLabels.t = tNow;
   // while the ring stands up its labels would point nowhere useful: they fade out, and back in once it stands
-  gv *= GINTRO.lf;
+  gv *= GINTRO.lf*TG.lf;
   const ctr = xform(m, [0, .35, 0], 0), dC = Math.hypot(ctr[0] - cam.x, ctr[2] - cam.z);
   boxes.length = 0;
   const order = G.loci.map((l, k) => k).sort((a, b) => G.L[G.loci[b].lead] - G.L[G.loci[a].lead]);
