@@ -5417,7 +5417,7 @@ function setGwas(model, animate){
 }
 
 // ---------------------------------------------------------------- layout and camera presets
-let dSmrt0 = 5, dCos = 7, dEarth = 7, dBrain = 5, dDna = 5, dGwas = 6, dNet = 7, dSmrt = 6, dZmw = 6, dSort = 6, dAmy = 6, dNeu = 6, dChr = 6, netBandOff = 0, portrait = false, panelR = 0;
+let dSmrt0 = 5, dCos = 7, dEarth = 7, dEarthNear = 7, dBrain = 5, dDna = 5, dGwas = 6, dNet = 7, dSmrt = 6, dZmw = 6, dSort = 6, dAmy = 6, dNeu = 6, dChr = 6, netBandOff = 0, portrait = false, panelR = 0;
 const az = { brain: 0, amy: 0, sort: 0, neu: 0, chr: 0, dna: 0, gwas: 0, net: 0, smrt: 0 };
 function fitDist(r){ const v = camera.fov/2*DEG, hz = Math.atan(Math.tan(v)*camera.aspect); return r / Math.sin(Math.min(v, hz)); }
 function resize(){
@@ -5428,7 +5428,7 @@ function resize(){
   U.uPR.value = renderer.getPixelRatio();
   if (U.uAspect) U.uAspect.value = w / h;
   portrait = w / h < .8;
-  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
+  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); { const w = .9*Math.tan(camera.fov/2*DEG)*camera.aspect; dEarthNear = portrait ? Math.sqrt(1 + 1/(w*w)) : dEarth; }   // (a phone, once there: the globe 90% of the width) dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
   { const gut = clamp(w*.024, 16, 32); panelR = w > 760 ? gut + Math.min(340, w - 2*gut) + 16 : 0; }   // the panel's resting width, maximized or not
   { // the repair system is a flat disc seen square on; fit every planet into the free part of the screen
     let aw, ah;
@@ -5455,7 +5455,7 @@ function gwasRingSph(){
   return [lerp(8, 89.5, f)*DEG, lerp(fitDist((G_R0 + .5)/sm), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
 }
 function presetPos(k, lay = layoutT){
-  if (k === ST.ORBIT) return orbitDir().multiplyScalar(dEarth);
+  if (k === ST.ORBIT) return orbitDir().multiplyScalar(ORB_IN.done ? dEarthNear : dEarth);
   if (k === ST.BRAIN) return dirAt(az.brain, 7*DEG).multiplyScalar(dBrain);
   if (k === ST.AMY) return dirAt(az.amy, 7*DEG).multiplyScalar(dBrain);   // (the brain's own view: nothing moves but the amygdalae)
   if (k === ST.SORT) return presetTarget(k).add(dirAt(az.sort, 5*DEG).multiplyScalar(dSort));
@@ -5480,7 +5480,7 @@ function presetTarget(k){
 const sph = new THREE.Spherical();
 function presetSph(k){        // [elevation, distance] for each chapter
   if (k === ST.COSMOS) return [34*DEG, dCos];               // the galaxy, from above and to one side
-  if (k === ST.ORBIT){ const v = orbitDir(); return [Math.asin(clamp(v.y, -1, 1)), dEarth]; }
+  if (k === ST.ORBIT){ const v = orbitDir(); return [Math.asin(clamp(v.y, -1, 1)), ORB_IN.done ? dEarthNear : dEarth]; }   // (the flight in from space ends at dEarth; once there, a phone comes closer)
   if (k === ST.BRAIN) return [7*DEG, dBrain];
   if (k === ST.AMY) return [7*DEG, dBrain];         // the brain as it was; the tube appears beside it
   if (k === ST.SORT) return [5*DEG, dSort];         // the sorter, nearly level
@@ -5844,9 +5844,9 @@ renderer.setAnimationLoop(() => {
 
     fly = null;
   } else if (fly && (!userMoved || fly.force) && mode === 0){
-    if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); ORB_IN.g = earth.rotation.y; }
+    if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); fly.d1 = fly.force ? dEarthNear : fly.d; ORB_IN.g = earth.rotation.y; }
     fly.t = Math.min(1, fly.t + dt/(fly.dur || 2.6));
-    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(ORB_IN.g, true) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(fly.d));
+    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(ORB_IN.g, true) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(lerp(fly.d, fly.d1, easeIO(fly.t))));
     if (fly.t >= 1) fly = null;
   }
   if (Sd < -.5){ ORB_IN.done = false; ORB_IN.t = -1; }
