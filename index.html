@@ -324,7 +324,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 @keyframes nudge{0%,100%{box-shadow:0 0 0 0 rgba(255,91,58,0)}35%{box-shadow:0 0 0 5px rgba(255,91,58,.2),0 0 22px rgba(255,91,58,.18)}}
 
 /* chapter V: the repair system */
-.slabel.sun{color:#FFD27A;text-shadow:0 0 14px rgba(255,190,90,.8),0 0 4px rgba(255,170,60,.9)}
+.slabel.sun{translate:-50% -50%;font-size:10px;font-weight:700;letter-spacing:.24em;padding-left:.24em;color:#6B2200;text-shadow:0 0 5px rgba(255,236,190,.95),0 0 12px rgba(255,210,140,.7)}   /* (in the heart of the sun: dark ember on its light) */
 @media (max-width:760px){ #netZoom{display:none} }   /* on a phone the repair map zooms and pans by hand alone */
 .slabel{position:absolute;left:0;top:0;translate:-50% -100%;font-size:9px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#EDEDED;white-space:nowrap;pointer-events:none;text-shadow:0 0 14px rgba(255,255,255,.35),0 0 4px rgba(4,6,11,1)}
 .rlabel{position:absolute;left:0;top:0;font-size:8.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#A8A8A8;white-space:nowrap;pointer-events:none;text-shadow:0 0 6px rgba(4,6,11,1),0 0 2px rgba(4,6,11,1);transition:opacity .35s}
@@ -3509,13 +3509,14 @@ function placeNetLabels(vis){
   const hot = new Set(); if (sel && sel.type === 'gene'){ hot.add(sel.i); NET.nbr[sel.i].forEach(x => hot.add(x[0])); }
   if (netHover && netHover.kind === 'gene') hot.add(netHover.i);
   const hoverK = netHover && netHover.kind === 'planet' ? netHover.k : netPlanetHover;      // pointing at a planet names its moons
-  const [sx, sy] = scr([0, .42, 0], 0); sunLabel.style.opacity = (vis*(sel ? .35 : .8)).toFixed(2); sunLabel.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`;
-  lBoxes.push([sx - 45, sy - 14, 90, 14]);
+  const [sx, sy] = scr([0, 0, 0], 0); sunLabel.style.opacity = (vis*(sel ? .45 : 1)).toFixed(2); sunLabel.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`;   // (in the middle of the sun)
+  lBoxes.push([sx - 22, sy - 9, 44, 18]);
   // planet names first, above each body
   const order = [...Array(26).keys()].sort((a, b) => (b === focusK) - (a === focusK) || NET.moons[b].length - NET.moons[a].length);
   for (const k of order){
     const el = pLabels[k], [x, y, d] = scr(planetL, k*3), rpx = planetR[k]*U.uScale.value/d;
-    const bw = el._w || (el._w = el.offsetWidth) || 90, bh = 17, bx = clamp(x - bw/2, 4, W - bw - 4), by = y - rpx - bh - 3;
+    // (above the planet; as a zoom brings the planet into focus, the name comes down onto its middle)
+    const bw = el._w || (el._w = el.offsetWidth) || 90, bh = 17, bx = clamp(x - bw/2, 4, W - bw - 4), by = lerp(y - rpx - bh - 3, y - bh/2, smooth(clamp((rpx - 14)/36, 0, 1)));
     if (out(x, y) || hudHit(bx, by, bw, bh)){ fade(el, 0); el.style.pointerEvents = 'none'; continue; }
     const hit = k !== focusK && boxHit(bx - 6, by - 3, bw + 12, bh + 6);         // (a name that would touch another is left out, not dimmed)
     if (!hit) lBoxes.push([bx - 2, by - 1, bw + 4, bh + 2]);
