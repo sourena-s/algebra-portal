@@ -1145,16 +1145,18 @@ const earth = new THREE.Group(); scene.add(earth);
 // lights on the night side, clouds and a thin blue atmosphere at the limb, lit by the real Sun. It gives way to the chapter's globe
 // of points as the orbit chapter is reached.
 const EARTH_PHOTO = (() => {
-  const tex = src => { const t = new THREE.Texture(), im = new Image(); im.onload = () => { t.image = im; t.needsUpdate = true; }; im.src = src; t.anisotropy = 4; return t; };
-  const day = tex('assets/earth-day.jpg'), night = tex('assets/earth-night.jpg'), cloud = tex('assets/earth-clouds.jpg'); day.colorSpace = THREE.SRGBColorSpace;
+  // cube maps (six faces each, reprojected from the equirectangular maps), sampled by direction: no seam, no pinching at the poles
+  const cubeLd = new THREE.CubeTextureLoader().setPath('assets/earth/'), tex = n => { const t = cubeLd.load(['px', 'nx', 'py', 'ny', 'pz', 'nz'].map(f => `${n}-${f}.jpg`)); t.anisotropy = 4; return t; };
+  const day = tex('day'), night = tex('night'), cloud = tex('clouds'); day.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.ShaderMaterial({ uniforms: { uDay: { value: day }, uNight: { value: night }, uCloud: { value: cloud }, uSun: { value: new THREE.Vector3(1, 0, 0) }, uOn: { value: 0 }, uT: U.uTime }, transparent: true, depthWrite: false,
-    vertexShader: `varying vec2 vU; varying vec3 vN, vW; void main(){ vU = uv; vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position, 1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: `uniform sampler2D uDay, uNight, uCloud; uniform vec3 uSun; uniform float uOn, uT; varying vec2 vU; varying vec3 vN, vW;
-      void main(){ vec3 N = normalize(vN), L = normalize(uSun), V = normalize(cameraPosition - vW);
-        float d = dot(N, L), day = smoothstep(-.12, .18, d), cl = texture2D(uCloud, vU + vec2(uT*.0004, 0.)).r;
-        vec3 c = texture2D(uDay, vU).rgb*(.08 + 1.05*max(d, 0.));
+    vertexShader: `varying vec3 vO, vN, vW; void main(){ vO = normal; vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position, 1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: `uniform samplerCube uDay, uNight, uCloud; uniform vec3 uSun; uniform float uOn, uT; varying vec3 vO, vN, vW;
+      void main(){ vec3 N = normalize(vN), L = normalize(uSun), V = normalize(cameraPosition - vW), O = normalize(vO);
+        float ca = cos(uT*.0025), sa = sin(uT*.0025);                                                // (the clouds drift eastward round the pole axis)
+        float d = dot(N, L), day = smoothstep(-.12, .18, d), cl = textureCube(uCloud, vec3(O.x*ca + O.z*sa, O.y, O.z*ca - O.x*sa)).r;
+        vec3 c = textureCube(uDay, O).rgb*(.08 + 1.05*max(d, 0.));
         c = mix(c, vec3(1.)*(.06 + .95*max(d, 0.)), cl*.8);                                         // clouds
-        c += texture2D(uNight, vU).r*vec3(1., .78, .45)*(1. - day)*(1. - cl)*1.2;                    // city lights
+        c += textureCube(uNight, O).r*vec3(1., .78, .45)*(1. - day)*(1. - cl)*1.2;                    // city lights
         float h = pow(1. - max(dot(N, V), 0.), 3.);
         c += vec3(.3, .55, 1.)*h*(.05 + .6*smoothstep(-.3, .6, d));                                 // the atmosphere at the limb
         c += vec3(.9, .95, 1.)*pow(max(dot(reflect(-L, N), V), 0.), 40.)*.25*(1. - cl)*day;          // sun glint
@@ -1477,10 +1479,14 @@ function buildModel(raw){
   const nFm = raw.cs ? raw.cs.reduce((a, b) => a + b, 0) : 0;
   return { ...raw, N, gene, gd, k, loci, u, y, d, chrSpan, windowed, nSig, nFm, maxL };
 }
+// ring (lay 0: counter-clockwise from above, chromosome 1 in front, 2 to its right) to line (lay 1). The ring is cut in front, where
+// chromosome 1 meets 22, and unrolled: the genome stays one arc whose curvature falls to nothing as it opens, turning half a turn about
+// its middle, so it never crosses itself. Flat: the peaks lie outward from the circle; they rise on a hinge at its edge.
 function gLayoutJS(u, y, d, lay, grow, out, flat = U.uGFlat.value){
-  const th = Math.PI/2 - u*Math.PI*2;          // (counter-clockwise from above: chromosome 1 in front, 2 to its right)
-  const h = y*grow, a = flat*Math.PI/2, rr = G_R0 + d + h*Math.sin(a);   // (flat: the peaks lie outward from the circle; they rise on a hinge at its edge)
-  out.set(lerp(rr*Math.cos(th), (u - .5)*G_LX, lay), lerp(h*Math.cos(a), h, lay), lerp(rr*Math.sin(th), d*1.2, lay));
+  const h = y*grow, fa = flat*Math.PI/2, L = lerp(2*Math.PI*G_R0, G_LX, lay), k = Math.max(1e-4, (1 - lay)/G_R0), s = (u - .5)*L, ks = k*s;
+  const dd = d*lerp(1, 1.2, lay) + h*Math.sin(fa)*(1 - lay), hc = (1 - Math.cos(k*L/2))/k/2;
+  const a = Math.sin(ks)/k + Math.sin(ks)*dd, b = (1 - Math.cos(ks))/k - Math.cos(ks)*dd - hc, ph = Math.PI*lay, tx = -Math.cos(ph), tz = -Math.sin(ph);
+  out.set(a*tx + b*tz, h*lerp(Math.cos(fa), 1, lay), a*tz - b*tx);
   return out;
 }
 
@@ -1488,10 +1494,11 @@ function gLayoutJS(u, y, d, lay, grow, out, flat = U.uGFlat.value){
 const gwasGroup = new THREE.Group(); scene.add(gwasGroup);
 const GLSL_LAYOUT = `
   uniform float uLayout, uR0, uLx, uGGrow, uGFlat;
-  vec3 gLayout(vec3 g){ float th = 1.5707963 - g.x*6.2831853, h = g.y*uGGrow, a = uGFlat*1.5707963, rr = uR0 + g.z + h*sin(a);
-    vec3 r = vec3(rr*cos(th), h*cos(a), rr*sin(th));
-    vec3 l = vec3((g.x - .5)*uLx, g.y*uGGrow, g.z*1.2);
-    return mix(r, l, uLayout); }`;
+  vec3 gLayout(vec3 g){      // (as gLayoutJS: the ring unrolls into the line as one opening arc)
+    float h = g.y*uGGrow, fa = uGFlat*1.5707963, L = mix(6.2831853*uR0, uLx, uLayout), k = max(1e-4, (1. - uLayout)/uR0), ks = k*(g.x - .5)*L;
+    float dd = g.z*mix(1., 1.2, uLayout) + h*sin(fa)*(1. - uLayout), hc = (1. - cos(k*L*.5))/k*.5;
+    float a = sin(ks)/k + sin(ks)*dd, b = (1. - cos(ks))/k - cos(ks)*dd - hc, ph = 3.1415927*uLayout, tx = -cos(ph), tz = -sin(ph);
+    return vec3(a*tx + b*tz, h*mix(cos(fa), 1., uLayout), a*tz - b*tx); }`;
 let gTrack = null, gGuides = null, gStems = null;
 function buildScaffold(){
   for (const o of [gTrack, gGuides, gStems]) if (o){ gwasGroup.remove(o); o.geometry.dispose(); }
