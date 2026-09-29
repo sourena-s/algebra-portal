@@ -5695,8 +5695,8 @@ renderer.setAnimationLoop(() => {
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
-    GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 1.8, T = GINTRO.t - HOLD;   // (the flat ring holds 3 s before it rises)
-    U.uGFlat.value = RISE ? 1 - easeIO(clamp(T/RISE, 0, 1)) : 0;
+    GINTRO.t += dt; const HOLD = RM ? 0 : 3, RISE = RM ? 0 : 2.4, T = GINTRO.t - HOLD;   // (the flat ring holds 3 s before it rises)
+    U.uGFlat.value = RISE ? .5 + .5*Math.cos(Math.PI*clamp(T/RISE, 0, 1)) : 0;   // (a soft ease: no sudden start or stop)
     // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
     if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
       sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
@@ -5910,8 +5910,13 @@ renderer.setAnimationLoop(() => {
 // place gene, chromosome and height labels; skip labels that would overlap a stronger one
 const boxes = [];
 function screenOf(x, y, z){ tmp3.set(x, y, z).project(camera); return [(tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight, tmp3.z]; }
+// a label's opacity eases to where it should be, so labels never blink as the plot moves and they make room for each other
+const labelFade = (el, o, k) => { el._o = el._o == null ? o : el._o + (o - el._o)*k; el.style.opacity = el._o < .005 ? '0' : el._o.toFixed(3); };
 function placeGenomeLabels(gv){
   const m = gwasGroup.matrixWorld.elements, lay = U.uLayout.value, grow = U.uGGrow.value, cam = camera.position;
+  const tNow = performance.now(), kf = Math.min(1, (tNow - (placeGenomeLabels.t || tNow))/1000*8); placeGenomeLabels.t = tNow;
+  // while the ring stands up its labels would point nowhere useful: they fade out, and back in once it stands
+  const fa = Math.abs(U.uGFlat.value - .5)*2; gv *= smooth(clamp((fa - .3)/.6, 0, 1));
   const ctr = xform(m, [0, .35, 0], 0), dC = Math.hypot(ctr[0] - cam.x, ctr[2] - cam.z);
   boxes.length = 0;
   const order = G.loci.map((l, k) => k).sort((a, b) => G.L[G.loci[b].lead] - G.L[G.loci[a].lead]);
@@ -5925,14 +5930,14 @@ function placeGenomeLabels(gv){
     if (ok && focusK >= 0 && focusK !== k) ok = false;
     if (ok) for (const b of boxes){ if (bx < b[0] + b[2] + 4 && bx + bw + 4 > b[0] && by < b[1] + b[3] && by + bh > b[1]){ ok = false; break; } }
     if (ok) boxes.push([bx, by, bw, bh]);
-    el.style.opacity = ok ? (gv*(back ? .5 : 1)).toFixed(2) : '0';
+    labelFade(el, ok ? gv*(back ? .5 : 1) : 0, kf);
     el.style.pointerEvents = ok && gv > .6 ? 'auto' : 'none';
     el.style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px)`;
   }
   G.chrSpan.forEach(([c, a, b, has], n) => {
     gLayoutJS((a + b)/2, 0, .36, lay, 1, tmp3); const w = xform(m, [tmp3.x, tmp3.y, tmp3.z], 0), [sx, sy, sz] = screenOf(...w);
     const back = lay < .5 && Math.hypot(w[0] - cam.x, w[2] - cam.z) > dC;
-    cLabels[n].style.opacity = sz < 1 ? (gv*(has ? 1 : .45)*(back ? .35 : 1)).toFixed(2) : '0';
+    labelFade(cLabels[n], sz < 1 ? gv*(has ? 1 : .45)*(back ? .35 : 1) : 0, kf);
     cLabels[n].style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`;
   });
   G.guides.forEach((L, n) => {
@@ -5943,7 +5948,7 @@ function placeGenomeLabels(gv){
       if (sz < 1 && (!best || sx < best[0])) best = [sx, sy];
       if (lay > .5) break;
     }
-    const el = hLabels[n]; el.style.opacity = best ? (gv*.9).toFixed(2) : '0';
+    const el = hLabels[n]; labelFade(el, best ? gv*.9 : 0, kf);
     if (best) el.style.transform = `translate(${best[0].toFixed(1)}px, ${best[1].toFixed(1)}px)`;
   });
 }
