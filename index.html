@@ -862,7 +862,7 @@ const simNow = () => simT0 + (performance.now() - perfT0) * SPEED;
 
 const RE = 6371.0, MU = 398600.4418, DEG = Math.PI / 180;
 const BRAIN_HALF = 1.3, DNA_HALF = 1.08;
-const BRAIN_FRAME = 1.85, DNA_FRAME = 1.62, GWAS_FRAME = 2.3;
+const EARTH_FRAME = 2.55, BRAIN_FRAME = 1.85, DNA_FRAME = 1.62, GWAS_FRAME = 2.3;
 const G_R0 = 1.45, G_LX = 5.4;
 const PAL = {
   leo:'#FFC98A', meo:'#7FD6FF', geo:'#E4EEFF', heo:'#FF7C9E', ember:'#FF5B3A', bone:'#ECE6DA',
@@ -5427,7 +5427,7 @@ function resize(){
   U.uPR.value = renderer.getPixelRatio();
   if (U.uAspect) U.uAspect.value = w / h;
   portrait = w / h < .8;
-  dCos = fitDist(portrait ? 2.25 : 2.35); { const tv = Math.tan(camera.fov/2*DEG), w = Math.min(.8*tv*camera.aspect, .9*tv); dEarth = Math.sqrt(1 + 1/(w*w)); }   // (the globe spans 80% of the screen's width; on a wide screen, 90% of its height, so it is never cut) dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
+  dCos = fitDist(portrait ? 2.25 : 2.35); dEarth = fitDist(portrait ? 2.2 : EARTH_FRAME); dBrain = fitDist(BRAIN_FRAME); dDna = fitDist(DNA_FRAME); dGwas = fitDist(portrait ? 2.2 : GWAS_FRAME); dSmrt = fitDist(portrait ? 1.9 : 2.25); dSmrt0 = fitDist(portrait ? 1.72 : 1.9); dZmw = fitDist(portrait ? 1.78 : 1.62); dSort = fitDist(portrait ? 1.62 : 2.3); dAmy = fitDist(portrait ? 1.02 : 1.62); dNeu = fitDist(portrait ? 1.3 : 2.02); dChr = fitDist(portrait ? 1.82 : 1.9);
   { const gut = clamp(w*.024, 16, 32); panelR = w > 760 ? gut + Math.min(340, w - 2*gut) + 16 : 0; }   // the panel's resting width, maximized or not
   { // the repair system is a flat disc seen square on; fit every planet into the free part of the screen
     let aw, ah;
@@ -5515,10 +5515,10 @@ const intro = { t: 0, from: new THREE.Vector3(.35, .55, 1).normalize(), to: new 
 let fly = null, userMoved = false;
 controls.addEventListener('start', () => { userMoved = true; camFly = null; });
 const EARTH_FACE = (() => { const la = 42*DEG, lo = 58*DEG; return new THREE.Vector3(Math.cos(la)*Math.cos(lo), Math.sin(la), -Math.cos(la)*Math.sin(lo)); })();   // (Europe and Asia, the side the flight in from space always shows)
-const ORB_IN = { done: true, t: -1 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
+const ORB_IN = { done: true, t: -1, g: 0 };                       // (false while the orbit chapter is being reached from space: it opens on that face, then turns to the visitor)
 const earthFaceDir = g => EARTH_FACE.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), g);
 const EARTH_SPIN = .045;                                     // (radians a second: a turn in about two and a half minutes, day and night sweeping across)
-const orbitDir = () => visitor ? visitorCamDir(earth.rotation.y, ORB_IN.done ? 1 : smooth(clamp((Sd + .15)/.15, 0, 1))) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns; over the last 15% of the zoom it curves up from the equator to over the tag)
+const orbitDir = () => visitor ? visitorCamDir(ORB_IN.g, ORB_IN.done ? 1 : smooth(clamp((Sd + .15)/.15, 0, 1))) : earthFaceDir(earth.rotation.y);   // (the approach is aimed from the start at where the visitor is, as the Earth turns; over the last 15% of the zoom it curves up from the equator to over the tag)
 function visitorCamDir(gmstAngle, over = 0){                 // (on the equator at the visitor's longitude; over: 0..1 of the way up to straight above the tag)
   const v = visitorLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), gmstAngle);
   const a = Math.atan2(v.x, v.z), el = +over*clamp(Math.asin(v.y), -80*DEG, 80*DEG);
@@ -5606,6 +5606,10 @@ renderer.setAnimationLoop(() => {
   // the chapter, or the way between two
   if (SCR.on){ S += (SCR.target - S)*Math.min(1, dt*6); if (Math.abs(SCR.target - S) < 1e-4) S = SCR.target; Sd = S; if (tNow - SCR.t > SCR.idle && !SCR.hold) scrSettle(tNow); }
   else S = Sd = navStage(tNow);
+  // the Earth chapter's aim, as the Earth's turn it is taken at: on the way in from space it starts east of the tag and closes on it as
+  // the Earth is reached, so the Earth is seen turning while the camera comes in over the tag; from arrival it holds still, and the
+  // Earth turns on under it (from the brain, it is the turn as the Earth comes back into view)
+  { if (Sd < -.002) ORB_IN.g = earth.rotation.y + .5*(1 - smooth(clamp((Sd + .4)/.4, 0, 1))); else if (Sd > .5) ORB_IN.g = earth.rotation.y; }
   if (nav.busy || SCR.on) navSettle = 1.8; else navSettle -= dt;          // (counted in frame time, so a slow device gets as many steps)
   const inTransit = nav.busy || navSettle > 0 || Math.abs(Sd - Math.round(Sd)) > .002;   // only a real transition steers the camera
   m1 = clamp(Sd, 0, 1); mAmy = clamp(Sd - 1, 0, 1); mSort = clamp(Sd - 2, 0, 1); mCell = clamp(Sd - 3, 0, 1); mNucl = clamp(Sd - 4, 0, 1);
@@ -5823,9 +5827,9 @@ renderer.setAnimationLoop(() => {
 
     fly = null;
   } else if (fly && (!userMoved || fly.force) && mode === 0){
-    if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); }
+    if (!fly.from){ fly.from = camera.position.clone().normalize(); fly.d = camera.position.length(); ORB_IN.g = earth.rotation.y; }
     fly.t = Math.min(1, fly.t + dt/(fly.dur || 2.6));
-    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(earth.rotation.y, true) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(fly.d));
+    camera.position.copy(fly.from.clone().lerp(visitor ? visitorCamDir(ORB_IN.g, true) : dirAt(0, 24*DEG), easeIO(fly.t)).normalize().multiplyScalar(fly.d));
     if (fly.t >= 1) fly = null;
   }
   if (Sd < -.5){ ORB_IN.done = false; ORB_IN.t = -1; }
