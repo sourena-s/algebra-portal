@@ -3137,6 +3137,8 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
 const GINTRO = { t: 0, done: false, chosen: false, lf: 1 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
+let gFlatT = 1;                                                    // (once the arrival is over: how flat the ring is to be; the ring button lays it flat)
+const gFlatNow = () => GINTRO.done ? gFlatT : U.uGFlat.value;
 const labelsEl = $('labels');
 // a finger that lands on a label is a tap on that label, unless a second finger joins it: then both go to the scene, so a
 // two-finger pan or pinch works wherever it starts. (Labels sit above the canvas and would otherwise swallow the gesture.)
@@ -3214,8 +3216,11 @@ function setLayout(v){
   layoutT = v; $('layRing').setAttribute('aria-pressed', String(v === 0)); $('layLine').setAttribute('aria-pressed', String(v === 1));
   if (focusK >= 0) setTimeout(() => focusLocus(focusK, { keepPin: true }), 1200); else flyTo(presetPos(ST.GWAS, v), presetTarget(ST.GWAS));
 }
-$('layRing').addEventListener('click', () => { GINTRO.chosen = true; setLayout(0); });
-$('layLine').addEventListener('click', () => { GINTRO.chosen = true; setLayout(1); });
+// the buttons: the ring is the flat ring, seen from straight above (zoom and pan, no turning); the line can be turned as well.
+// (a press ends the arrival's sequence where it stands)
+const layBtn = v => { Object.assign(GINTRO, { chosen: true, done: true, lf: 1 }); gFlatT = 1; setLayout(v); };
+$('layRing').addEventListener('click', () => layBtn(0));
+$('layLine').addEventListener('click', () => layBtn(1));
 $('exReset').addEventListener('click', () => { $('exThr').value = 0; GU.uGThresh.value = 0; $('exThrV').textContent = '0.0'; $('exFm').checked = false; GU.uGFm.value = 0; pinned = null; focusLocus(-1); });
 $('exThr').addEventListener('input', e => { GU.uGThresh.value = +e.target.value; $('exThrV').textContent = (+e.target.value).toFixed(1); });
 $('exFm').addEventListener('change', e => { GU.uGFm.value = e.target.checked ? 1 : 0; });
@@ -5452,7 +5457,7 @@ function gExtent(){
 }
 // the ring's view: flat, straight down onto it and all of it in frame; standing, from nearly level (flat 1 -> 0 as it rises)
 function gwasRingSph(){
-  const e = gExtent(), f = U.uGFlat.value, sm = portrait ? .86 : 1;   // (on a phone, clear of the chapter strip at the right edge)
+  const e = gExtent(), f = gFlatNow(), sm = portrait ? .86 : 1;   // (on a phone, clear of the chapter strip at the right edge)
   return [lerp(8, 89.5, f)*DEG, lerp(fitDist((G_R0 + .5)/sm), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
 }
 function presetPos(k, lay = layoutT){
@@ -5475,7 +5480,7 @@ function dnaTarget(){
   return new THREE.Vector3(Math.cos(a), 0, -Math.sin(a)).multiplyScalar(sx*wpp).add(new THREE.Vector3(0, sy*wpp, 0));
 }
 function presetTarget(k){
-  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - U.uGFlat.value), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
+  return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - gFlatNow()), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
     : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.4 : -.36, 0) : new THREE.Vector3();
 }
 const sph = new THREE.Spherical();
@@ -5692,7 +5697,7 @@ renderer.setAnimationLoop(() => {
   // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
   // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
   if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
-    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1 }); gFlatT = 1; layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
@@ -5704,9 +5709,10 @@ renderer.setAnimationLoop(() => {
     if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
       sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target)); controls.target.lerp(tg, k);
       sph.phi = lerp(sph.phi, Math.PI/2 - e, k); sph.radius = lerp(sph.radius, d, k); camera.position.copy(controls.target).add(tmpV.setFromSpherical(sph)); }
-    if (T >= RISE + 3){ GINTRO.done = true;   // (the standing ring holds 3 s before it unrolls)
+    if (T >= RISE + 3){ GINTRO.done = true; gFlatT = U.uGFlat.value;   // (the standing ring holds 3 s before it unrolls)
       if (!GINTRO.chosen && layoutT === 0 && focusK < 0) setLayout(1); }
   }
+  if (GINTRO.done) U.uGFlat.value += (gFlatT - U.uGFlat.value)*Math.min(1, dt*2.5);   // (the ring button lays the ring down flat)
   U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
   // the repair system: orbits, focus and selection
   netGroup.updateMatrixWorld(true);
@@ -5859,7 +5865,10 @@ renderer.setAnimationLoop(() => {
     if (Sd > .5) ORB_IN.done = true;
     else if (ORB_IN.t < 0){ if (!nav.busy && Math.abs(Sd) < .01) ORB_IN.t = 0; }   // (as soon as the Earth is reached)
     else { ORB_IN.t += dt; if (ORB_IN.t >= (RM ? 0 : .3)){ ORB_IN.done = true; fly = { t: 0, from: null, d: 0, dur: RM ? .01 : 1.2, force: true }; } } }   // (only tidies up any lag: the approach has already curved over the tag)
-  { const want = !RM && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
+  const flatRing = Math.abs(Sd - ST.GWAS) < .5 && layoutT === 0 && GINTRO.done && gFlatT > .5;   // (the flat ring: zoom and pan, no turning)
+  controls.enableRotate = !flatRing;                                              // (a drag there pans instead: a finger, or the left button)
+  controls.mouseButtons.LEFT = flatRing ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE; controls.touches.ONE = flatRing ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+  { const want = !RM && !flatRing && !hovered && !pinned && intro.t >= 1 && !camFly && focusK < 0 && !!AR_OK[Math.floor(Sd)] && !!AR_OK[Math.ceil(Sd)] && (Math.round(Sd) !== ST.SMRT || smrtCam.on >= 1);   // (the SMRT Cell holds square until the camera has come into view)
     arEase += ((want ? 1 : 0) - arEase)*Math.min(1, dt*(want ? 1.6 : 5));          // (the turn eases in and out, never stops or starts dead)
     controls.autoRotate = arEase > .002; controls.autoRotateSpeed = .28*arEase*(Math.round(Sd) === ST.SMRT ? smooth(clamp((smrtCam.after || 0)/3, 0, 1)) : 1); }   // (and then eases into its turn)
   if (!NV.live){
