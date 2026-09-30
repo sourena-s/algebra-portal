@@ -8,7 +8,7 @@ The page and its code are in `index.html` (~580 KB). Large assets live beside it
 
 - `assets/earth/{day,night,clouds}-{px,nx,py,ny,pz,nz}.jpg`: the Earth's cube maps (NASA Blue Marble, Black Marble and clouds, reprojected from equirectangular so the globe has no seam), sampled by direction in `EARTH_PHOTO`.
 - `assets/*.jpg`: the planets (Mercury to Neptune, no Earth) and the Moon; `assets/saturn-rings.png`; `assets/moons/*.jpg`, the moons' maps (credits in `assets/moons/CREDITS.md`).
-- `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (fetched in parallel at start via `BIN`) and `tle`, an old satellite snapshot, no longer used. Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
+- `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (EADB et al. 2026), `gwas2` (Uffelmann et al. 2026, GRCh37, built by `tools/build-gwas2.ps1`) (fetched in parallel at start via `BIN`) and `tle`, an old satellite snapshot, no longer used. Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
 - `window.NOOS_DATA` (one long line near the import map) keeps only the small inline data: the `net` and `land` datasets, their metadata, and the time-zone table.
@@ -40,3 +40,5 @@ Then open http://localhost:8080. `serve.ps1` is a dependency-free static server,
 - The splash says only "Loading…"; `ld()` is a no-op.
 - IP geolocation runs only after consent from the privacy notice (`#consent`, localStorage key `algebra-geo`); without it, `locate()` falls back to the time zone.
 - Developer credit: Sourena Soheili-Nezhad, in `<meta name="author">` only (not in the chapter titles).
+- The Manhattan chapter holds two studies: `GA` (EADB) and `GB` (Uffelmann, `mir = 1`). `G` is the one on show. The flat ring shows only `G`; the button filling its inner circle (`#gSwap`, `switchStudy`) spins it 20 turns in 3 s and swaps the studies mid-turn. The standing ring and the line show both, `GB` mirrored below. Particles `[0, NS)` carry `G` and `[NS, 2NS)` the other study (`NP >= 2*NS`); `showStudy` trades the two sets. Both studies share the GRCh38 genome axis so their positions match.
+- Middle- or right-drag pans the scene; left-drag turns it; the wheel zooms.
