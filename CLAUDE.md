@@ -1,6 +1,6 @@
 # ALGEBRA
 
-**ALGEBRA: Alzheimer's disease and genomic breakdown in ageing.** A single-page interactive 3D website (Three.js / WebGL). It zooms from the Laniakea supercluster and the Milky Way down to Earth and its circulating atmosphere, then into the human brain and its seven resting-state networks, the amygdalae and their nuclei, a single neuron's nucleus and DNA, PacBio SMRT Cell sequencing, a 3D Manhattan plot of Alzheimer's disease GWAS, an all-atom DNA double helix with ageing-related lesions, and DNA repair genes.
+**ALGEBRA: Alzheimer's disease and genomic breakdown in ageing.** A single-page interactive 3D website (Three.js / WebGL). It zooms from the Laniakea supercluster and the Milky Way down to Earth, which shrinks into the nucleus of a single neuron (with its oligodendrocytes); out to the human brain and its seven resting-state networks; the amygdalae, whose nuclei are sorted by laser; the sorted neurons' nuclei gathering into one nucleus and its DNA; PacBio SMRT Cell sequencing, a 3D Manhattan plot of Alzheimer's disease GWAS, an all-atom DNA double helix with ageing-related lesions, and DNA repair genes.
 
 ## Layout
 
@@ -42,3 +42,4 @@ Then open http://localhost:8080. `serve.ps1` is a dependency-free static server,
 - Developer credit: Sourena Soheili-Nezhad, in `<meta name="author">` only (not in the chapter titles).
 - The Manhattan chapter holds two studies: `GA` (EADB) and `GB` (Uffelmann, `mir = 1`). `G` is the one on show. The flat ring shows only `G`; the button filling its inner circle (`#gSwap`, `switchStudy`) spins it 20 turns in 3 s and swaps the studies mid-turn. The standing ring and the line show both, `GB` mirrored below. Particles `[0, NS)` carry `G` and `[NS, 2NS)` the other study (`NP >= 2*NS`); `showStudy` trades the two sets. Both studies share the GRCh38 genome axis so their positions match.
 - Middle- or right-drag pans the scene; left-drag turns it; the wheel zooms.
+- Chapters (`ST`, in story order): Universe -1, Earth 0, Neuron 1, Brain 2, Amygdala 3, Sorting 4, Nucleus 5, One well 6, SMRT Cell 7, Genome 8, DNA 9, Repair 10. Each transition has its own progress variable, and the particle shader runs them as one chain in the same order: `mCell` Earth → neuron (the Earth photograph shrinks into its nucleus), `m1`/`uMorph` neuron → brain, `mAmy`, `mSort`, `mNucl` sorter → nucleus (the neurons' tube pours out into it), then `mZm`, `mSm`, `mGw`, `mDna`, `mNet`.

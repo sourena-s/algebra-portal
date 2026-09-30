@@ -589,7 +589,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <span class="st-cortex" data-split>Studying the ageing brain</span>
     <span class="st-amygdala" data-split>The amygdalae</span>
     <span class="st-sorter" data-split>Sorting its nuclei</span>
-    <span class="st-neuron" data-split>Extracting neuronal DNA</span>
+    <span class="st-neuron" data-split>One of 86 billion neurons</span>
     <span class="st-chromatin" data-split>Inside its nucleus</span>
     <span class="st-zmw" data-split>Inside one well</span>
     <span class="st-smrt" data-split>The SMRT Cell</span>
@@ -600,10 +600,10 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   <div class="lede anim" style="--d:520ms">
     <p data-ch="-1" id="ledeCosmos">Maps lead to discovery. Beyond them, we explore.</p>
     <p data-ch="0" id="ledeOrbit"></p>
-    <p data-ch="1" id="ledeCortex">An ageing brain. Does its DNA break down in Alzheimer's disease?</p>
-    <p data-ch="2" id="ledeAmy">From 90 donors, the most vulnerable tissue first: the amygdalae.</p>
-    <p data-ch="3" id="ledeSort">Nuclei sorted by laser into neurons and oligodendrocytes.</p>
-    <p data-ch="4" id="ledeCell"></p>
+    <p data-ch="1" id="ledeCell"></p>
+    <p data-ch="2" id="ledeCortex">An ageing brain. Does its DNA break down in Alzheimer's disease?</p>
+    <p data-ch="3" id="ledeAmy">From 90 donors, the most vulnerable tissue first: the amygdalae.</p>
+    <p data-ch="4" id="ledeSort">Nuclei sorted by laser into neurons and oligodendrocytes.</p>
     <p data-ch="5" id="ledeChrom">46 chromosomes, gaining 10 to 20 mutations a year.</p>
     <p data-ch="6" id="ledeZmw">One DNA circle, read round and round in one well.</p>
     <p data-ch="7" id="ledeSmrt">One of 25 million wells on a SMRT Cell, imaged as they read.</p>
@@ -690,7 +690,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 </section>
 
 <section class="hud hud-br anim" style="--d:760ms">
-  <div class="legend" data-ch="1">
+  <div class="legend" data-ch="2">
     <div class="lg-title">FreeSurfer fsaverage · MNI305</div>
     <div class="rows">
       <div class="row" tabindex="0" data-focus="10" style="color:var(--gyri)"><span class="k"><i></i>CTX</span><span class="n">Cortex, pial surface</span><span class="v" id="cCtx">0</span></div>
@@ -700,7 +700,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     </div>
     <p class="note">The seven networks fire in turn; hover a dot to isolate one. Illustrative, not recorded activity.</p>
   </div>
-  <div class="legend" data-ch="2">
+  <div class="legend" data-ch="3">
     <div class="lg-title">FreeSurfer aseg · fsaverage</div>
     <div class="rows">
       <div class="row" style="color:#FFD23F"><span class="k"><i></i>L-AMY</span><span class="n">Left-Amygdala · label 18</span><span class="v">1,941 mm³</span></div>
@@ -710,7 +710,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     </div>
     <p class="note">Every 1 mm voxel of both amygdalae in the atlas. With the entorhinal cortex they are among the structures Alzheimer's disease reaches first; 500 to 1,000 mg is taken from each donor.</p>
   </div>
-  <div class="legend" data-ch="3">
+  <div class="legend" data-ch="4">
     <div class="lg-title">Fluorescence-activated nuclei sorting</div>
     <div class="rows">
       <div class="row" style="color:#4DA3FF"><span class="k"><i></i>NEU</span><span class="n">NeuN⁺ nuclei · neurons</span><span class="v" id="sNeu">0</span></div>
@@ -719,15 +719,15 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     </div>
     <p class="note">Antibodies to NeuN and OLIG2 make each nucleus glow; its light at the lasers charges its droplet and the plates bend it into a tube. In the seed phase, 10 vulnerability markers (RELN the best) and 5 DNA-damage markers such as 53BP1 were also optimised.</p>
   </div>
-  <div class="legend" data-ch="4">
-    <div class="lg-title">One sorted neuron</div>
+  <div class="legend" data-ch="1">
+    <div class="lg-title">One neuron</div>
     <div class="rows">
-      <div class="row" style="color:#4DA3FF"><span class="k"><i></i>NUC</span><span class="n">Nucleus, the part that was sorted</span><span class="v">≈ 10 µm</span></div>
+      <div class="row" style="color:#4DA3FF"><span class="k"><i></i>NUC</span><span class="n">Nucleus, the part ALGEBRA sorts</span><span class="v">≈ 10 µm</span></div>
       <div class="row" style="color:#8CF5DA"><span class="k"><i></i>DEND</span><span class="n">Dendrites and their spines</span><span class="v">apical · basal</span></div>
       <div class="row" style="color:#FFD08A"><span class="k"><i></i>AXON</span><span class="n">Axon, myelinated</span><span class="v">1</span></div>
       <div class="row" style="color:#B8A8FF"><span class="k"><i></i>SYN</span><span class="n">Terminal boutons on other cells' dendrites</span><span class="v">20</span></div>
     </div>
-    <p class="note">A sorter keeps only nuclei. The cell drawn around this one is the kind it came from, a pyramidal-like principal neuron of the basolateral amygdala, shown for scale and shape; it is illustrative, not reconstructed.</p>
+    <p class="note">A pyramidal-like principal neuron of the basolateral amygdala, the kind whose nuclei ALGEBRA sorts, with the oligodendrocytes that myelinate its axon; shown for scale and shape, it is illustrative, not reconstructed.</p>
   </div>
   <div class="legend" data-ch="5">
     <div class="lg-title">Down to the double helix</div>
@@ -794,10 +794,10 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 <nav class="rail" id="rail" aria-label="Chapters">
   <button data-go="-1" class="on"><span>I · Universe</span><i></i></button>
   <button data-go="0"><span>II · Earth</span><i></i></button>
-  <button data-go="1"><span>III · Brain</span><i></i></button>
-  <button data-go="2"><span>IV · Amygdala</span><i></i></button>
-  <button data-go="3"><span>V · Sorting</span><i></i></button>
-  <button data-go="4"><span>VI · Neuron</span><i></i></button>
+  <button data-go="1"><span>III · Neuron</span><i></i></button>
+  <button data-go="2"><span>IV · Brain</span><i></i></button>
+  <button data-go="3"><span>V · Amygdala</span><i></i></button>
+  <button data-go="4"><span>VI · Sorting</span><i></i></button>
   <button data-go="5"><span>VII · Nucleus</span><i></i></button>
   <button data-go="6"><span>VIII · One well</span><i></i></button>
   <button data-go="7"><span>IX · SMRT Cell</span><i></i></button>
@@ -815,7 +815,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
       <button class="step-b" id="stPlay" type="button" aria-label="Play the chapters" aria-pressed="false"><i class="st-pp" aria-hidden="true"></i></button>
       <button class="step-next first" id="stNext" type="button" title="Next chapter (→ or Space)">
         <em class="st-lbl" aria-hidden="true">Slide</em><span class="st-track" id="stTrack" aria-hidden="true"><i class="st-fill"></i><i class="st-thumb"></i></span><span class="step-n"><b id="stNum">I</b>/ XII</span>
-        <span class="step-t"><b id="cueB">Next</b><small id="cueS">Fold the orbit into a brain</small></span>
+        <span class="step-t"><b id="cueB">Next</b><small id="cueS">Through the Solar System to Earth</small></span>
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg>
         <i class="step-bar" id="stBar"></i>
       </button>
@@ -1102,7 +1102,7 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 const U = {
-  uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
+  uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uBg: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
   uSun: { value: new THREE.Vector3(1, 0, 0) }, uFocusId: { value: -1 }, uFocusAmt: { value: 0 },
   uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGAct: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
 };
@@ -1110,7 +1110,7 @@ const U = {
 // ---------------------------------------------------------------- backdrop
 {
   const m = new THREE.ShaderMaterial({
-    uniforms: { uTime: U.uTime, uMorph: U.uMorph, uDna: U.uDna, uGw: U.uGw, uAspect: { value: 1 } },
+    uniforms: { uTime: U.uTime, uMorph: U.uBg, uDna: U.uDna, uGw: U.uGw, uAspect: { value: 1 } },   // (uMorph here: past the Earth)
     vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,1.,1.); }`,
     fragmentShader: `
       varying vec2 vUv; uniform float uTime, uMorph, uDna, uGw, uAspect;
@@ -1165,9 +1165,9 @@ const EARTH_PHOTO = (() => {
   // cube maps (six faces each, reprojected from the equirectangular maps), sampled by direction: no seam, no pinching at the poles
   const cubeLd = new THREE.CubeTextureLoader().setPath('assets/earth/'), tex = n => { const t = cubeLd.load(['px', 'nx', 'py', 'ny', 'pz', 'nz'].map(f => `${n}-${f}.jpg`)); t.anisotropy = 4; return t; };
   const day = tex('day'), night = tex('night'), cloud = tex('clouds'); day.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.ShaderMaterial({ uniforms: { uDay: { value: day }, uNight: { value: night }, uCloud: { value: cloud }, uSun: { value: new THREE.Vector3(1, 0, 0) }, uOn: { value: 0 }, uT: U.uTime }, transparent: true, depthWrite: false,
+  const m = new THREE.ShaderMaterial({ uniforms: { uDay: { value: day }, uNight: { value: night }, uCloud: { value: cloud }, uSun: { value: new THREE.Vector3(1, 0, 0) }, uOn: { value: 0 }, uBlue: { value: 0 }, uT: U.uTime }, transparent: true, depthWrite: false,
     vertexShader: `varying vec3 vO, vN, vW; void main(){ vO = normal; vN = normalize(mat3(modelMatrix)*normal); vec4 w = modelMatrix*vec4(position, 1.); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
-    fragmentShader: `uniform samplerCube uDay, uNight, uCloud; uniform vec3 uSun; uniform float uOn, uT; varying vec3 vO, vN, vW;
+    fragmentShader: `uniform samplerCube uDay, uNight, uCloud; uniform vec3 uSun; uniform float uOn, uBlue, uT; varying vec3 vO, vN, vW;
       void main(){ vec3 N = normalize(vN), L = normalize(uSun), V = normalize(cameraPosition - vW), O = normalize(vO);
         float ca = cos(uT*.0025), sa = sin(uT*.0025);                                                // (the clouds drift eastward round the pole axis)
         float d = dot(N, L), day = smoothstep(-.12, .18, d), cl = textureCube(uCloud, vec3(O.x*ca + O.z*sa, O.y, O.z*ca - O.x*sa)).r;
@@ -1177,6 +1177,9 @@ const EARTH_PHOTO = (() => {
         float h = pow(1. - max(dot(N, V), 0.), 3.);
         c += vec3(.3, .55, 1.)*h*(.05 + .6*smoothstep(-.3, .6, d));                                 // the atmosphere at the limb
         c += vec3(.9, .95, 1.)*pow(max(dot(reflect(-L, N), V), 0.), 40.)*.25*(1. - cl)*day;          // sun glint
+        // shrinking into a neuron, it becomes that neuron's nucleus: the NeuN blue of its envelope, lit from within, brightest at the rim
+        vec3 nuc = vec3(.3, .64, 1.)*(.28 + 1.1*pow(1. - max(dot(N, V), 0.), 1.6)) + vec3(.1, .2, .32)*textureCube(uDay, O).b;
+        c = mix(c, nuc, uBlue);
         gl_FragColor = vec4(c, uOn); }` });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(1.004, 96, 64), m); const grp = new THREE.Group(); scene.add(grp); mesh.renderOrder = 6; mesh.visible = false; grp.add(mesh);
   const halo = new THREE.Mesh(new THREE.SphereGeometry(1.035, 64, 48), new THREE.ShaderMaterial({ uniforms: { uSun: m.uniforms.uSun, uOn: { value: 0 } }, transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
@@ -1913,15 +1916,27 @@ function initParticles(){
         vec3 bP = (uBrainMat*vec4(aBrain, 1.)).xyz;
         vec3 bN = normalize(mat3(uBrainMat)*aNorm);
 
-        // I -> II: orbit to brain
+        vec3 p = sP;
+        float pid = float(gl_VertexID);
+        // II -> III: the Earth, drawn as its photograph, shrinks into the nucleus of one neuron (the photograph is drawn on its own);
+        // the neuron grows out of it, nucleus first, then its soma, dendrites and axon, from the middle outward
+        float eN = 0., fadeN = 1.;
+        vec3 ncC = vec3(0.); float ncA = 0., ncS = .004;
+        if (uCell > 0. && uMorph < 1.){
+          vec4 nd = texelFetch(uShape, ivec2(gl_VertexID % uShapeW, gl_VertexID / uShapeW), 0);
+          float part = floor(nd.w), fr = fract(nd.w);
+          float ts = part < 1.5 ? .4 + .08*aRnd.y : part < 2.5 ? .5 + .07*aRnd.y : part < 10.9 ? .55 + .28*fr + .05*aRnd.y : .78 + .1*aRnd.y;
+          if (uCell >= ts){ float g = smoothstep(ts, ts + .14, uCell); p = uCellC + mat3(uCellMat)*nd.xyz*mix(.9, 1., g); eN = 1.; fadeN = smoothstep(ts, ts + .1, uCell); }
+          neuronLook(part, fr, ncC, ncA, ncS);
+        }
+        // III -> IV: the neuron's points arc out and gather into the brain
         float e = eio(clamp((uMorph - aRnd.x*.42)/.58, 0., 1.));
         float fly = e*(1. - e)*4.;
-        vec3 mid = .5*(sP + bP);
+        vec3 mid = .5*(p + bP);
         vec3 tang = normalize(cross(vec3(0., 1., 0.), mid) + vec3(1e-3, 0., 0.));
         vec3 ctrl = mid*(1.2 + .55*aRnd.z) + tang*(.35 + 1.05*aRnd.y) + vec3(0., (aRnd.w - .5)*.9, 0.);
-        vec3 p = mix(mix(sP, ctrl, e), mix(ctrl, bP, e), e);
+        p = mix(mix(p, ctrl, e), mix(ctrl, bP, e), e);
         p += h3(aRnd.x*97.3)*.07*fly*sin(uTime*1.7 + aRnd.y*6.28);
-        float pid = float(gl_VertexID);
         // II -> III: both amygdalae (FreeSurfer aseg 18 and 54) light up inside the brain, drawn from the cortex nearest them;
         // then they leave the brain and drop into a tube, which gathers from the brain beside it
         float left = step(4.5, aCube.w), cw = aCube.w - 4.*left, mem = step(.5, cw), bnd = step(2.5, cw), role = cw - 2.*bnd, r4t = rn(pid, 14.);
@@ -1934,7 +1949,7 @@ function initParticles(){
         }
         // III -> IV: the tube goes to the top of the sorter with its sample, and the rest of the brain becomes the instrument
         float eS = 0., flyS = 0., edp = 0., k3F = 0.; vec3 k3P = vec3(0.), k3C = vec3(0.); float k3A = 0., k3S = .004;
-        if (uCell < 1. && ((memD > .5 || isTube > .5) ? uDrop > 0. : uSort > 0.)){   // (once the neuron has formed, nothing of this is left)
+        if (uNucl < 1. && ((memD > .5 || isTube > .5) ? uDrop > 0. : uSort > 0.)){   // (once the chromatin has formed, nothing of this is left)
           sorterPart(pid, memD > .5 ? role : 0., k3P, k3C, k3A, k3S, k3F);
           vec3 w3 = ((k3F > .5 ? uTubeM : uSortMat)*vec4(k3P, 1.)).xyz;
           if (memD > .5){                                 // out of the brain, up and over, and down into the tube
@@ -1961,55 +1976,42 @@ function initParticles(){
             p = mix(mix(p, c3s, eS), mix(c3s, w3, eS), eS);
           }
         }
-        // IV -> V: into one nucleus in the neurons' tube. The sorter swells past the view as it fades; the neuron grows out of that one
-        // point, nucleus first, then its soma, dendrites and axon, from the middle outward
-        float eN = 0., fadeN = 1., eC = 0., fadeC = 1.;
-        vec3 ncC = vec3(0.), cC = vec3(0.); float ncA = 0., ncS = .004, cA = 0., cS = .004;
-        if (uCell > 0. && uNucl < 1.){
-          vec4 nd = texelFetch(uShape, ivec2(gl_VertexID % uShapeW, gl_VertexID / uShapeW), 0);
-          float z = eio(uCell), Zs = pow(uZA, z), part = floor(nd.w), fr = fract(nd.w);
-          vec3 Ft = mix(uFoc, uCellC, z);
-          p = Ft + (p - uFoc)*Zs;
-          float ts = part < 1.5 ? .03 + .05*aRnd.y : part < 2.5 ? .1 + .1*aRnd.y : part < 10.9 ? .14 + .38*fr + .08*aRnd.y : .42 + .2*aRnd.y;
-          if (uCell >= ts){ p = Ft + mat3(uCellMat)*nd.xyz*(Zs/uZA); eN = 1.; fadeN = smoothstep(ts, ts + .14, uCell); }
-          else fadeN = 1. - smoothstep(ts - .14, ts, uCell);
-          neuronLook(part, fr, ncC, ncA, ncS); ncA *= clamp(pow(Zs/uZA, .75)*1.4, .04, 1.);   // (a cloud still small is dense: dim it)
-        }
-        // V -> VI: into that nucleus, in four steps. Everything but the nucleus is scraped away, the tips of the dendrites and the
-        // axon's terminals first and the soma last. The view dives into the nucleus, and its DNA, each chromosome in its own
-        // territory, shows ever more clearly through the thinning envelope. The envelope peels away, from the side facing the viewer
-        // round to the back. Then on down one fibre of chromosome 19: the chromatin swells past as a haze and the fibre resolves into
-        // the double helix, wound round its histones
+        float eC = 0., fadeC = 1.;
+        vec3 cC = vec3(0.); float cA = 0., cS = .004;
+        // VI -> VII: from the sorted neurons into one nucleus, in three steps. The nuclei in the neurons' tube pour out of it and
+        // gather into one nucleus, its envelope first, then its DNA, each chromosome in its own territory, while the rest of the sorter
+        // fades and more of the nucleus streams out of the tube. The envelope peels away, from the side facing the viewer round to the
+        // back. Then on down one fibre of chromosome 19: the chromatin swells past as a haze and the fibre resolves into the double
+        // helix, wound round its histones
         float eH = 0., fadeH = 1., hW = 0.; vec3 hC = vec3(0.); float hA = 0., hS = .004;
         if (uNucl > 0. && uSmrt < 1.){
           int third = (textureSize(uShape, 0).y)/3, ci = gl_VertexID + uShapeW*third, hi = gl_VertexID + 2*uShapeW*third;
           vec4 cd = texelFetch(uShape, ivec2(ci % uShapeW, ci / uShapeW), 0), hd = texelFetch(uShape, ivec2(hi % uShapeW, hi / uShapeW), 0);
-          vec4 nd1 = texelFetch(uShape, ivec2(gl_VertexID % uShapeW, gl_VertexID / uShapeW), 0);
-          float part1 = floor(nd1.w), fr1 = fract(nd1.w);
-          if (part1 > 1.5){                               // 1: scraped off, lifting away as it fades
-            float tsc = .01 + .14*(1. - fr1) + .05*aRnd.y, k = clamp((uNucl - tsc)/.1, 0., 1.);
-            p += (normalize(p - uCellC + 1e-4)*.8 + h3(aRnd.w*17.3)*.45)*.2*k*k;
-            ncA *= 1. - smoothstep(0., 1., k);
-          }
-          float z = eio(clamp((uNucl - .2)/.4, 0., 1.)), Zs = pow(uZB, z);   // 2: into the nucleus
-          p = uCellC + (p - uCellC)*Zs;
-          float ts = part1 < 1.5 ? .27 + .14*aRnd.y : cd.w > 49.5 ? (cd.w > 51.5 ? .2 : .12) + .1*aRnd.y : .2 + .3*aRnd.z;
-          if (uNucl >= ts){ p = uCellC + mat3(uChrMat)*cd.xyz*(Zs/uZB); eC = 1.; fadeC = smoothstep(ts, ts + .12, uNucl); }
-          else fadeC = 1. - smoothstep(ts - .12, ts, uNucl);
-          chromLook(cd.w, cC, cA, cS); cA *= clamp(pow(Zs/uZB, .75)*1.4, .06, 1.);
+          // 1: out of the tube. A nucleus lying in the neurons' tube leaves from where it lies; every other point, once the sorter has
+          // faded round it, from somewhere in that pile
+          float s4 = rn(pid, 14.), inVial = (1. - memD)*step(.57, s4)*step(s4, .83)*step(rn(pid, 11.), .47)*step(rn(pid, 12.), uFillT);
+          vec3 cW = uCellC + mat3(uChrMat)*cd.xyz;       // (its place in the nucleus, at its full size)
+          float ts = inVial > .5 ? .02 + .12*aRnd.y : cd.w > 49.5 ? (cd.w > 51.5 ? .2 : .12) + .08*aRnd.y : .14 + .28*aRnd.z;   // (the envelope first)
+          vec3 src = inVial > .5 ? p : (uSortMat*vec4(-.72 + (aRnd.x - .5)*.1, -1.77 + aRnd.y*max(.03, uFillT*.3), (aRnd.z - .5)*.1, 1.)).xyz;
+          float ev = eio(clamp((uNucl - ts)/.26, 0., 1.));
+          vec3 ctl = mix(src, cW, .45) + normalize(cW - uCellC + 1e-4)*.25*length(cW - src) + h3(aRnd.w*21.7)*.12;
+          if (uNucl >= ts){ p = mix(mix(src, ctl, ev), mix(ctl, cW, ev), ev); eC = smoothstep(ts, ts + .12, uNucl); fadeC = inVial > .5 ? 1. : smoothstep(ts, ts + .1, uNucl); }
+          else fadeC = inVial > .5 ? 1. : 1. - smoothstep(0., .12, uNucl);
+          float z = smoothstep(.2, .6, uNucl);
+          chromLook(cd.w, cC, cA, cS);
           vec3 nrm = normalize(p - uCellC + 1e-5); float front = dot(nrm, normalize(cameraPosition - uCellC));
           if (cd.w < 49.5){
-            cA *= smoothstep(.22, .56, uNucl)*mix(.5, 1., smoothstep(.56, .72, uNucl));   // the DNA comes through gradually as the view closes in, then in full
+            cA *= mix(.6, 1., smoothstep(.3, .56, uNucl))*mix(.5, 1., smoothstep(.56, .72, uNucl));   // the DNA comes through as the nucleus gathers, then in full
             if (cd.w >= 38. && cd.w < 39.){               // and the fibre the view will follow lights up before it goes there
               vec3 dq = cd.xyz - uFh; float hl = exp(-dot(dq, dq)/.01)*smoothstep(.52, .68, uNucl);
               cC = mix(cC, vec3(1.), .4*hl); cA *= 1. + 1.1*hl; }
           } else {                                        // the envelope, its pores and the nucleolus
             if (cd.w < 51.5) cA *= mix(1., .42, smoothstep(-.3, .8, front)*z);   // its near side thins as the view closes in
             float tm = cd.w > 51.5 ? .58 + .08*aRnd.w : .5 + .11*(1. - front) + .02*aRnd.w, km = clamp((uNucl - tm)/.08, 0., 1.), dq = (uNucl - tm)/.018;
-            p += (nrm*.7 + normalize(cameraPosition - uCellC)*.35 + h3(aRnd.x*29.1)*.3)*.8*km*km;   // 3: then it peels away
+            p += (nrm*.7 + normalize(cameraPosition - uCellC)*.35 + h3(aRnd.x*29.1)*.3)*.8*km*km;   // 2: then it peels away
             cA *= (1. - smoothstep(0., 1., km))*(1. + 2.2*exp(-dq*dq)*step(cd.w, 51.5));   // (its edge flares as it tears, a ring opening out)
           }
-          float z2 = eio(clamp((uNucl - .6)/.4, 0., 1.)), Zs2 = pow(uZH, z2);   // 4: down one fibre
+          float z2 = eio(clamp((uNucl - .6)/.4, 0., 1.)), Zs2 = pow(uZH, z2);   // 3: down one fibre
           vec3 Fw = uCellC + mat3(uChrMat)*uFh, Ft = mix(Fw, uCellC, z2);
           p = Ft + (p - Fw)*Zs2;
           hW = hd.w;
@@ -2113,7 +2115,7 @@ function initParticles(){
         // orbit
         vec3 sc = reg < .5 ? uLEO : reg < 1.5 ? uMEO : reg < 2.5 ? uGEO : uHEO;
         sc *= mix(1., .3, shade);
-        float orbA = aPrim*ok*.8*smoothstep(0., .1, uMorph);           // (the Earth's points: only once they start for the brain, as the photograph fades)
+        float orbA = 0.;                                               // (the Earth is its photograph: its points are never drawn)
         float orbS = .011;
         // brain
         float gy = smoothstep(.95, -.85, aInfo.x);
@@ -2184,10 +2186,11 @@ function initParticles(){
         float amS = mem > .5 ? .0078*(1. + .25*bnd) : brS*.9;
         // one chain, in the order of the story
         float dnaHalo = lit*ed*(1. - en);
-        vec3 col = mix(sc, bc, e); float al = mix(orbA, brA, e), sz = mix(orbS, brS, e)*(.8 + .4*aRnd.w)*(1. + fly*.5);
+        vec3 col = sc; float al = orbA, sz = orbS;
+        col = mix(col, ncC, eN); al = mix(al, ncA, eN)*fadeN; sz = mix(sz, ncS, eN);
+        col = mix(col, bc, e); al = mix(al, brA, e); sz = mix(sz, brS*(.8 + .4*aRnd.w)*(1. + fly*.5), e);
         col = mix(col, amC, eam); al = mix(al, amA, eam); sz = mix(sz, amS, eam);
         col = mix(col, k3C, eS); al = mix(al, k3A, eS); sz = mix(sz, k3S*(1. + flyS*.5), eS);
-        col = mix(col, ncC, eN); al = mix(al, ncA, eN)*fadeN; sz = mix(sz, ncS, eN);
         col = mix(col, cC, eC); al = mix(al, cA, eC)*fadeC; sz = mix(sz, cS, eC);
         col = mix(col, hC, eH); al = mix(al, hA, eH)*fadeH; sz = mix(sz, hS, eH);
         col = mix(col, kSC, es); al = mix(al*prevFade, kSA, es); sz = mix(sz, kSS*(1. + fly5*.5), es);
@@ -2315,8 +2318,14 @@ function satOrder(){
 const satPosOf = p => { const o = (aSat[p] | 0)*4; return texData[o+3] < -.5 ? [Math.random() - .5, Math.random() - .5, Math.random() - .5] : [texData[o], texData[o+1], texData[o+2]]; };
 const xform = (m, P, k) => [m[0]*P[k] + m[4]*P[k+1] + m[8]*P[k+2] + m[12], m[1]*P[k] + m[5]*P[k+1] + m[9]*P[k+2] + m[13], m[2]*P[k] + m[6]*P[k+1] + m[10]*P[k+2] + m[14]];
 const tmp3 = new THREE.Vector3();
+// the particles by where they stand in the neuron (as it is turned), in the bands the shapes use: the brain forms out of the neuron,
+// top to top and side to side
+function neuronOrder(){
+  const d = CU.uShape.value.image.data, ry = neuronGroup.rotation.y, c = Math.cos(ry), sn = Math.sin(ry);
+  return Int32Array.from(bandOrder(NP, (q, v) => { const k = q*4, x = d[k], z = d[k+2]; v[0] = c*x + sn*z; v[1] = d[k+1] + .3; v[2] = -sn*x + c*z; }).idx);
+}
 function assignBrain(){
-  const po = satOrder(), bo = rotated(ordBrain, brainGroup.rotation.y), total = brain.total;
+  const po = CU.uShape.value ? neuronOrder() : satOrder(), bo = rotated(ordBrain, brainGroup.rotation.y), total = brain.total;
   partOfBrain = new Int32Array(total).fill(-1);
   for (let k = 0; k < NP; k++){ const j = bo[k] % total; brainOf[po[k]] = j; partOfBrain[j] = po[k]; }
   partOrder = po;            // particles now in brain order: the next shape reuses it
@@ -2796,13 +2805,13 @@ function emitBase(g, slot, t0, src){
 // Chapters turn only when asked: the Next and Back buttons (or a swipe across them), the rail, the arrow keys, Space, Page Up and
 // Page Down, Home, End and the number keys. The wheel, drags and pinches all belong to the scene, so exploring it can never turn a page.
 let S = -1, Sd = -1, m1 = 0;
-const FIRST = -1, LAST = 10, ST = { COSMOS: -1, ORBIT: 0, BRAIN: 1, AMY: 2, SORT: 3, CELL: 4, CHROM: 5, ZMW: 6, SMRT: 7, GWAS: 8, DNA: 9, NET: 10 };   // the chapters, in story order
-const MODES = ['orbit', 'cortex', 'amygdala', 'sorter', 'neuron', 'chromatin', 'zmw', 'smrt', 'genome', 'dna', 'repair'];
-const HASH = ['orbit', 'brain', 'amygdala', 'sorting', 'neuron', 'chromatin', 'well', 'chip', 'genome', 'helix', 'repair'];
+const FIRST = -1, LAST = 10, ST = { COSMOS: -1, ORBIT: 0, CELL: 1, BRAIN: 2, AMY: 3, SORT: 4, CHROM: 5, ZMW: 6, SMRT: 7, GWAS: 8, DNA: 9, NET: 10 };   // the chapters, in story order
+const MODES = ['orbit', 'neuron', 'cortex', 'amygdala', 'sorter', 'chromatin', 'zmw', 'smrt', 'genome', 'dna', 'repair'];
+const HASH = ['orbit', 'neuron', 'brain', 'amygdala', 'sorting', 'chromatin', 'well', 'chip', 'genome', 'helix', 'repair'];
 const ROMAN9 = ['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 MODES[-1] = 'cosmos'; HASH[-1] = 'cosmos'; ROMAN9[-1] = 'I';   // (the opening chapter sits before the orbit, at -1)
 const CHN = [...document.querySelectorAll('#rail button span')].map(e => e.textContent.split('·').pop().trim());   // (on a phone the bar names the next chapter in a word or two)
-const NEXT = ['Into the brain', 'Light up the amygdalae', 'Sort their nuclei', 'Zoom into one neuron', 'Into its nucleus', 'Unwind it into one well', 'Pull back to the whole chip',
+const NEXT = ['Down to one neuron', 'Out to the whole brain', 'Light up the amygdalae', 'Sort their nuclei', 'Into a neuron\'s nucleus', 'Unwind it into one well', 'Pull back to the whole chip',
   'Read the genome of a disease', 'Look inside the helix', 'See the genes that repair DNA', 'Back to the orbit'];
 NEXT[-1] = 'Through the Solar System to Earth';
 const nav = { from: -1, to: -1, t0: 0, dur: 1, busy: false, used: false };
@@ -2812,8 +2821,8 @@ function goChapter(k){
   const n = Math.abs(k - S);
   nav.from = S; nav.to = k; nav.t0 = performance.now(); nav.busy = true; nav.used = true;
   nav.dur = (RM ? .35 : Math.min(5.4, 2.1 + .7*Math.max(0, n - 1)))*1000;       // one chapter in about two seconds; a long jump a little longer
-  nav.soft = !RM && n <= 1.001 && ((Math.min(S, k) >= ST.CELL - .001 && Math.max(S, k) <= ST.ZMW + .001) || Math.max(S, k) <= .001);   // into the nucleus, and the DNA into the well: slower, and even
-  if (nav.soft) nav.dur = Math.max(S, k) <= .001 ? 9000 : Math.min(S, k) < ST.CHROM - .001 ? 7000 : 5200;
+  nav.soft = !RM && n <= 1.001 && ((Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || Math.max(S, k) <= ST.CELL + .001);   // into the nucleus, and the DNA into the well: slower, and even
+  if (nav.soft) nav.dur = Math.max(S, k) <= .001 ? 9000 : Math.max(S, k) <= ST.CELL + .001 ? 6000 : Math.min(S, k) < ST.CHROM - .001 ? 7000 : 5200;
   try { history.replaceState(null, '', '#' + HASH[k]); } catch (e) {}
 }
 const stepChapter = d => goChapter(SCR.hold ? (d > 0 ? Math.floor(S + 1e-3) + 1 : Math.ceil(S - 1e-3) - 1) : nav.to + d);   // (from a paused point: the chapters either side of it)
@@ -2903,7 +2912,7 @@ const chEls = [...document.querySelectorAll('[data-ch]')];
 // The wheel, a trackpad or a vertical swipe moves through the story itself, transitions and all; when it stops, the story settles
 // on a chapter (a small push is enough to turn the page). A pinch, or ⌘/Ctrl with the wheel, zooms the scene; a sideways drag turns it.
 const SCR = { on: false, hold: false, target: 0, t: 0, dir: 1, idle: 260 };   // (hold: paused part-way by the bar, it does not settle)
-const scrLen = k => k === ST.CELL || k === ST.CHROM ? 2.4 : k === ST.COSMOS ? 2.8 : 1.1;    // screen heights of scrolling from chapter k to the next (the dives take longer)
+const scrLen = k => k === ST.ORBIT || k === ST.SORT || k === ST.CHROM ? 2.4 : k === ST.COSMOS ? 2.8 : 1.1;    // screen heights of scrolling from chapter k to the next (the dives take longer)
 function scrollStory(px){
   if (!ready || !px) return;
   if ((SCR.on ? SCR.target : S) <= FIRST + 1e-3 && (px < 0 || COS.za < 1)){                     // (in the opening chapter: the zoom from Laniakea to the Milky Way)
@@ -2919,7 +2928,7 @@ function scrollStory(px){
 function scrSettle(tNow){
   SCR.on = false;
   const b = Math.floor(SCR.target), f = SCR.target - b, k = clamp(SCR.dir > 0 ? (f > .06 ? b + 1 : b) : (f < .94 ? b : b + 1), FIRST, LAST), d = Math.abs(k - S);
-  const cos = Math.min(S, k) < -.001 && Math.max(S, k) <= .001, slow = cos || (Math.min(S, k) >= ST.CELL - .001 && Math.max(S, k) <= ST.ZMW + .001);
+  const cos = Math.min(S, k) < -.001 && Math.max(S, k) <= .001, slow = cos || (Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || (Math.min(S, k) >= -.001 && Math.max(S, k) <= ST.CELL + .001);
   Object.assign(nav, { from: S, to: k, t0: tNow, soft: slow, out: !slow, busy: d > 1e-4, dur: RM ? 300 : Math.max(350, d*(cos ? 9000 : slow ? 5200 : 1700)) });
   try { history.replaceState(null, '', '#' + HASH[k]); } catch (e) {}
 }
@@ -2970,7 +2979,7 @@ const pointer = { x: 0, y: 0, inside: false, moved: false, downX: 0, downY: 0, d
 let hovered = null, pinned = null, inspKey = '', inspAt = 0, inspRect = null, inspAnimT = 0;
 const pv = new THREE.Matrix4();
 const settledStage = () => { const r = Math.round(Sd); return Math.abs(Sd - r) < .003 ? r : -9; };
-const KINDS = ['sat', 'brain', '', '', '', '', '', '', 'gwas', 'dna', 'gene'];     // what can be picked in each chapter (nothing in III to VIII)
+const KINDS = ['sat', '', 'brain', '', '', '', '', '', 'gwas', 'dna', 'gene'];     // what can be picked in each chapter (nothing in III, or V to IX)
 const kindOk = (item, st) => st === ST.NET ? item.kind === 'gene' || item.kind === 'planet' : !!KINDS[st] && item.kind === KINDS[st];
 function worldOf(item){
   if (!item) return null;
@@ -3174,7 +3183,7 @@ document.querySelectorAll('.pmax').forEach(b => b.addEventListener('click', () =
 
 // ---------------------------------------------------------------- the genome explorer
 let layoutV = 0, layoutT = 0, focusK = -1, camFly = null, growT = 1, gYaw = 0;
-const GINTRO = { t: 0, done: false, chosen: false, lf: 1 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
+const GINTRO = { t: 0, done: false, chosen: false, lf: 0 };      // the Manhattan plot's arrival: flat ring, rise, then line (each visit)
 let gFlatT = 1;                                                    // (once the arrival is over: how flat the ring is to be; the ring button lays it flat)
 const gFlatNow = () => GINTRO.done ? gFlatT : U.uGFlat.value;
 const labelsEl = $('labels');
@@ -4289,10 +4298,6 @@ function buildOligos(){
         else if (k < 7.5){ C = vec3(.72, .74, .8); A = .36; S = .0054; }                                // a process
         else { C = mix(vec3(.8, .74, .72), uG, .45); A = .36; S = .005; }                             // the myelin it wraps
         vec3 W = uC + mat3(uM)*position;
-        // into the neuron's nucleus: the cells are scraped away as the neuron is, lifting off as they fade; their nuclei stay, and
-        // follow the view as it dives in (everything scaled about the neuron's centre, as the neuron's own points are)
-        if (k > 5.5){ float sc = clamp((uNucl - .02 - .1*fract(position.x*97.3 + position.y*31.7))/.1, 0., 1.); W += normalize(W - uC + 1e-4)*.16*sc*sc; A *= 1. - smoothstep(0., 1., sc); }
-        W = uC + (W - uC)*pow(uZB, eio(clamp((uNucl - .2)/.4, 0., 1.))); A *= 1. - smoothstep(.45, .6, uNucl);
         vec4 mv = viewMatrix*vec4(W, 1.); gl_Position = projectionMatrix*mv;
         float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 2.6, 18.*uPR); gl_PointSize = drawn; vC = C; vA = A*uOn*min(1., px*px/(drawn*drawn));
       }`,
@@ -4413,11 +4418,11 @@ function buildNucleosomes(out, off){
 }
 function cellFrame(mCell, mNucl){
   CU.uCell.value = mCell; CU.uNucl.value = mNucl;
-  if (OLIGO.pts){ const on = smooth(clamp((mCell - .7)/.3, 0, 1))*(mNucl < .6 ? 1 : 0); OLIGO.pts.visible = on > .003; OLIGO.pts.material.uniforms.uOn.value = on; }   // (the oligodendrocytes, with the neuron)
+  if (OLIGO.pts){ const on = smooth(clamp((mCell - .76)/.22, 0, 1))*(1 - smooth(clamp(m1/.3, 0, 1))); OLIGO.pts.visible = on > .003; OLIGO.pts.material.uniforms.uOn.value = on; }   // (the oligodendrocytes, with the neuron)
   neuronGroup.updateMatrixWorld(true); chromGroup.updateMatrixWorld(true);
 }
 function placeCellLabels(){
-  const vn = clamp((mCellG - .92)/.08, 0, 1)*(1 - clamp(mNuclG/.08, 0, 1)), vc = clamp((mNuclG - .92)/.08, 0, 1)*(1 - clamp(mSeqG/.08, 0, 1)), el = $('cellLabels');
+  const vn = clamp((mCellG - .92)/.08, 0, 1)*(1 - clamp(m1/.08, 0, 1)), vc = clamp((mNuclG - .92)/.08, 0, 1)*(1 - clamp(mSeqG/.08, 0, 1)), el = $('cellLabels');
   el.style.display = vn > .02 || vc > .02 ? 'block' : 'none'; if (vn <= .02 && vc <= .02) return;
   const put = (L, m, o) => { const w = xform(m, L.p, 0); tmp3.set(w[0], w[1], w[2]).project(camera);
     labelAt(L.e, (tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight, o*(tmp3.z < 1 ? 1 : 0)); };
@@ -5006,11 +5011,14 @@ function cosmosFrame(dt, Sd){
   const back = here && (ORB_IN.done || ORB_IN.t >= 0), gB = back ? cosSm(.9, .955, f)*hand : 0, turnB = back ? cosSm(.82, .9, f) : 0;
   const sats = here ? (back ? cosSm(.96, .995, f)*(ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1))) : 0) : ORB_IN.done ? 1 : smooth(clamp(ORB_IN.t - 1, 0, 1));   // (the satellites only once the globe is there)
   earth.visible = here ? z > 2.6 : true; for (const c of earth.children) c.visible = c === beacon;   // (the tag is on the Earth before it is reached)   // (of the old globe only the red tag is left, on the photograph)
-  U.uCosV.value = sats;
-  { const on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp(U.uMorph.value/.2, 0, 1)), E = EARTH_PHOTO;   // (the photograph is the Earth chapter's Earth; it gives way to its points as they leave for the brain)
-    E.mesh.visible = E.halo.visible = on > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on;
+  U.uCosV.value = here ? sats : 1;
+  // the photograph is the Earth chapter's Earth. Leaving it, the Earth shrinks into the nucleus of one neuron (radius .074, at the
+  // neuron's centre, which is the Earth's), turning the NeuN blue of that nucleus, and gives way to the nucleus's own points
+  { const sh = here ? 0 : smooth(clamp(mCell/.46, 0, 1)), on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp((mCell - .42)/.14, 0, 1)), E = EARTH_PHOTO;
+    E.mesh.visible = on > .003; E.halo.visible = on*(1 - sh) > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on*(1 - smooth(clamp(mCell/.25, 0, 1)));
+    E.mesh.material.uniforms.uBlue.value = here ? 0 : smooth(clamp((mCell - .16)/.28, 0, 1));
     if (on > .003){
-      E.grp.position.copy(earth.position); E.grp.scale.setScalar(earth.scale.x);
+      E.grp.position.copy(earth.position).lerp(CU.uCellC.value, sh); E.grp.scale.setScalar(earth.scale.x*Math.pow(.0735, sh));
       E.grp.quaternion.copy(earth.quaternion);                     // (the photograph turns exactly as the Earth does, all the way in)
       // its sunlight: the real Sun as it stands over that face now, turned with the photograph
       E.mesh.material.uniforms.uSun.value.copy(U.uSun.value).applyAxisAngle(_tv[3].set(0, 1, 0), -earth.rotation.y).applyQuaternion(E.grp.quaternion);
@@ -5464,7 +5472,6 @@ function buildSorterFx(){
     vertexShader: `uniform float uCell, uZA; uniform vec3 uFoc, uCellC; varying vec3 vN, vP;
       float eio(float t){ return t < .5 ? 4.*t*t*t : 1. - pow(-2.*t + 2., 3.)/2.; }
       void main(){ vN = normalize(mat3(modelMatrix)*normal); vec3 w = (modelMatrix*vec4(position, 1.)).xyz;
-        if (uCell > 0.){ float z = eio(uCell); w = mix(uFoc, uCellC, z) + (w - uFoc)*pow(uZA, z); }      // swells past the view with the rest of the sorter
         vP = w; gl_Position = projectionMatrix*viewMatrix*vec4(w, 1.); }`,
     fragmentShader: `uniform float uOp; varying vec3 vN, vP;
       void main(){ vec3 V = normalize(cameraPosition - vP), N = normalize(vN); if (!gl_FrontFacing) N = -N;
@@ -5499,14 +5506,14 @@ function sortFrame(dt, mAmy, mSort){
   amyFrame(dt, mAmy, mSort);
   if (mSort > 0) tubeTo(easeIO(clamp(mSort/.62, 0, 1)), easeIO(clamp((mSort - .62)/.3, 0, 1))); else { AU.uTubeM.value.copy(AMY.vialM); AU.uTilt.value = 0; }
   liquidFrame();
-  { const gone = 1 - clamp(mSmG/.3, 0, 1), sOp = smooth(clamp(Math.max(AMY.drop, mSort)*1.7 - .1, 0, 1))*gone, cOp = smooth(clamp((mSort - .3)/.45, 0, 1))*gone;
+  { const gone = 1 - smooth(clamp(mSmG/.16, 0, 1)), sOp = smooth(clamp(Math.max(AMY.drop, mSort)*1.7 - .1, 0, 1))*gone, cOp = smooth(clamp((mSort - .3)/.45, 0, 1))*gone;
     glassU.uSample.value = sOp; glassU.uColl.value = cOp;
     if (sampleGlass){ sampleGlass.visible = sOp > .005; sampleGlass.matrix.copy(AU.uTubeM.value); sampleGlass.matrixWorldNeedsUpdate = true; }
     for (const g of collGlass) g.visible = cOp > .005; }
-  const on = clamp((mSort - .7)/.3, 0, 1)*(1 - clamp(mSmG/.12, 0, 1));             // the light goes out as we zoom into a neuron
+  const on = clamp((mSort - .7)/.3, 0, 1)*(1 - clamp(mSmG/.12, 0, 1));             // the light goes out as the nuclei pour out of the tube
   sortFx.visible = on > .01; sortU.uOn.value = on;
   if (mSort < .62){ AU.uSortT.value = 0; AU.uFillT.value = 0; }   // leaving the sorter: every nucleus back in the tube, the run starts over
-  if (mSort > .96 && mSmG < 1){                  // the instrument is built: the sample starts to run
+  if (mSort > .96 && mSmG <= 0){                 // the instrument is built: the sample starts to run (and stops as the view leaves it)
     AU.uSortT.value += dt; AU.uFillT.value = clamp((AU.uSortT.value - 4)/45, 0, 1);
     // which nucleus is at the lasers now, and how close: the same arithmetic as the shader's path
     const NC = AU.uNCell.value, T = AU.uSortT.value*.055, PL = .78286, x = ((PL - T) % 1 + 1) % 1*NC, c0 = Math.round(x) % NC;
@@ -5514,7 +5521,7 @@ function sortFrame(dt, mAmy, mSort){
     const cyc = c0/NC + T, ty = rnJS(c0 + Math.floor(cyc)*7919, 9), k = ty < .52 ? 0 : 1;
     sortU.uF.value = f; sortU.uFC.value.copy(k === 0 ? AU.uNeu.value : AU.uGlia.value);
     const passed = Math.max(0, (T - (PL - .5))*NC); sortCounts = [Math.floor(passed*.52), Math.floor(passed*.48), 0];
-  } else if (mSort <= .96){ sortU.uF.value = 0; }
+  } else { sortU.uF.value = 0; }
 }
 function labelAt(e, sx, sy, o){
   const w = e._w || (e._w = e.offsetWidth), al = e.classList.contains('r') ? 1 : e.classList.contains('c') ? .5 : 0, x0 = sx - w*al;
@@ -5849,8 +5856,8 @@ const tmpV = new THREE.Vector3(), tmpW = new THREE.Vector3();
 const stepUI = { to: -99 };
 let prevM = new Array(10).fill(0), mAmy = 0, mSort = 0, mCell = 0, mNucl = 0, mSm = 0, mZm = 0, mGw = 0, mDna = 0, mNet = 0;
 const stageW = k => clamp(1 - Math.abs(Sd - k), 0, 1);          // how much of chapter k is on screen
-const AR_OK = [1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0]; AR_OK[-1] = 1;                            // chapters that may turn slowly on their own
-const BLOOM_BASE = [0, -.16, -.08, .02, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [.5, .3, .35, .3, .3, .35, .3, .4, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;
+const AR_OK = [1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]; AR_OK[-1] = 1;                            // chapters that may turn slowly on their own
+const BLOOM_BASE = [0, .02, -.16, -.08, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [.5, .3, .3, .35, .3, .35, .3, .4, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;
 renderer.setAnimationLoop(() => {
   const tNow = performance.now(), dt = Math.min(.05, (tNow - lastT)/1000); lastT = tNow;
   U.uTime.value += dt;
@@ -5871,19 +5878,16 @@ renderer.setAnimationLoop(() => {
   { if (Sd < -.002) ORB_IN.g = earth.rotation.y + .5*(1 - orbitLand()); else if (Sd > .5) ORB_IN.g = earth.rotation.y; }
   if (nav.busy || SCR.on) navSettle = 1.8; else navSettle -= dt;          // (counted in frame time, so a slow device gets as many steps)
   const inTransit = nav.busy || navSettle > 0 || Math.abs(Sd - Math.round(Sd)) > .002;   // only a real transition steers the camera
-  m1 = clamp(Sd, 0, 1); mAmy = clamp(Sd - 1, 0, 1); mSort = clamp(Sd - 2, 0, 1); mCell = clamp(Sd - 3, 0, 1); mNucl = clamp(Sd - 4, 0, 1);
+  mCell = clamp(Sd, 0, 1); m1 = clamp(Sd - 1, 0, 1); mAmy = clamp(Sd - 2, 0, 1); mSort = clamp(Sd - 3, 0, 1); mNucl = clamp(Sd - 4, 0, 1);   // (the story's order: Earth, neuron, brain, amygdalae, sorter, nucleus)
   mZm = clamp(Sd - 5, 0, 1); mSm = clamp(Sd - 6, 0, 1); mGw = clamp(Sd - 7, 0, 1); mDna = clamp(Sd - 8, 0, 1); mNet = clamp(Sd - 9, 0, 1);
-  mAmyG = mAmy; mSortG = mSort; mSmG = mCell; mCellG = mCell; mNuclG = mNucl; mSeqG = mZm;
+  mAmyG = mAmy; mSortG = mSort; mSmG = mNucl; mCellG = mCell; mNuclG = mNucl; mSeqG = mZm;   // (mSmG: leaving the sorter)
   // entering a transition: align the next shape to the camera and match particles to it
   const camAz = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
   if (prevM[0] === 0 && m1 > 0){ az.brain = camAz; brainGroup.rotation.y = camAz - Math.atan2(-1, -.55); brainGroup.updateMatrixWorld(true); assignBrain(); }
   if (prevM[1] === 0 && mAmy > 0) assignAmy(camAz);
   if (prevM[2] === 0 && mSort > 0){ az.sort = camAz; sorterGroup.rotation.y = camAz; sorterGroup.updateMatrixWorld(true); AU.uSortT.value = 0; AU.uFillT.value = 0; sortCounts = [0, 0, 0]; }
-  if (prevM[3] === 0 && mCell > 0){                   // into one nucleus near the top of the neurons' pile
-    az.neu = camAz; neuronGroup.rotation.y = camAz; neuronGroup.updateMatrixWorld(true); sorterGroup.updateMatrixWorld(true);
-    CU.uFoc.value.set(-.69, -1.77 + Math.max(.025, AU.uFillT.value*.3*.8), .02).applyMatrix4(sorterGroup.matrixWorld);
-  }
-  if (prevM[4] === 0 && mNucl > 0){ az.chr = camAz; chromGroup.rotation.y = camAz; chromGroup.updateMatrixWorld(true); }
+  if (prevM[3] === 0 && mCell > 0){ az.neu = camAz; neuronGroup.rotation.y = camAz; neuronGroup.updateMatrixWorld(true); }   // (the neuron grows out of the Earth, facing the view)
+  if (prevM[4] === 0 && mNucl > 0){ az.chr = camAz; chromGroup.rotation.y = camAz; chromGroup.updateMatrixWorld(true); sorterGroup.updateMatrixWorld(true); }
   if (prevM[5] === 0 && mZm > 0){ az.smrt = camAz; smrtGroup.rotation.y = camAz; smrtGroup.updateMatrixWorld(true); }
   if (prevM[7] === 0 && mGw > 0){
     az.gwas = camAz;
@@ -5928,7 +5932,7 @@ renderer.setAnimationLoop(() => {
     if (el.inert !== off) el.inert = off;
   }
 
-  U.uMorph.value = m1; U.uDna.value = mDna; U.uGw.value = mGw; U.uGone.value = m1;
+  U.uMorph.value = m1; U.uDna.value = mDna; U.uGw.value = mGw; U.uGone.value = mCell; U.uBg.value = mCell;
   layoutV += (layoutT - layoutV)*Math.min(1, dt*2.2); if (Math.abs(layoutT - layoutV) < 1e-4) layoutV = layoutT; U.uLayout.value = easeIO(layoutV);
   spinFrame(dt);
   gwasGroup.rotation.y = lerp(gYaw + gSpin, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
@@ -5937,7 +5941,8 @@ renderer.setAnimationLoop(() => {
   // the chapter has settled and 3 s have passed they rise into the ring, and 3 s later the ring unrolls into a line (unless the viewer has already
   // chosen a layout or a locus). Once the plot is wholly out of sight, it is made ready to play again.
   if ((Sd <= ST.GWAS - .95 || Sd >= ST.GWAS + .95) && (GINTRO.t > 0 || layoutT !== 0 || U.uGFlat.value < 1)){
-    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 1, spun: false }); Object.assign(TG, { ph: 0, lf: 1 }); gFlatT = 1; layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
+    Object.assign(GINTRO, { t: 0, done: false, chosen: false, lf: 0, spun: false });   // (lf 0: no labels while the points are on their way into the ring)
+    Object.assign(TG, { ph: 0, lf: 1 }); gFlatT = 1; layoutT = layoutV = 0; U.uLayout.value = 0; U.uGFlat.value = 1;
     $('layRing').setAttribute('aria-pressed', 'true'); $('layLine').setAttribute('aria-pressed', 'false');
   }
   if (!GINTRO.done && !inTransit && settledStage() === ST.GWAS){
@@ -5945,7 +5950,8 @@ renderer.setAnimationLoop(() => {
     GINTRO.t += dt; const SW = other() && !RM, HOLD = RM ? 0 : SW ? 7 : 3, RISE = RM ? 0 : 2.4, T = GINTRO.t - HOLD;
     if (SW && !GINTRO.spun && GINTRO.t >= 3 && !GINTRO.chosen && focusK < 0){ GINTRO.spun = true; switchStudy(); }
     // the labels first fade out (the last moment of the hold), then the ring stands up, and only once it stands do they fade back in
-    GINTRO.lf = RM ? 1 : T < RISE ? 1 - smooth(clamp((T + .9)/.6, 0, 1)) : smooth(clamp((T - RISE - .15)/.6, 0, 1));
+    // (and none at all until the chapter has settled on the formed ring: the labels fade in over its first half second)
+    GINTRO.lf = (RM ? 1 : T < RISE ? 1 - smooth(clamp((T + .9)/.6, 0, 1)) : smooth(clamp((T - RISE - .15)/.6, 0, 1)))*smooth(clamp(GINTRO.t/.5, 0, 1));
     U.uGFlat.value = RISE ? .5 + .5*Math.cos(Math.PI*clamp(T/RISE, 0, 1)) : 0;   // (a soft ease: no sudden start or stop)
     // the camera follows: from straight above the flat ring it tilts down to nearly level as the ring stands up (it keeps its turn)
     if (!camFly && !GINTRO.chosen && focusK < 0){ const [e, d] = gwasRingSph(), tg = presetTarget(ST.GWAS), k = Math.min(1, dt*4);
@@ -5994,9 +6000,9 @@ renderer.setAnimationLoop(() => {
   const em = easeIO(m1), ed = easeIO(mDna), eg = easeIO(mGw);
   focusAmt += (focusTarget - focusAmt)*Math.min(1, dt*9);
   U.uFocusId.value = focusId; U.uFocusAmt.value = focusAmt;
-  EU.uOpacity.value = 1 - clamp(m1/.45, 0, 1);
+  EU.uOpacity.value = 1 - smooth(clamp(mCell/.08, 0, 1));   // (the dark globe behind the photograph stays its size: it goes as the Earth starts to shrink)
   ocean.visible = EU.uOpacity.value > .01; ocean.material.depthWrite = EU.uOpacity.value > .6;
-  BU.uOpacity.value = (visitor ? 1 : 0)*(1 - clamp(m1/.2, 0, 1))*(intro.t >= 1 ? 1 : intro.t)*(Sd < 0 ? clamp((COS.z - 2.6)/.2, 0, 1) : 1);   // (the tag is there as the Earth comes close)
+  BU.uOpacity.value = (visitor ? 1 : 0)*(1 - clamp(mCell/.12, 0, 1))*(intro.t >= 1 ? 1 : intro.t)*(Sd < 0 ? clamp((COS.z - 2.6)/.2, 0, 1) : 1);   // (the tag is there as the Earth comes close)
   BRU.uOpacity.value = clamp((m1 - .55)/.45, 0, 1)*(1 - clamp(mSort/.3, 0, 1));   // the glass dims as the block comes out
   if (brain) brain.meshes.forEach(m => m.visible = BRU.uOpacity.value > .01);
   { const fi = clamp(Math.floor(Sd), FIRST, LAST - 1); let bs = .58 + BLOOM_BUMP[fi]*Math.sin(Math.PI*(Sd - fi));
@@ -6059,7 +6065,7 @@ renderer.setAnimationLoop(() => {
   typeU.uOn.value = Math.max(clamp((mDna - .6)/.4, 0, 1)*(1 - clamp(mNet/.3, 0, 1)), clamp((mZm - .85)/.15, 0, 1)*clamp((.15 - mSm)/.15, 0, 1)); typePts.visible = flyPts.visible = typeU.uOn.value > .002;
   pMat.uniforms.uCamD.value = camera.position.distanceTo(controls.target);
 
-  if (visitor && m1 < .2 && Sd > -.02){
+  if (visitor && mCell < .2 && Sd > -.02){
     tmpW.copy(visitorLocal).applyMatrix4(earth.matrixWorld);
     const a = linkGeo.attributes.position.array; let n = 0;
     for (const i of linkIdx){ const o = i*4; if (texData[o+3] < -.5) continue; a.set([tmpW.x, tmpW.y, tmpW.z, texData[o], texData[o+1], texData[o+2]], n*6); n++; }
