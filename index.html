@@ -1991,12 +1991,12 @@ function initParticles(){
           // faded round it, from somewhere in that pile
           float s4 = rn(pid, 14.), inVial = (1. - memD)*step(.57, s4)*step(s4, .83)*step(rn(pid, 11.), .47)*step(rn(pid, 12.), uFillT);
           vec3 cW = uCellC + mat3(uChrMat)*cd.xyz;       // (its place in the nucleus, at its full size)
-          float ts = inVial > .5 ? .02 + .12*aRnd.y : cd.w > 49.5 ? (cd.w > 51.5 ? .2 : .12) + .08*aRnd.y : .14 + .28*aRnd.z;   // (the envelope first)
+          float ts = inVial > .5 ? .03 + .14*aRnd.y : cd.w > 49.5 ? (cd.w > 51.5 ? .24 : .2) + .06*aRnd.y : .22 + .24*aRnd.z;   // (the tube's own nuclei first, then the envelope)
           vec3 src = inVial > .5 ? p : (uSortMat*vec4(-.72 + (aRnd.x - .5)*.1, -1.77 + aRnd.y*max(.03, uFillT*.3), (aRnd.z - .5)*.1, 1.)).xyz;
-          float ev = eio(clamp((uNucl - ts)/.26, 0., 1.));
+          float ev = eio(clamp((uNucl - ts)/.24, 0., 1.));
           vec3 ctl = mix(src, cW, .45) + normalize(cW - uCellC + 1e-4)*.25*length(cW - src) + h3(aRnd.w*21.7)*.12;
           if (uNucl >= ts){ p = mix(mix(src, ctl, ev), mix(ctl, cW, ev), ev); eC = smoothstep(ts, ts + .12, uNucl); fadeC = inVial > .5 ? 1. : smoothstep(ts, ts + .1, uNucl); }
-          else fadeC = inVial > .5 ? 1. : 1. - smoothstep(0., .12, uNucl);
+          else fadeC = inVial > .5 ? 1. : 1. - smoothstep(.02, .18, uNucl);   // (the rest of the sorter fades while the tube's nuclei rise)
           float z = smoothstep(.2, .6, uNucl);
           chromLook(cd.w, cC, cA, cS);
           vec3 nrm = normalize(p - uCellC + 1e-5); float front = dot(nrm, normalize(cameraPosition - uCellC));
@@ -3231,6 +3231,7 @@ function buildLabels(){                              // for both studies: the fl
     const t = document.createElement('span'); t.className = 'stag'; t.textContent = M.cite; labelsEl.appendChild(t); sTags.push({ M, el: t });
   }
   cLabels = G.chrSpan.map(([c]) => { const s = document.createElement('span'); s.className = 'clabel'; s.textContent = c; labelsEl.appendChild(s); return s; });
+  for (const e of labelsEl.children){ e.style.opacity = '0'; e._o = 0; }   // (every label starts unseen: it only ever fades in)
 }
 function buildExplorer(){
   $("gCite").innerHTML = G.ref || ""; $("gCite").hidden = !G.ref;
@@ -5014,7 +5015,7 @@ function cosmosFrame(dt, Sd){
   U.uCosV.value = here ? sats : 1;
   // the photograph is the Earth chapter's Earth. Leaving it, the Earth shrinks into the nucleus of one neuron (radius .074, at the
   // neuron's centre, which is the Earth's), turning the NeuN blue of that nucleus, and gives way to the nucleus's own points
-  { const sh = here ? 0 : smooth(clamp(mCell/.46, 0, 1)), on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp((mCell - .42)/.14, 0, 1)), E = EARTH_PHOTO;
+  { const sh = here ? 0 : smooth(clamp(mCell/.46, 0, 1)), on = here ? cosSm(2.05, 2.25, z) : 1 - smooth(clamp((mCell - .36)/.14, 0, 1)), E = EARTH_PHOTO;
     E.mesh.visible = on > .003; E.halo.visible = on*(1 - sh) > .003; E.mesh.material.uniforms.uOn.value = on; E.halo.material.uniforms.uOn.value = on*(1 - smooth(clamp(mCell/.25, 0, 1)));
     E.mesh.material.uniforms.uBlue.value = here ? 0 : smooth(clamp((mCell - .16)/.28, 0, 1));
     if (on > .003){
@@ -5506,7 +5507,8 @@ function sortFrame(dt, mAmy, mSort){
   amyFrame(dt, mAmy, mSort);
   if (mSort > 0) tubeTo(easeIO(clamp(mSort/.62, 0, 1)), easeIO(clamp((mSort - .62)/.3, 0, 1))); else { AU.uTubeM.value.copy(AMY.vialM); AU.uTilt.value = 0; }
   liquidFrame();
-  { const gone = 1 - smooth(clamp(mSmG/.16, 0, 1)), sOp = smooth(clamp(Math.max(AMY.drop, mSort)*1.7 - .1, 0, 1))*gone, cOp = smooth(clamp((mSort - .3)/.45, 0, 1))*gone;
+  { const gone = 1 - smooth(clamp(mSmG/.1, 0, 1)), sOp = smooth(clamp(Math.max(AMY.drop, mSort)*1.7 - .1, 0, 1))*gone,
+      cOp = smooth(clamp((mSort - .3)/.45, 0, 1))*(1 - smooth(clamp((mSmG - .16)/.16, 0, 1)));   // (the collection tubes stay until their nuclei have poured out)
     glassU.uSample.value = sOp; glassU.uColl.value = cOp;
     if (sampleGlass){ sampleGlass.visible = sOp > .005; sampleGlass.matrix.copy(AU.uTubeM.value); sampleGlass.matrixWorldNeedsUpdate = true; }
     for (const g of collGlass) g.visible = cOp > .005; }
@@ -5883,10 +5885,10 @@ renderer.setAnimationLoop(() => {
   mAmyG = mAmy; mSortG = mSort; mSmG = mNucl; mCellG = mCell; mNuclG = mNucl; mSeqG = mZm;   // (mSmG: leaving the sorter)
   // entering a transition: align the next shape to the camera and match particles to it
   const camAz = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+  if (prevM[3] === 0 && mCell > 0){ az.neu = camAz; neuronGroup.rotation.y = camAz; neuronGroup.updateMatrixWorld(true); }   // (the neuron grows out of the Earth, facing the view; before the brain is matched to it)
   if (prevM[0] === 0 && m1 > 0){ az.brain = camAz; brainGroup.rotation.y = camAz - Math.atan2(-1, -.55); brainGroup.updateMatrixWorld(true); assignBrain(); }
   if (prevM[1] === 0 && mAmy > 0) assignAmy(camAz);
   if (prevM[2] === 0 && mSort > 0){ az.sort = camAz; sorterGroup.rotation.y = camAz; sorterGroup.updateMatrixWorld(true); AU.uSortT.value = 0; AU.uFillT.value = 0; sortCounts = [0, 0, 0]; }
-  if (prevM[3] === 0 && mCell > 0){ az.neu = camAz; neuronGroup.rotation.y = camAz; neuronGroup.updateMatrixWorld(true); }   // (the neuron grows out of the Earth, facing the view)
   if (prevM[4] === 0 && mNucl > 0){ az.chr = camAz; chromGroup.rotation.y = camAz; chromGroup.updateMatrixWorld(true); sorterGroup.updateMatrixWorld(true); }
   if (prevM[5] === 0 && mZm > 0){ az.smrt = camAz; smrtGroup.rotation.y = camAz; smrtGroup.updateMatrixWorld(true); }
   if (prevM[7] === 0 && mGw > 0){
