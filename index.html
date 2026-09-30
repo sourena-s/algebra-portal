@@ -5761,7 +5761,8 @@ renderer.setAnimationLoop(() => {
   { const C = smrtCam, here = mSm > .999 && mGw < .001 && settledStage() === ST.SMRT;   // the camera: two seconds after the cell has lit up
     C.t = here ? C.t + dt : 0; C.after = here && C.on >= 1 ? (C.after || 0) + dt : 0; const want = here && C.t > (RM ? 0 : 2) ? 1 : 0;
     C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 4)) : mSm > .9 && mGw > .001 && mGw < .999 ? C.on : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);   // (on the way to the Manhattan plot it holds, so the view it leaves never jumps)
-    C.g.visible = C.on > .002; const k = smooth(C.on), fl = .92 + .08*Math.sin(U.uTime.value*3.1);
+    const gone = 1 - smooth(clamp(mGw/.2, 0, 1));                 // (leaving for the Manhattan plot, the camera is gone within the first fifth; its view still holds)
+    C.g.visible = C.on*gone > .002; const k = smooth(C.on)*gone, fl = .92 + .08*Math.sin(U.uTime.value*3.1);
     if (C.on <= 0) C.s0 = null;
     if (here && C.on > 0 && C.on < 1 && !nav.busy){ const [e, d] = presetSph(ST.SMRT), tg = presetTarget(ST.SMRT);   // (the view settles with the camera's arrival)
       if (!C.s0){ const s = new THREE.Spherical().setFromVector3(tmpV.copy(camera.position).sub(controls.target)); C.s0 = { th: s.theta, ph: s.phi, r: s.radius, tg: controls.target.clone() }; }   // (from wherever the view stands, never a jump)
