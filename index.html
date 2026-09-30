@@ -250,9 +250,9 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 #strip .sa::before{content:"";width:7px;height:7px;border-right:1.5px solid var(--bone);border-bottom:1.5px solid var(--bone);transform:translateY(-2px) rotate(45deg);animation:saNudge 2.4s ease-in-out infinite}
 #strip .sa.up::before{transform:translateY(2px) rotate(-135deg);animation-delay:1.2s}
 #strip .sa:hover::before{border-color:var(--ember)}
-/* on a touch screen the side strip gives way to a glass player at the bottom: back, play, a track through the whole story to slide
-   along (the Laniakea zoom, then a tick for each chapter), and forward */
-@media (pointer:coarse){
+/* the chapters are turned on a glass player at the bottom, on a phone and a computer alike (the side strip and rail are gone): back,
+   play, a track through the whole story to slide along (the Laniakea zoom, then a tick for each chapter), and forward */
+@media all{
   #strip,#scue{display:none}
   #stepRow{display:flex!important;position:relative;align-items:center;gap:4px;height:52px;padding:0 5px;box-sizing:border-box;touch-action:none;
     border:1px solid rgba(236,230,218,.14);border-radius:26px;background:linear-gradient(180deg,rgba(28,34,48,.42),rgba(10,13,22,.5));
@@ -299,6 +299,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 /* chapter steps: Back and Next, bottom centre */
 .step{left:50%;bottom:calc(var(--gut) + env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:3}
 .step-in{display:grid;justify-items:center;gap:9px}
+@media (min-width:761px){ .step{width:min(520px, calc(100vw - 2*var(--gut)))} #stepRow{width:100%} }   /* (on a computer: centred, clear of the side panels) */
 .step-row{display:none!important}
 .scue{display:flex;flex-direction:column;align-items:center;gap:7px;font-size:9.5px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:rgba(236,230,218,.78);white-space:nowrap;text-align:center}
 .scue i{width:9px;height:9px;border-right:1.3px solid currentColor;border-bottom:1.3px solid currentColor;rotate:45deg;animation:scue 2.2s var(--ease) infinite}
@@ -846,7 +847,7 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo(0, 0);
 const D = window.NOOS_DATA;
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const COARSE = matchMedia('(pointer: coarse)').matches;
+const COARSE = matchMedia('(pointer: coarse)').matches, BAR = true;   // (BAR: the chapters turn on the bottom player, on every screen)
 const $ = id => document.getElementById(id);
 const fmt = n => Math.round(n).toLocaleString('en-US');
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -2795,7 +2796,7 @@ function navStage(tNow){
 }
 document.querySelectorAll('#rail button').forEach(b => b.addEventListener('click', () => goChapter(+b.dataset.go)));
 $('stPrev').addEventListener('click', () => { if (nav.to === FIRST && !nav.busy){ COS.manual = true; COS.za = 0; return; } stepChapter(-1); });   // (in the opening chapter: back out to Laniakea)
-$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (COARSE){ barJump(); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
+$('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = false; return; } if (BAR){ barJump(); return; } nav.to >= LAST ? goChapter(FIRST) : stepChapter(1); });
 $('stFwd').addEventListener('click', () => nav.to >= LAST ? goChapter(FIRST) : stepChapter(1));
 // play: the chapters follow one another on their own, each held a few seconds once it has arrived; the middle of the bar turns it on and off
 const AUTO = { on: false, t: 0, dwell: 5 }; let arEase = 0;
@@ -4091,10 +4092,10 @@ function buildNeuron(out, off){
   while (i < n){ const si = dSegs[(R()*dSegs.length) | 0], q = SEG[si], d = dirR(); if (Math.abs(project(q[0] + d.x*q[6], q[1] + d.y*q[6], q[2] + d.z*q[6])) < .002) put(P[0], P[1], P[2], 3, q[9]); }
   const bt = den[3].pts[den[3].pts.length - 1], tp = trunk.pts[Math.floor(trunk.pts.length*.6)], ap = axon.pts[Math.floor(axon.pts.length*.3)];
   const tc = terms.slice(0, 12).reduce((a, t) => a.add(t.c), V(0, 0, 0)).multiplyScalar(1/Math.min(12, terms.length));
-  OLIGO.ax = { pts: axon.pts, STEP, START, INT, NINT }; OLIGO.plan = planOligos(OLIGO.ax); const ol = OLIGO.plan[Math.min(1, OLIGO.plan.length - 1)].c;
+  OLIGO.ax = { pts: axon.pts, STEP, START, INT, NINT }; OLIGO.plan = planOligos(OLIGO.ax); const ol = OLIGO.plan[OLIGO.plan.length - 1].c;
   return [[[.09, .06, 0], 'Nucleus', 'l', '#4DA3FF'], [[-.13, .16, 0], 'Soma', 'r'], [[tp.x + .05, tp.y, tp.z], 'Apical dendrite', 'l'],
     [[bt.x, bt.y - .07, bt.z], 'Basal dendrites', 'c'], [[ap.x + .05, ap.y, ap.z], 'Axon · myelinated', 'l'], [[tc.x + .16, tc.y - .02, tc.z], 'Axon terminals · synapses', 'l', '#FFD08A'],
-    [[ol.x + .06, ol.y + .03, ol.z], 'Oligodendrocyte · myelin', 'l', '#FF6A5A']];
+    [[ol.x + .08, ol.y + .02, ol.z], 'Oligodendrocyte', 'l', '#FF6A5A']];
 }
 // Oligodendrocytes beside the neuron: three small cells, each sending a few thin processes to the axon, where every process ends in
 // the myelin sheath of one internode, wound round and round it; drawn as the neuron is drawn, a quiet grey membrane of points, and
@@ -4116,36 +4117,64 @@ function buildOligos(){
   const perp = d => (Math.abs(d.y) < .9 ? V(0, 1, 0) : V(1, 0, 0)).cross(d).normalize();
   const fib = (k, m) => { const yy = 1 - 2*(k + .5)/m, r = Math.sqrt(1 - yy*yy), a = k*2.39996323; return V(Math.cos(a)*r, yy, Math.sin(a)*r); };
   const at = s => Math.min(ax.pts.length - 1, Math.max(0, Math.round(s/ax.STEP))), tan = i => ax.pts[Math.min(ax.pts.length - 1, i + 1)].clone().sub(ax.pts[Math.max(0, i - 1)]).normalize();
+  const bez = (a, b, c, t) => a.clone().multiplyScalar((1 - t)*(1 - t)).addScaledVector(b, 2*t*(1 - t)).addScaledVector(c, t*t);
+  const smin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0)/k; return Math.min(a, b) - h*h*k*.25; };
   for (const o of OLIGO.plan){
-    const c = o.c, RS = .058;
-    // the soma: its membrane, a little flattened toward the axon
-    for (let k = 0, M = 900; k < M; k++){ const d = fib(k, M); put(c.clone().add(V(d.x*RS, d.y*RS*.86, d.z*RS)), 6); }
+    const c = o.c, RS = .056, ph = [R()*TAU, R()*TAU, R()*TAU];
+    // one continuous surface, as the neuron's: a lumpy soma, and processes that flare out of it and fork near the axon into fine
+    // branches, each ending on the myelin in a flattened pad lying along it; pieces joined by a smooth minimum
+    const segs = [];                                   // [ax, ay, az, bx, by, bz, ra, rb, k (blend)]
+    const tube = (pts, r0, r1, k) => { for (let q = 1; q < pts.length; q++){ const a = pts[q - 1], b = pts[q], t0 = (q - 1)/(pts.length - 1), t1 = q/(pts.length - 1);
+      segs.push([a.x, a.y, a.z, b.x, b.y, b.z, r0 + (r1 - r0)*t0, r0 + (r1 - r0)*t1, k]); } };
+    for (const k of o.ks){
+      const s0 = ax.START + k*ax.INT, im = at(s0 + ax.INT/2), T = tan(im), A = ax.pts[im];
+      let out = c.clone().sub(A); out.sub(T.clone().multiplyScalar(out.dot(T))).normalize();
+      const fork = A.clone().addScaledVector(out, .075).addScaledVector(T, (R() - .5)*.03);
+      const ctl = c.clone().lerp(fork, .5).addScaledVector(T, (R() - .5)*.06).addScaledVector(out, .02);
+      tube([...Array(13)].map((_, q) => bez(c, ctl, fork, q/12)), .013, .0045, .045);        // the process: thick where it leaves the soma
+      const nb = 2 + (R() < .5 ? 1 : 0);
+      for (let b = 0; b < nb; b++){                     // its fine branches, fanning out along the internode
+        const along = (b - (nb - 1)/2)*.045 + (R() - .5)*.012, end = A.clone().addScaledVector(out, .024).addScaledVector(T, along);
+        const mid = fork.clone().lerp(end, .5).addScaledVector(out, .012).addScaledVector(perp(T).cross(out).normalize(), (R() - .5)*.02);
+        tube([...Array(8)].map((_, q) => bez(fork, mid, end, q/7)), .0034, .0024, .012);
+        const e0 = end.clone().addScaledVector(T, -.012), e1 = end.clone().addScaledVector(T, .012);      // the pad on the sheath
+        segs.push([e0.x, e0.y, e0.z, e1.x, e1.y, e1.z, .0042, .0042, .01]);
+      }
+    }
+    const lump = (x, y, z) => .0045*(Math.sin(x*61 + ph[0]) + Math.sin(y*57 + ph[1]) + Math.sin(z*67 + ph[2]))/3;
+    const somaF = (x, y, z) => { const dx = (x - c.x)/RS, dy = (y - c.y)/(RS*.84), dz = (z - c.z)/(RS*.92); return RS*.9*(Math.hypot(dx, dy, dz) - 1) + lump(x, y, z); };
+    const segD = (s, x, y, z) => { const bx = s[3] - s[0], by = s[4] - s[1], bz = s[5] - s[2], px = x - s[0], py = y - s[1], pz = z - s[2], bb = bx*bx + by*by + bz*bz;
+      const h = bb > 1e-12 ? Math.min(1, Math.max(0, (px*bx + py*by + pz*bz)/bb)) : 0, dx = px - bx*h, dy = py - by*h, dz = pz - bz*h; return Math.sqrt(dx*dx + dy*dy + dz*dz) - (s[6] + (s[7] - s[6])*h); };
+    const F = (x, y, z) => { let f = somaF(x, y, z); for (const s of segs){ const d = segD(s, x, y, z); if (d < .06) f = smin(f, d, s[8]); } return f; };
+    const e = .0008, onto = v => { let { x, y, z } = v;
+      for (let it = 0; it < 5; it++){ const f = F(x, y, z); if (Math.abs(f) < 2e-5) break;
+        const g1 = F(x + e, y - e, z - e), g2 = F(x - e, y - e, z + e), g3 = F(x - e, y + e, z - e), g4 = F(x + e, y + e, z + e);
+        let gx = g1 - g2 - g3 + g4, gy = -g1 - g2 + g3 + g4, gz = -g1 + g2 - g3 + g4; const gl = Math.hypot(gx, gy, gz) || 1; x -= f*gx/gl; y -= f*gy/gl; z -= f*gz/gl; }
+      return Math.abs(F(x, y, z)) < .0015 ? V(x, y, z) : null; };
+    // points spread over each piece by its area; kept only where they are not buried in another piece, then pulled onto the surface
+    const buried = (x, y, z, own) => { if (own !== -1 && somaF(x, y, z) < -.002) return true; for (let i = 0; i < segs.length; i++) if (i !== own && segD(segs[i], x, y, z) < -.0015) return true; return false; };
+    for (let k = 0, M = 1100; k < M; k++){ const d = fib(k, M), v = V(c.x + d.x*RS, c.y + d.y*RS*.84, c.z + d.z*RS*.92);
+      if (buried(v.x, v.y, v.z, -1)) continue; const q = onto(v); if (q) put(q, 6); }
+    segs.forEach((s, si) => { const A0 = V(s[0], s[1], s[2]), B0 = V(s[3], s[4], s[5]), L = A0.distanceTo(B0), T = L > 1e-6 ? B0.clone().sub(A0).normalize() : dirR(), N1 = perp(T), N2 = T.clone().cross(N1);
+      const m = Math.max(3, Math.round(Math.PI*(s[6] + s[7])*Math.max(L, .004)*26000));
+      for (let j = 0; j < m; j++){ const t = (j + R())/m, r = s[6] + (s[7] - s[6])*t, a = j*2.39996323 + R()*.4, v = A0.clone().lerp(B0, t).addScaledVector(N1, r*Math.cos(a)).addScaledVector(N2, r*Math.sin(a));
+        if (buried(v.x, v.y, v.z, si)) continue; const q = onto(v); if (q) put(q, 7); } });
     // the nucleus: the envelope, and inside it the DNA as coiled double helices, base pairs across
-    for (let k = 0, M = 300; k < M; k++) put(c.clone().addScaledVector(fib(k, M), .027), 0);
+    for (let k = 0, M = 300; k < M; k++) put(c.clone().addScaledVector(fib(k, M), .026), 0);
     for (let h = 0; h < 4; h++){
       let p = dirR().multiplyScalar(.012*R()), d = dirR(); const w = V(0, 0, 0); let ref = perp(d), ang = R()*TAU;
       for (let t = 0; t < 70; t++){
-        w.addScaledVector(dirR(), .5).multiplyScalar(.9); d.addScaledVector(w, .02); if (p.length() > .019) d.addScaledVector(p.clone().normalize(), -.3); d.normalize(); p.addScaledVector(d, .0012);
+        w.addScaledVector(dirR(), .5).multiplyScalar(.9); d.addScaledVector(w, .02); if (p.length() > .018) d.addScaledVector(p.clone().normalize(), -.3); d.normalize(); p.addScaledVector(d, .0012);
         ref.sub(d.clone().multiplyScalar(ref.dot(d))).normalize(); const bi = d.clone().cross(ref); ang += .37;
         const s1 = p.clone().addScaledVector(ref, .0034*Math.cos(ang)).addScaledVector(bi, .0034*Math.sin(ang)), s2 = p.clone().addScaledVector(ref, .0034*Math.cos(ang + 2.4)).addScaledVector(bi, .0034*Math.sin(ang + 2.4));
         put(c.clone().add(s1), 1); put(c.clone().add(s2), 1);
         if (t % 3 === 0){ const g = Math.floor(R()*4); put(c.clone().add(s1.clone().lerp(s2, .33)), 2 + g); put(c.clone().add(s2.clone().lerp(s1, .33)), 2 + (3 - g)); }
       }
     }
-    // a process to each internode it myelinates, ending on the sheath, and the sheath itself wound round the axon
-    for (const k of o.ks){
-      const s0 = ax.START + k*ax.INT + .012, s1 = s0 + ax.INT - .024, im = at((s0 + s1)/2), T = tan(im), A = ax.pts[im];
-      let out = c.clone().sub(A); out.sub(T.clone().multiplyScalar(out.dot(T))).normalize();
-      const end = A.clone().addScaledVector(out, .02), start = c.clone().add(end.clone().sub(c).normalize().multiplyScalar(RS*.9));
-      const ctl = start.clone().lerp(end, .5).addScaledVector(T, (R() - .5)*.08).addScaledVector(out, .03);
-      const NPc = 420;
-      for (let q = 0; q < NPc; q++){ const t = q/NPc, a = start.clone().multiplyScalar((1 - t)*(1 - t)).addScaledVector(ctl, 2*t*(1 - t)).addScaledVector(end, t*t);
-        const dd = ctl.clone().sub(start).multiplyScalar(2*(1 - t)).addScaledVector(end.clone().sub(ctl), 2*t).normalize(), N1 = perp(dd), N2 = dd.clone().cross(N1), r = .0085 - .004*t, g = q*2.39996;
-        put(a.addScaledVector(N1, r*Math.cos(g)).addScaledVector(N2, r*Math.sin(g)), 7); }
-      // the sheath: the process's membrane wound many times round this internode (a spiral just over the myelin)
+    // the sheath each internode is wrapped in: the oligodendrocyte's membrane wound round and round the axon
+    for (const k of o.ks){ const s0 = ax.START + k*ax.INT + .012, s1 = s0 + ax.INT - .024;
       for (let q = 0, M = 420; q < M; q++){ const s = s0 + (s1 - s0)*q/M, i = at(s), Tq = tan(i), N1 = perp(Tq), N2 = Tq.clone().cross(N1), g = q*.9;
-        put(ax.pts[i].clone().addScaledVector(N1, .0215*Math.cos(g)).addScaledVector(N2, .0215*Math.sin(g)), 8); }
-    }
+        put(ax.pts[i].clone().addScaledVector(N1, .0215*Math.cos(g)).addScaledVector(N2, .0215*Math.sin(g)), 8); } }
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aK', new THREE.Float32BufferAttribute(K, 1));
   const m = new THREE.ShaderMaterial({
@@ -4158,7 +4187,7 @@ function buildOligos(){
         else if (k < 1.5){ C = mix(uG, vec3(1., .95, .9), .3); A = .55; S = .0048; }                   // DNA
         else if (k < 5.5){ C = mix(k < 2.5 ? uBA : k < 3.5 ? uBC : k < 4.5 ? uBG : uBT, uG, .2); A = .58; S = .0046; }   // its base pairs
         else if (k < 6.5){ C = vec3(.72, .74, .8); A = .34; S = .0058; }                               // the cell's membrane
-        else if (k < 7.5){ C = vec3(.72, .74, .8); A = .42; S = .0054; }                                // a process
+        else if (k < 7.5){ C = vec3(.72, .74, .8); A = .36; S = .0054; }                                // a process
         else { C = mix(vec3(.8, .74, .72), uG, .45); A = .36; S = .005; }                             // the myelin it wraps
         vec4 mv = viewMatrix*vec4(uC + mat3(uM)*position, 1.); gl_Position = projectionMatrix*mv;
         float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 2.6, 18.*uPR); gl_PointSize = drawn; vC = C; vA = A*uOn*min(1., px*px/(drawn*drawn));
@@ -5768,14 +5797,14 @@ renderer.setAnimationLoop(() => {
   // the step buttons name where Next goes, and fill a hairline while a chapter turns
   if (stepUI.to !== nav.to){
     stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
-    $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = COARSE ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
-    if (COARSE && !AUTO.on){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
+    $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = BAR ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
+    if (BAR && !AUTO.on){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
     $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
   autoFrame(dt);
-  if (COARSE){ const v = barPos(), f = v - Math.floor(v + 1e-4); $('stepRow').style.setProperty('--pos', clamp(f, 0, 1).toFixed(4)); }   // (how far into this chapter's animation)
+  if (BAR){ const v = barPos(), f = v - Math.floor(v + 1e-4); $('stepRow').style.setProperty('--pos', clamp(f, 0, 1).toFixed(4)); }   // (how far into this chapter's animation)
   $('stBar').style.setProperty('--p', nav.busy ? clamp((tNow - nav.t0)/nav.dur, 0, 1).toFixed(3) : AUTO.on ? (AUTO.t/AUTO.dwell).toFixed(3) : '0');   // (playing: the wait before the next chapter)
   // chapter text, legends and panels crossfade with the scroll
   for (const el of chEls){
@@ -6058,7 +6087,7 @@ function placeGenomeLabels(gv){
       if (sz < 1 && (!best || sx < best[0])) best = [sx, sy];
       if (lay > .5) break;
     }
-    const el = hLabels[n]; labelFade(el, best ? gv*.9 : 0, kf);
+    const el = hLabels[n]; labelFade(el, best ? gv*.9*(1 - smooth(clamp(U.uGFlat.value*1.4, 0, 1))) : 0, kf);   // (the flat ring has no height scale to name)
     if (best) el.style.transform = `translate(${best[0].toFixed(1)}px, ${best[1].toFixed(1)}px)`;
   });
 }
