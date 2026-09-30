@@ -3877,7 +3877,7 @@ function buildShapes(){
   const tex = new THREE.DataTexture(data, SHAPE_W, rows, THREE.RGBAFormat, THREE.FloatType);
   tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.needsUpdate = true; CU.uShape.value = tex;
   const mk = ([p, t, al, c]) => { const e = document.createElement('span'); e.className = 'zlabel ' + al; e.textContent = t; if (c) e.style.color = c; $('cellLabels').appendChild(e); return { p, e }; };
-  CELL.nLab = nl.map(mk); CELL.cLab = hl.map(mk);
+  CELL.nLab = nl.map(mk); CELL.cLab = hl.map(mk); buildOligos();
   // the zoom into the nucleus ends on four nucleosomes in a row on chromosome 19: the one nearest the viewer and the three after it.
   // They are the very nucleosomes the close-up shows, so the DNA wound on them grows out of the chromatin, bead for bead
   let best = null;
@@ -4091,8 +4091,81 @@ function buildNeuron(out, off){
   while (i < n){ const si = dSegs[(R()*dSegs.length) | 0], q = SEG[si], d = dirR(); if (Math.abs(project(q[0] + d.x*q[6], q[1] + d.y*q[6], q[2] + d.z*q[6])) < .002) put(P[0], P[1], P[2], 3, q[9]); }
   const bt = den[3].pts[den[3].pts.length - 1], tp = trunk.pts[Math.floor(trunk.pts.length*.6)], ap = axon.pts[Math.floor(axon.pts.length*.3)];
   const tc = terms.slice(0, 12).reduce((a, t) => a.add(t.c), V(0, 0, 0)).multiplyScalar(1/Math.min(12, terms.length));
+  OLIGO.ax = { pts: axon.pts, STEP, START, INT, NINT }; OLIGO.plan = planOligos(OLIGO.ax); const ol = OLIGO.plan[Math.min(1, OLIGO.plan.length - 1)].c;
   return [[[.09, .06, 0], 'Nucleus', 'l', '#4DA3FF'], [[-.13, .16, 0], 'Soma', 'r'], [[tp.x + .05, tp.y, tp.z], 'Apical dendrite', 'l'],
-    [[bt.x, bt.y - .07, bt.z], 'Basal dendrites', 'c'], [[ap.x + .05, ap.y, ap.z], 'Axon · myelinated', 'l'], [[tc.x + .16, tc.y - .02, tc.z], 'Axon terminals · synapses', 'l', '#FFD08A']];
+    [[bt.x, bt.y - .07, bt.z], 'Basal dendrites', 'c'], [[ap.x + .05, ap.y, ap.z], 'Axon · myelinated', 'l'], [[tc.x + .16, tc.y - .02, tc.z], 'Axon terminals · synapses', 'l', '#FFD08A'],
+    [[ol.x + .06, ol.y + .03, ol.z], 'Oligodendrocyte · myelin', 'l', '#FF6A5A']];
+}
+// Oligodendrocytes beside the neuron: three small cells, each sending a few thin processes to the axon, where every process ends in
+// the myelin sheath of one internode, wound round and round it; drawn as the neuron is drawn, a quiet grey membrane of points, and
+// a nucleus of the same make, an envelope over coiled DNA, in the oligodendrocytes' red. In the neuron's own frame.
+const OLIGO = { pts: null, plan: null };
+function planOligos(ax){
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), at = s => Math.min(ax.pts.length - 1, Math.max(0, Math.round(s/ax.STEP)));
+  const mid = k => ax.START + (k + .5)*ax.INT, groups = [[0, 1], [2, 3, 4], [5, 6]].map(g => g.filter(k => k < ax.NINT)).filter(g => g.length);
+  return groups.map((g, j) => {
+    const s = g.reduce((a, k) => a + mid(k), 0)/g.length, p = ax.pts[at(s)], side = [1, -1, 1][j];   // (to either side of the axon as the camera sees it)
+    return { c: p.clone().add(V(side*.26, .04*(1 - j), [.05, -.04, .03][j])), ks: g };
+  });
+}
+function buildOligos(){
+  const ax = OLIGO.ax; if (!ax) return;
+  const R = mulberry(41), V = (x, y, z) => new THREE.Vector3(x, y, z), P = [], K = [];
+  const put = (v, k) => { P.push(v.x, v.y, v.z); K.push(k); };
+  const dirR = () => { let v; do { v = V(R()*2 - 1, R()*2 - 1, R()*2 - 1); } while (v.lengthSq() > 1 || v.lengthSq() < 1e-4); return v.normalize(); };
+  const perp = d => (Math.abs(d.y) < .9 ? V(0, 1, 0) : V(1, 0, 0)).cross(d).normalize();
+  const fib = (k, m) => { const yy = 1 - 2*(k + .5)/m, r = Math.sqrt(1 - yy*yy), a = k*2.39996323; return V(Math.cos(a)*r, yy, Math.sin(a)*r); };
+  const at = s => Math.min(ax.pts.length - 1, Math.max(0, Math.round(s/ax.STEP))), tan = i => ax.pts[Math.min(ax.pts.length - 1, i + 1)].clone().sub(ax.pts[Math.max(0, i - 1)]).normalize();
+  for (const o of OLIGO.plan){
+    const c = o.c, RS = .058;
+    // the soma: its membrane, a little flattened toward the axon
+    for (let k = 0, M = 900; k < M; k++){ const d = fib(k, M); put(c.clone().add(V(d.x*RS, d.y*RS*.86, d.z*RS)), 6); }
+    // the nucleus: the envelope, and inside it the DNA as coiled double helices, base pairs across
+    for (let k = 0, M = 300; k < M; k++) put(c.clone().addScaledVector(fib(k, M), .027), 0);
+    for (let h = 0; h < 4; h++){
+      let p = dirR().multiplyScalar(.012*R()), d = dirR(); const w = V(0, 0, 0); let ref = perp(d), ang = R()*TAU;
+      for (let t = 0; t < 70; t++){
+        w.addScaledVector(dirR(), .5).multiplyScalar(.9); d.addScaledVector(w, .02); if (p.length() > .019) d.addScaledVector(p.clone().normalize(), -.3); d.normalize(); p.addScaledVector(d, .0012);
+        ref.sub(d.clone().multiplyScalar(ref.dot(d))).normalize(); const bi = d.clone().cross(ref); ang += .37;
+        const s1 = p.clone().addScaledVector(ref, .0034*Math.cos(ang)).addScaledVector(bi, .0034*Math.sin(ang)), s2 = p.clone().addScaledVector(ref, .0034*Math.cos(ang + 2.4)).addScaledVector(bi, .0034*Math.sin(ang + 2.4));
+        put(c.clone().add(s1), 1); put(c.clone().add(s2), 1);
+        if (t % 3 === 0){ const g = Math.floor(R()*4); put(c.clone().add(s1.clone().lerp(s2, .33)), 2 + g); put(c.clone().add(s2.clone().lerp(s1, .33)), 2 + (3 - g)); }
+      }
+    }
+    // a process to each internode it myelinates, ending on the sheath, and the sheath itself wound round the axon
+    for (const k of o.ks){
+      const s0 = ax.START + k*ax.INT + .012, s1 = s0 + ax.INT - .024, im = at((s0 + s1)/2), T = tan(im), A = ax.pts[im];
+      let out = c.clone().sub(A); out.sub(T.clone().multiplyScalar(out.dot(T))).normalize();
+      const end = A.clone().addScaledVector(out, .02), start = c.clone().add(end.clone().sub(c).normalize().multiplyScalar(RS*.9));
+      const ctl = start.clone().lerp(end, .5).addScaledVector(T, (R() - .5)*.08).addScaledVector(out, .03);
+      const NPc = 420;
+      for (let q = 0; q < NPc; q++){ const t = q/NPc, a = start.clone().multiplyScalar((1 - t)*(1 - t)).addScaledVector(ctl, 2*t*(1 - t)).addScaledVector(end, t*t);
+        const dd = ctl.clone().sub(start).multiplyScalar(2*(1 - t)).addScaledVector(end.clone().sub(ctl), 2*t).normalize(), N1 = perp(dd), N2 = dd.clone().cross(N1), r = .0085 - .004*t, g = q*2.39996;
+        put(a.addScaledVector(N1, r*Math.cos(g)).addScaledVector(N2, r*Math.sin(g)), 7); }
+      // the sheath: the process's membrane wound many times round this internode (a spiral just over the myelin)
+      for (let q = 0, M = 420; q < M; q++){ const s = s0 + (s1 - s0)*q/M, i = at(s), Tq = tan(i), N1 = perp(Tq), N2 = Tq.clone().cross(N1), g = q*.9;
+        put(ax.pts[i].clone().addScaledVector(N1, .0215*Math.cos(g)).addScaledVector(N2, .0215*Math.sin(g)), 8); }
+    }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aK', new THREE.Float32BufferAttribute(K, 1));
+  const m = new THREE.ShaderMaterial({
+    uniforms: { uOn: { value: 0 }, uC: CU.uCellC, uM: CU.uCellMat, uPR: U.uPR, uScale: U.uScale, uG: { value: col('#FF4A3D') },
+      uBA: { value: col(PAL.baseA) }, uBC: { value: col(PAL.baseC) }, uBG: { value: col(PAL.baseG) }, uBT: { value: col(PAL.baseT) } },
+    vertexShader: `attribute float aK; uniform float uOn, uPR, uScale; uniform vec3 uC, uG, uBA, uBC, uBG, uBT; uniform mat4 uM; varying vec3 vC; varying float vA;
+      void main(){
+        vec3 C; float A, S, k = aK;
+        if (k < .5){ C = uG*vec3(1., .85, .8); A = .42; S = .0062; }                                   // the nuclear envelope
+        else if (k < 1.5){ C = mix(uG, vec3(1., .95, .9), .3); A = .55; S = .0048; }                   // DNA
+        else if (k < 5.5){ C = mix(k < 2.5 ? uBA : k < 3.5 ? uBC : k < 4.5 ? uBG : uBT, uG, .2); A = .58; S = .0046; }   // its base pairs
+        else if (k < 6.5){ C = vec3(.72, .74, .8); A = .34; S = .0058; }                               // the cell's membrane
+        else if (k < 7.5){ C = vec3(.72, .74, .8); A = .42; S = .0054; }                                // a process
+        else { C = mix(vec3(.8, .74, .72), uG, .45); A = .36; S = .005; }                             // the myelin it wraps
+        vec4 mv = viewMatrix*vec4(uC + mat3(uM)*position, 1.); gl_Position = projectionMatrix*mv;
+        float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 2.6, 18.*uPR); gl_PointSize = drawn; vC = C; vA = A*uOn*min(1., px*px/(drawn*drawn));
+      }`,
+    fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*d*3.)); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  OLIGO.pts = new THREE.Points(g, m); OLIGO.pts.frustumCulled = false; OLIGO.pts.visible = false; scene.add(OLIGO.pts);
 }
 let CHR19B = [], NUCC = [];
 function buildChromatin(out, off){
@@ -4207,6 +4280,7 @@ function buildNucleosomes(out, off){
 }
 function cellFrame(mCell, mNucl){
   CU.uCell.value = mCell; CU.uNucl.value = mNucl;
+  if (OLIGO.pts){ const on = smooth(clamp((mCell - .7)/.3, 0, 1))*(1 - smooth(clamp(mNucl/.12, 0, 1))); OLIGO.pts.visible = on > .003; OLIGO.pts.material.uniforms.uOn.value = on; }   // (the oligodendrocytes, with the neuron)
   neuronGroup.updateMatrixWorld(true); chromGroup.updateMatrixWorld(true);
 }
 function placeCellLabels(){
