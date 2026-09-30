@@ -4178,7 +4178,7 @@ function buildNeuron(out, off){
   const tc = terms.slice(0, 12).reduce((a, t) => a.add(t.c), V(0, 0, 0)).multiplyScalar(1/Math.min(12, terms.length));
   OLIGO.ax = { pts: axon.pts, STEP, START, INT, NINT }; OLIGO.plan = planOligos(OLIGO.ax); const ol = OLIGO.plan[OLIGO.plan.length - 1].c;
   return [[[.09, .06, 0], 'Nucleus', 'l', '#4DA3FF'], [[-.13, .16, 0], 'Soma', 'r'], [[tp.x + .05, tp.y, tp.z], 'Apical dendrite', 'l'],
-    [[bt.x, bt.y - .07, bt.z], 'Basal dendrites', 'c'], [[ap.x + .05, ap.y, ap.z], 'Axon · myelinated', 'l'], [[tc.x + .16, tc.y - .02, tc.z], 'Axon terminals · synapses', 'l', '#FFD08A'],
+    [[ap.x + .05, ap.y, ap.z], 'Axon · myelinated', 'l'], [[tc.x + .16, tc.y - .02, tc.z], 'Axon terminals · synapses', 'l', '#FFD08A'],
     [[ol.x + .08, ol.y + .02, ol.z], 'Oligodendrocyte', 'l', '#FF6A5A']];
 }
 // Oligodendrocytes beside the neuron: three small cells, each sending a few thin processes to the axon, where every process ends in
@@ -4204,7 +4204,7 @@ function buildOligos(){
   const bez = (a, b, c, t) => a.clone().multiplyScalar((1 - t)*(1 - t)).addScaledVector(b, 2*t*(1 - t)).addScaledVector(c, t*t);
   const smin = (a, b, k) => { const h = Math.max(k - Math.abs(a - b), 0)/k; return Math.min(a, b) - h*h*k*.25; };
   for (const o of OLIGO.plan){
-    const c = o.c, RS = .056, ph = [R()*TAU, R()*TAU, R()*TAU];
+    const c = o.c, RS = .042, ph = [R()*TAU, R()*TAU, R()*TAU], far = [];   // (far: sheaths on axons out of the picture)
     // one continuous surface, as the neuron's: a lumpy soma, and processes that flare out of it and fork near the axon into fine
     // branches, each ending on the myelin in a flattened pad lying along it; pieces joined by a smooth minimum
     const segs = [];                                   // [ax, ay, az, bx, by, bz, ra, rb, k (blend)]
@@ -4215,18 +4215,30 @@ function buildOligos(){
       let out = c.clone().sub(A); out.sub(T.clone().multiplyScalar(out.dot(T))).normalize();
       const fork = A.clone().addScaledVector(out, .075).addScaledVector(T, (R() - .5)*.03);
       const ctl = c.clone().lerp(fork, .5).addScaledVector(T, (R() - .5)*.06).addScaledVector(out, .02);
-      tube([...Array(13)].map((_, q) => bez(c, ctl, fork, q/12)), .013, .0045, .045);        // the process: thick where it leaves the soma
-      const nb = 2 + (R() < .5 ? 1 : 0);
+      tube([...Array(13)].map((_, q) => bez(c, ctl, fork, q/12)), .0062, .0032, .02);        // the process: slender, a little fuller where it leaves the soma
+      const nb = 2;
       for (let b = 0; b < nb; b++){                     // its fine branches, fanning out along the internode
         const along = (b - (nb - 1)/2)*.045 + (R() - .5)*.012, end = A.clone().addScaledVector(out, .024).addScaledVector(T, along);
         const mid = fork.clone().lerp(end, .5).addScaledVector(out, .012).addScaledVector(perp(T).cross(out).normalize(), (R() - .5)*.02);
-        tube([...Array(8)].map((_, q) => bez(fork, mid, end, q/7)), .0034, .0024, .012);
+        tube([...Array(8)].map((_, q) => bez(fork, mid, end, q/7)), .0028, .0022, .01);
         const e0 = end.clone().addScaledVector(T, -.012), e1 = end.clone().addScaledVector(T, .012);      // the pad on the sheath
         segs.push([e0.x, e0.y, e0.z, e1.x, e1.y, e1.z, .0042, .0042, .01]);
       }
     }
-    const lump = (x, y, z) => .0045*(Math.sin(x*61 + ph[0]) + Math.sin(y*57 + ph[1]) + Math.sin(z*67 + ph[2]))/3;
-    const somaF = (x, y, z) => { const dx = (x - c.x)/RS, dy = (y - c.y)/(RS*.84), dz = (z - c.z)/(RS*.92); return RS*.9*(Math.hypot(dx, dy, dz) - 1) + lump(x, y, z); };
+    // one oligodendrocyte myelinates many axons: more processes reach away from this one, each to a short sheath on an axon out of
+    // the picture, running at its own angle
+    const toAx = ax.pts[at(ax.START + o.ks[0]*ax.INT)].clone().sub(c).normalize();
+    for (let e = 0; e < 3; e++){
+      let d = dirR(); if (d.dot(toAx) > 0) d.addScaledVector(toAx, -1.4*d.dot(toAx)); d.normalize();
+      const L = .1 + .05*R(), end = c.clone().addScaledVector(d, L), ctl = c.clone().addScaledVector(d, L*.5).addScaledVector(dirR(), .02);
+      tube([...Array(10)].map((_, q) => bez(c, ctl, end, q/9)), .0056, .0028, .02);
+      const aDir = perp(d).applyAxisAngle(d, R()*TAU), ctr = end.clone().addScaledVector(d, .02);
+      far.push([ctr, aDir, .09 + .05*R()]);
+      const e0 = ctr.clone().addScaledVector(d, -.016).addScaledVector(aDir, -.01), e1 = e0.clone().addScaledVector(aDir, .02);
+      segs.push([e0.x, e0.y, e0.z, e1.x, e1.y, e1.z, .0038, .0038, .01]);
+    }
+    const lump = (x, y, z) => .003*(Math.sin(x*61 + ph[0]) + Math.sin(y*57 + ph[1]) + Math.sin(z*67 + ph[2]))/3;
+    const somaF = (x, y, z) => { const dx = (x - c.x)/RS, dy = (y - c.y)/(RS*.8), dz = (z - c.z)/(RS*.9); return RS*.9*(Math.hypot(dx, dy, dz) - 1) + lump(x, y, z); };
     const segD = (s, x, y, z) => { const bx = s[3] - s[0], by = s[4] - s[1], bz = s[5] - s[2], px = x - s[0], py = y - s[1], pz = z - s[2], bb = bx*bx + by*by + bz*bz;
       const h = bb > 1e-12 ? Math.min(1, Math.max(0, (px*bx + py*by + pz*bz)/bb)) : 0, dx = px - bx*h, dy = py - by*h, dz = pz - bz*h; return Math.sqrt(dx*dx + dy*dy + dz*dz) - (s[6] + (s[7] - s[6])*h); };
     const F = (x, y, z) => { let f = somaF(x, y, z); for (const s of segs){ const d = segD(s, x, y, z); if (d < .06) f = smin(f, d, s[8]); } return f; };
@@ -4237,14 +4249,14 @@ function buildOligos(){
       return Math.abs(F(x, y, z)) < .0015 ? V(x, y, z) : null; };
     // points spread over each piece by its area; kept only where they are not buried in another piece, then pulled onto the surface
     const buried = (x, y, z, own) => { if (own !== -1 && somaF(x, y, z) < -.002) return true; for (let i = 0; i < segs.length; i++) if (i !== own && segD(segs[i], x, y, z) < -.0015) return true; return false; };
-    for (let k = 0, M = 1100; k < M; k++){ const d = fib(k, M), v = V(c.x + d.x*RS, c.y + d.y*RS*.84, c.z + d.z*RS*.92);
+    for (let k = 0, M = 800; k < M; k++){ const d = fib(k, M), v = V(c.x + d.x*RS, c.y + d.y*RS*.8, c.z + d.z*RS*.9);
       if (buried(v.x, v.y, v.z, -1)) continue; const q = onto(v); if (q) put(q, 6); }
     segs.forEach((s, si) => { const A0 = V(s[0], s[1], s[2]), B0 = V(s[3], s[4], s[5]), L = A0.distanceTo(B0), T = L > 1e-6 ? B0.clone().sub(A0).normalize() : dirR(), N1 = perp(T), N2 = T.clone().cross(N1);
       const m = Math.max(3, Math.round(Math.PI*(s[6] + s[7])*Math.max(L, .004)*26000));
       for (let j = 0; j < m; j++){ const t = (j + R())/m, r = s[6] + (s[7] - s[6])*t, a = j*2.39996323 + R()*.4, v = A0.clone().lerp(B0, t).addScaledVector(N1, r*Math.cos(a)).addScaledVector(N2, r*Math.sin(a));
         if (buried(v.x, v.y, v.z, si)) continue; const q = onto(v); if (q) put(q, 7); } });
     // the nucleus: the envelope, and inside it the DNA as coiled double helices, base pairs across
-    for (let k = 0, M = 300; k < M; k++) put(c.clone().addScaledVector(fib(k, M), .026), 0);
+    for (let k = 0, M = 260; k < M; k++) put(c.clone().addScaledVector(fib(k, M), .024), 0);
     for (let h = 0; h < 4; h++){
       let p = dirR().multiplyScalar(.012*R()), d = dirR(); const w = V(0, 0, 0); let ref = perp(d), ang = R()*TAU;
       for (let t = 0; t < 70; t++){
@@ -4259,12 +4271,15 @@ function buildOligos(){
     for (const k of o.ks){ const s0 = ax.START + k*ax.INT + .012, s1 = s0 + ax.INT - .024;
       for (let q = 0, M = 420; q < M; q++){ const s = s0 + (s1 - s0)*q/M, i = at(s), Tq = tan(i), N1 = perp(Tq), N2 = Tq.clone().cross(N1), g = q*.9;
         put(ax.pts[i].clone().addScaledVector(N1, .0215*Math.cos(g)).addScaledVector(N2, .0215*Math.sin(g)), 8); } }
+    for (const [ctr, aDir, L] of far){ const N1 = perp(aDir), N2 = aDir.clone().cross(N1);    // (and the sheaths out of the picture)
+      for (let q = 0, M = 260; q < M; q++){ const g = q*.9; put(ctr.clone().addScaledVector(aDir, (q/M - .5)*L).addScaledVector(N1, .016*Math.cos(g)).addScaledVector(N2, .016*Math.sin(g)), 8); } }
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aK', new THREE.Float32BufferAttribute(K, 1));
   const m = new THREE.ShaderMaterial({
-    uniforms: { uOn: { value: 0 }, uC: CU.uCellC, uM: CU.uCellMat, uPR: U.uPR, uScale: U.uScale, uG: { value: col('#FF4A3D') },
+    uniforms: { uOn: { value: 0 }, uC: CU.uCellC, uM: CU.uCellMat, uNucl: CU.uNucl, uZB: CU.uZB, uPR: U.uPR, uScale: U.uScale, uG: { value: col('#FF4A3D') },
       uBA: { value: col(PAL.baseA) }, uBC: { value: col(PAL.baseC) }, uBG: { value: col(PAL.baseG) }, uBT: { value: col(PAL.baseT) } },
-    vertexShader: `attribute float aK; uniform float uOn, uPR, uScale; uniform vec3 uC, uG, uBA, uBC, uBG, uBT; uniform mat4 uM; varying vec3 vC; varying float vA;
+    vertexShader: `attribute float aK; uniform float uOn, uPR, uScale, uNucl, uZB; uniform vec3 uC, uG, uBA, uBC, uBG, uBT; uniform mat4 uM; varying vec3 vC; varying float vA;
+      float eio(float t){ return t < .5 ? 4.*t*t*t : 1. - pow(-2.*t + 2., 3.)*.5; }
       void main(){
         vec3 C; float A, S, k = aK;
         if (k < .5){ C = uG*vec3(1., .85, .8); A = .42; S = .0062; }                                   // the nuclear envelope
@@ -4273,7 +4288,12 @@ function buildOligos(){
         else if (k < 6.5){ C = vec3(.72, .74, .8); A = .34; S = .0058; }                               // the cell's membrane
         else if (k < 7.5){ C = vec3(.72, .74, .8); A = .36; S = .0054; }                                // a process
         else { C = mix(vec3(.8, .74, .72), uG, .45); A = .36; S = .005; }                             // the myelin it wraps
-        vec4 mv = viewMatrix*vec4(uC + mat3(uM)*position, 1.); gl_Position = projectionMatrix*mv;
+        vec3 W = uC + mat3(uM)*position;
+        // into the neuron's nucleus: the cells are scraped away as the neuron is, lifting off as they fade; their nuclei stay, and
+        // follow the view as it dives in (everything scaled about the neuron's centre, as the neuron's own points are)
+        if (k > 5.5){ float sc = clamp((uNucl - .02 - .1*fract(position.x*97.3 + position.y*31.7))/.1, 0., 1.); W += normalize(W - uC + 1e-4)*.16*sc*sc; A *= 1. - smoothstep(0., 1., sc); }
+        W = uC + (W - uC)*pow(uZB, eio(clamp((uNucl - .2)/.4, 0., 1.))); A *= 1. - smoothstep(.45, .6, uNucl);
+        vec4 mv = viewMatrix*vec4(W, 1.); gl_Position = projectionMatrix*mv;
         float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 2.6, 18.*uPR); gl_PointSize = drawn; vC = C; vA = A*uOn*min(1., px*px/(drawn*drawn));
       }`,
     fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*d*3.)); }`,
@@ -4393,7 +4413,7 @@ function buildNucleosomes(out, off){
 }
 function cellFrame(mCell, mNucl){
   CU.uCell.value = mCell; CU.uNucl.value = mNucl;
-  if (OLIGO.pts){ const on = smooth(clamp((mCell - .7)/.3, 0, 1))*(1 - smooth(clamp(mNucl/.12, 0, 1))); OLIGO.pts.visible = on > .003; OLIGO.pts.material.uniforms.uOn.value = on; }   // (the oligodendrocytes, with the neuron)
+  if (OLIGO.pts){ const on = smooth(clamp((mCell - .7)/.3, 0, 1))*(mNucl < .6 ? 1 : 0); OLIGO.pts.visible = on > .003; OLIGO.pts.material.uniforms.uOn.value = on; }   // (the oligodendrocytes, with the neuron)
   neuronGroup.updateMatrixWorld(true); chromGroup.updateMatrixWorld(true);
 }
 function placeCellLabels(){
@@ -5355,11 +5375,10 @@ function assignAmy(camAz){
   });
   pGeo.attributes.aCube.needsUpdate = true;
   AU.uNCell.value = Math.floor(amyK*.3/10);
-  // the view turns to the front of the brain, a little to one side, so both amygdalae show; the tube stands to its left (below, on a tall screen)
+  // the view turns to the front of the brain, a little to one side, so both amygdalae show; the tube stands in front of it, below
   az.amy = camAz;                                // (the view stays where it is)
   const toCam = dirAt(az.amy, 0), right = new THREE.Vector3(toCam.z, 0, -toCam.x), up = new THREE.Vector3(0, 1, 0), s = portrait ? .62 : .78;
-  if (portrait){ AMY.vialPos.set(0, -1.55, 0).addScaledVector(toCam, .1); AMY.target.set(0, 0, 0); }
-  else { AMY.vialPos.copy(right).multiplyScalar(-1.95).add(new THREE.Vector3(0, -.3, 0)); AMY.target.set(0, 0, 0); }
+  AMY.vialPos.set(0, portrait ? -1.5 : -1.12, 0).addScaledVector(toCam, portrait ? .9 : .55); AMY.target.set(0, 0, 0);   // (in front of the brain, below it)
   AMY.vialM.compose(AMY.vialPos, new THREE.Quaternion().setFromAxisAngle(up, az.amy), new THREE.Vector3(s*.62, s*.86, s*.62)).multiply(new THREE.Matrix4().makeTranslation(0, -1.24, 0));
   AU.uAmyOut.value.copy(toCam).multiplyScalar(.7).addScaledVector(up, .95).addScaledVector(right, portrait ? 0 : -.3);
   setNum($('amyN'), amyK);
