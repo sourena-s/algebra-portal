@@ -5859,7 +5859,7 @@ const stepUI = { to: -99 };
 let prevM = new Array(10).fill(0), mAmy = 0, mSort = 0, mCell = 0, mNucl = 0, mSm = 0, mZm = 0, mGw = 0, mDna = 0, mNet = 0;
 const stageW = k => clamp(1 - Math.abs(Sd - k), 0, 1);          // how much of chapter k is on screen
 const AR_OK = [1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]; AR_OK[-1] = 1;                            // chapters that may turn slowly on their own
-const BLOOM_BASE = [0, .02, -.16, -.08, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [.5, .3, .3, .35, .3, .35, .3, .4, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;
+const BLOOM_BASE = [0, .02, -.16, -.08, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [0, .4, .3, .35, .3, .35, .3, .4, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;   // (no bump from the Earth to the neuron: its nucleus appears mid-way and would flash)
 renderer.setAnimationLoop(() => {
   const tNow = performance.now(), dt = Math.min(.05, (tNow - lastT)/1000); lastT = tNow;
   U.uTime.value += dt;
