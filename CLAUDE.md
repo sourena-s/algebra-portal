@@ -9,6 +9,7 @@ The page and its code are in `index.html` (~580 KB). Large assets live beside it
 - `assets/earth/{day,night,clouds}-{px,nx,py,ny,pz,nz}.jpg`: the Earth's cube maps (NASA Blue Marble, Black Marble and clouds, reprojected from equirectangular so the globe has no seam), sampled by direction in `EARTH_PHOTO`.
 - `assets/*.jpg`: the planets (Mercury to Neptune, no Earth) and the Moon; `assets/saturn-rings.png`; `assets/moons/*.jpg`, the moons' maps (credits in `assets/moons/CREDITS.md`).
 - `data/*.bin`: gzipped datasets `brain`, `dna`, `genes`, `gwas` (EADB et al. 2026), `gwas2` (Uffelmann et al. 2026, GRCh37, built by `tools/build-gwas2.ps1`) (fetched in parallel at start via `BIN`) and `tle`, an old satellite snapshot, no longer used. Load them with `loadBin(name)` or `loadJSON(name)`, which also accept files a host has already decompressed.
+- `i18n/{nl,fa}.json`: the Dutch and Persian dictionaries. Each maps English text, with whitespace collapsed, to its translation. Text with inline markup is keyed by its HTML. English is the source and has no file.
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
 - `window.NOOS_DATA` (one long line near the import map) keeps only the small inline data: the `net` and `land` datasets, their metadata, and the time-zone table.
@@ -37,6 +38,7 @@ Then open http://localhost:8080. `serve.ps1` is a dependency-free static server,
 
 ## Conventions
 
+- Languages: English, Nederlands and پارسی, picked on the opening chapter (`#langs`). The choice is stored in localStorage under `algebra-lang` (a `?lang=` query string overrides it) and the page reloads. `LANG` and `I18` load before anything else. `translateDom()` translates the page, and a MutationObserver translates text the scene writes later. In code, wrap strings with `t_('…')`; for strings that contain values, use `tf('Reading {0}', name)`. Every new piece of user-facing English needs entries in both JSON files. Gene names, papers, p-values, numbers and units stay in English. Persian sets `body.rtl`: Vazirmatn font, no letter-spacing, right-to-left text blocks, and `splitChars` splits titles by word.
 - The splash says only "Loading…"; `ld()` is a no-op.
 - IP geolocation runs only after consent from the privacy notice (`#consent`, localStorage key `algebra-geo`); without it, `locate()` falls back to the time zone.
 - Developer credit: Sourena Soheili-Nezhad, in `<meta name="author">` only (not in the chapter titles).

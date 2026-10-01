@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap">
 <style>
 :root{
   color-scheme: dark;
@@ -500,6 +501,25 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .cite{margin-top:6px;font-size:10px;line-height:1.55;color:var(--dust)}
 .cite i{font-style:italic}
 
+/* languages: the picker on the opening chapter, and Persian (right to left; its letters join, so no letter-spacing) */
+.langs{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
+.langs button{font:inherit;font-size:11px;font-weight:500;letter-spacing:.08em;color:rgba(236,230,218,.72);background:rgba(10,12,20,.35);border:1px solid rgba(236,230,218,.22);border-radius:999px;padding:6px 13px;cursor:pointer;transition:color .3s,border-color .3s,background .3s}
+.langs button:hover{color:var(--bone);border-color:rgba(236,230,218,.5)}
+.langs button[aria-pressed=true]{color:var(--void);background:var(--bone);border-color:var(--bone)}
+.langs button[lang=fa]{font-family:'Vazirmatn',var(--sans);letter-spacing:0}
+body.rtl{--sans:'Vazirmatn','Univia Pro','univia-pro','Exo 2',ui-sans-serif,system-ui,sans-serif}
+body.rtl :not(.mark,.mark *){letter-spacing:0!important}
+body.rtl .plate > span,body.rtl .event{text-transform:none}
+body.rtl .lede p,body.rtl .tag,body.rtl .plate > span,body.rtl .event span,body.rtl .i-title,body.rtl .i-sub,body.rtl .i-idle,body.rtl .note,body.rtl .legend p,body.rtl .ds-head > div,body.rtl #dsBody,body.rtl #exProgT,body.rtl #consent,body.rtl .how,body.rtl #ldTxt,body.rtl #moonTip,body.rtl .step-t,body.rtl #scueT,body.rtl .cue{direction:rtl;unicode-bidi:isolate}
+body.rtl .lede p,body.rtl .tag{text-align:right}
+body.rtl .cite,body.rtl .legend .cite{direction:ltr;unicode-bidi:isolate;text-align:left}   /* (the citations stay in English) */
+body.rtl .lede p{justify-self:end}
+body.rtl .plate > span,body.rtl .event{left:auto;right:0}
+body.rtl .langs{justify-content:flex-end}
+body.rtl .ds-step{float:left}
+body.rtl .plabel,body.rtl .rlabel{direction:rtl;unicode-bidi:isolate}
+body.rtl .plabel small{margin:0 6px 0 0}
+
 @media (max-width:760px){
   .lede p{font-size:13.5px;max-width:30ch}
   .hud-br{display:none}
@@ -616,6 +636,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     <div class="event" id="readEv"><i></i><span id="readTxt">Reading</span></div>
     <div class="event" id="dmgEv"><i></i><span id="dmgTxt">DNA damage</span></div>
   </div>
+  <div class="anim" style="--d:640ms"><nav class="langs" id="langs" data-ch="-1" aria-label="Language" data-i18n-skip><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="nl" lang="nl">Nederlands</button><button type="button" data-lang="fa" lang="fa" dir="rtl">پارسی</button></nav></div>
 </header>
 
 <div class="hud hud-tr">
@@ -856,6 +877,60 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 
+// ---------------------------------------------------------------- languages: English (the source), Dutch, Persian
+// i18n/<lang>.json maps English text (whitespace collapsed) to its translation; names, genes, papers and numbers stay as they are.
+const LANGS = ['en', 'nl', 'fa'];
+const LANG = (() => { try { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.includes(q)) return q;
+  const v = localStorage.getItem('algebra-lang'); if (LANGS.includes(v)) return v; } catch (e) {} return 'en'; })();
+const I18 = LANG === 'en' ? {} : await fetch(`i18n/${LANG}.json`).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+const normT = s => s.replace(/\s+/g, ' ').trim();
+const t_ = s => { if (!s || LANG === 'en') return s; const v = I18[s]; if (v !== undefined) return v; const w = I18[normT(s)]; return w !== undefined ? w : s; };
+const tf = (s, ...v) => t_(s).replace(/\{(\d)\}/g, (_, k) => v[k]);   // (a sentence with values in it: 'Reading base pair {0} of {1}')
+const I18_ATTR = ['aria-label', 'title', 'placeholder'];
+const i18Skip = n => n.closest('script,style,[data-i18n-skip]');
+const hasText = el => { for (const n of el.childNodes) if (n.nodeType === 3 && n.data.trim()) return true; return false; };
+function i18Text(n){ const k = normT(n.data), t = k && I18[k]; if (t !== undefined && t !== k && t !== false) n.data = n.data.match(/^\s*/)[0] + t + n.data.match(/\s*$/)[0]; }
+function i18Mixed(el){   // (text with inline markup is one entry, keyed by its HTML)
+  if (!el.children.length || !hasText(el)) return false;
+  const t = I18[normT(el.innerHTML)]; if (t === undefined) return false;
+  if (el.innerHTML !== t) el.innerHTML = t; return true;
+}
+function translateDom(root = document.body){
+  if (LANG === 'en' || root.nodeType !== 1 || i18Skip(root)) return;
+  const walk = el => {
+    if (el.nodeType !== 1 || el.matches('script,style,[data-i18n-skip]')) return;
+    for (const a of I18_ATTR) if (el.hasAttribute(a)){ const v = el.getAttribute(a), t = t_(v); if (t !== v) el.setAttribute(a, t); }
+    if (i18Mixed(el)) return;
+    for (const n of [...el.childNodes]) n.nodeType === 3 ? i18Text(n) : walk(n);
+  };
+  walk(root);
+}
+// text the scene writes later is translated as it lands (before it is painted)
+if (LANG !== 'en') new MutationObserver(ms => {
+  for (const m of ms){
+    const t = m.target;
+    if (m.type === 'characterData'){ if (t.parentElement && !i18Skip(t.parentElement) && !i18Mixed(t.parentElement)) i18Text(t); }
+    else if (m.type === 'attributes'){ if (!i18Skip(t)){ const v = t.getAttribute(m.attributeName), w = v && t_(v); if (w !== v) t.setAttribute(m.attributeName, w); } }
+    else if (m.addedNodes.length && !i18Skip(t)){
+      if (i18Mixed(t)) continue;
+      for (const n of m.addedNodes) n.nodeType === 3 ? i18Text(n) : translateDom(n);
+    }
+  }
+}).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: I18_ATTR });
+document.documentElement.lang = LANG;
+if (LANG === 'fa') document.body.classList.add('rtl');
+translateDom();
+document.title = t_(document.title);
+for (const b of document.querySelectorAll('#langs [data-lang]')){
+  b.setAttribute('aria-pressed', b.dataset.lang === LANG);
+  b.addEventListener('click', () => {
+    if (b.dataset.lang === LANG) return;
+    try { localStorage.setItem('algebra-lang', b.dataset.lang); } catch (e) {}
+    const u = new URL(location.href); u.searchParams.delete('lang'); if (b.dataset.lang !== 'en' || u.search) u.searchParams.set('lang', b.dataset.lang);
+    location.replace(u.href);
+  });
+}
+
 // Geolocation: MaxMind's GeoIP2 JavaScript client works only on a domain registered in your MaxMind account.
 const MAXMIND = { enabled: true, service: 'city' };
 
@@ -910,7 +985,7 @@ function splitChars(root){
     for (const n of [...node.childNodes]){
       if (n.nodeType === 3){
         const frag = document.createDocumentFragment();
-        for (const ch of n.textContent){ const s = document.createElement('span'); s.className = 'ch'; s.style.setProperty('--i', i++); s.textContent = ch === ' ' ? ' ' : ch; frag.appendChild(s); }
+        for (const ch of (LANG === 'fa' ? n.textContent.split(/(\s+)/).filter(Boolean) : n.textContent)){ const s = document.createElement('span'); s.className = 'ch'; s.style.setProperty('--i', i++); s.textContent = /^\s+$/.test(ch) ? '\u00a0' : ch; frag.appendChild(s); }
         n.replaceWith(frag);
       } else if (n.nodeType === 1) walk(n);
     }
@@ -960,8 +1035,8 @@ function scramble(el, text, dur = 1000){
   step();
 }
 function swapIn(el, html){
-  if (el.innerHTML === html) return;
-  el.innerHTML = html;
+  if (el._src === html) return;   // (compared with what was asked for: the page may show it translated)
+  el._src = html; el.innerHTML = html;
   if (!RM) el.animate([{ opacity: .25, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.2,.7,.1,1)' });
 }
 // p-values as 1.2 × 10⁻³⁴, from −log10 p so tiny values never underflow
@@ -2513,8 +2588,8 @@ function kinDraw(vis){
   g.lineWidth = 1; g.strokeStyle = 'rgba(236,230,218,.16)'; g.beginPath(); g.moveTo(L, y0 + .5); g.lineTo(w - R, y0 + .5); g.moveTo(L - .5, top - 6); g.lineTo(L - .5, y0 + .5); g.stroke();
   g.fillStyle = 'rgba(140,149,168,.9)'; g.font = font(8);
   for (let s = Math.ceil(t0/.25)*.25; s <= now; s += .25) g.fillRect(X(s) - .5, y0 + 1, 1, 3);     // a tick every real second
-  g.textBaseline = 'alphabetic'; g.textAlign = 'right'; g.fillText('NOW', w - R, h - 2); g.textAlign = 'left'; g.fillText(`−${Math.round(KIN_WIN*KIN_X)} S`, L + 2, h - 2); g.textAlign = 'center'; g.fillText('TIME', (L + w - R)/2, h - 2);
-  g.save(); g.translate(8, (top + y0)/2); g.rotate(-Math.PI/2); g.textAlign = 'center'; g.fillText('INTENSITY', 0, 0); g.restore();
+  g.textBaseline = 'alphabetic'; g.textAlign = 'right'; g.fillText(t_('NOW'), w - R, h - 2); g.textAlign = 'left'; g.fillText(`−${Math.round(KIN_WIN*KIN_X)} S`, L + 2, h - 2); g.textAlign = 'center'; g.fillText(t_('TIME'), (L + w - R)/2, h - 2);
+  g.save(); g.translate(8, (top + y0)/2); g.rotate(-Math.PI/2); g.textAlign = 'center'; g.fillText(t_('INTENSITY'), 0, 0); g.restore();
   // the long waits at lesions: a band over the gap, and its IPD beside the bracket; a stall still going on grows at the right edge
   const gaps = KIN.ev.filter(e => e.les).map(e => [e.t0 - e.ipd, e.t0, e.x, false]);
   if (KIN.pend && KIN.last) gaps.push([KIN.last.t0 + KIN.last.pw, now, 0, true]);
@@ -2522,7 +2597,7 @@ function kinDraw(vis){
     if (b < t0) continue; const xa = X(Math.max(a, t0)), xb = X(b), ipd = (b - a)*KIN_X;
     g.fillStyle = 'rgba(169,203,255,.07)'; g.fillRect(xa, top - 4, xb - xa, y0 - top + 4);
     g.strokeStyle = 'rgba(169,203,255,.7)'; g.beginPath(); g.moveTo(xa + .5, top + 1); g.lineTo(xa + .5, top - 3); g.lineTo(xb - .5, top - 3); g.lineTo(xb - .5, top + 1); g.stroke();
-    const txt = 'POLYMERASE DELAY';
+    const txt = t_('POLYMERASE DELAY');
     g.font = font(8); const tw = g.measureText(txt).width;
     if (xb - xa > tw + 6){ g.fillStyle = '#A9CBFF'; g.textAlign = 'center'; g.fillText(txt, (xa + xb)/2, top + 12); }   // (under the bracket that spans the delay)
   }
@@ -2547,7 +2622,7 @@ function kinDraw(vis){
     if (!e) el.innerHTML = '&nbsp;';
     else if (KIN.pend) el.innerHTML = `<span class="z"><span class="k">STALLED</span><b>${LESION_TYPES[KIN.pend.type].name}</b> · bp ${fmt(KIN.pend.bp + 1)}</span>`;
     else { const les = KIN.ev.slice().reverse().find(q => q.les && now - q.t0 < 1.6);
-      el.innerHTML = les ? `<span class="z"><span class="k">IPD</span><b>${(les.ipd*KIN_X).toFixed(1)} s</b></span><span class="z">${Math.round(les.x)}× the usual, at ${LESION_TYPES[les.les.type].name.toLowerCase()}</span>`
+      el.innerHTML = les ? `<span class="z"><span class="k">IPD</span><b>${(les.ipd*KIN_X).toFixed(1)} s</b></span><span class="z">${tf('{0}× the usual, at {1}', Math.round(les.x), t_(LESION_TYPES[les.les.type].name).toLowerCase())}</span>`
         : `<span><span class="k">BASE</span><b style="color:${KIN_HEX[e.base]}">${e.base}</b></span><span><span class="k">IPD</span><b>${(e.ipd*KIN_X).toFixed(2)} s</b></span><span><span class="k">PW</span><b>${(e.pw*KIN_X).toFixed(2)} s</b></span>`; } }
 }
 
@@ -2639,8 +2714,8 @@ const HOLD = 2;
 const lesEnv = (L, t) => t < L.t0 ? 0 : t < L.t1 ? Math.min(1, (t - L.t0)/.05)*(.72 + .28*Math.exp(-(t - L.t0)*2.5)) : Math.max(0, 1 - (t - L.t1)/.09)*.72;
 function igniteLesion(L){
   L.t0 = U.uTime.value; L.t1 = L.t0 + HOLD;
-  const T = LESION_TYPES[L.type], strand = L.type === 'dsb' ? 'both strands' : `strand ${L.strand + 1}`;
-  $('dmgTxt').innerHTML = `DNA damage · <b>${T.name}</b> · bp ${fmt(L.bp + 1)}, ${strand}`;
+  const T = LESION_TYPES[L.type], strand = L.type === 'dsb' ? t_('both strands') : tf('strand {0}', L.strand + 1);
+  $('dmgTxt').innerHTML = `${t_('DNA damage')} · <b>${t_(T.name)}</b> · bp ${fmt(L.bp + 1)}, ${strand}`;
   $('dmgEv').classList.add('on');
 }
 function updateDamage(show, readOn){
@@ -2812,8 +2887,8 @@ const ROMAN9 = ['II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'X
 MODES[-1] = 'cosmos'; HASH[-1] = 'cosmos'; ROMAN9[-1] = 'I';   // (the opening chapter sits before the orbit, at -1)
 const CHN = [...document.querySelectorAll('#rail button span')].map(e => e.textContent.split('·').pop().trim());   // (on a phone the bar names the next chapter in a word or two)
 const NEXT = ['Down to one neuron', 'Out to the whole brain', 'Light up the amygdalae', 'Sort their nuclei', 'Into a neuron\'s nucleus', 'Unwind it into one well', 'Pull back to the whole chip',
-  'Read the genome of a disease', 'Look inside the helix', 'See the genes that repair DNA', 'Back to the orbit'];
-NEXT[-1] = 'Through the Solar System to Earth';
+  'Read the genome of a disease', 'Look inside the helix', 'See the genes that repair DNA', 'Back to the orbit'].map(t_);
+NEXT[-1] = t_('Through the Solar System to Earth');
 const nav = { from: -1, to: -1, t0: 0, dur: 1, busy: false, used: false };
 function goChapter(k){
   k = clamp(Math.round(k), FIRST, LAST); SCR.on = SCR.hold = false; nav.out = false;
@@ -3075,8 +3150,8 @@ function inspectorHTML(item, now){
     const mm = [raw[k]/M.scale + M.center[0], raw[k+1]/M.scale + M.center[1], raw[k+2]/M.scale + M.center[2]];
     const rows = [['MNI305', `${mm.map(v => v.toFixed(1)).join(', ')} mm`]];
     let title, sub;
-    if (TT[j] === 0){ const left = j < nv/2, sd = SS[j]; title = `Cortex · vertex ${fmt(left ? j : j - nv/2)}`; sub = `${left ? 'Left' : 'Right'} hemisphere · ${sd > 0 ? 'in a sulcus' : 'on a gyrus'}`; rows.push(['Sulcal depth', `${sd > 0 ? '+' : '−'}${Math.abs(sd).toFixed(2)}`]); }
-    else if (TT[j] === 1){ const left = mm[0] < 0; title = 'Cerebellum'; sub = `${left ? 'Left' : 'Right'} side`; rows.push(['aseg labels', left ? '7, 8' : '46, 47']); }
+    if (TT[j] === 0){ const left = j < nv/2, sd = SS[j]; title = tf('Cortex · vertex {0}', fmt(left ? j : j - nv/2)); sub = `${t_(left ? 'Left hemisphere' : 'Right hemisphere')} · ${t_(sd > 0 ? 'in a sulcus' : 'on a gyrus')}`; rows.push(['Sulcal depth', `${sd > 0 ? '+' : '−'}${Math.abs(sd).toFixed(2)}`]); }
+    else if (TT[j] === 1){ const left = mm[0] < 0; title = 'Cerebellum'; sub = t_(left ? 'Left side' : 'Right side'); rows.push(['aseg labels', left ? '7, 8' : '46, 47']); }
     else { title = 'Brainstem'; sub = mm[2] > -18 ? 'Midbrain level' : mm[2] > -42 ? 'Pons level' : 'Medulla level'; rows.push(['aseg label', '16']); }
     const nn = brain.NET[j];
     if (nn) rows.push(['Network', `<span style="color:${PAL.net[nn - 1]}">${NET_NAMES[nn]}</span>`]);
@@ -3084,11 +3159,11 @@ function inspectorHTML(item, now){
   }
   if (item.kind === 'dna'){
     const { el, nm, rt, bp, seq, nbp, M, les } = dna, j = item.j, n = M.names[nm[j]], base = 'ACGT'[rt[j] & 3], strand = (rt[j] >> 2) + 1, i = bp[j] + 1, a = seq[i - 1];
-    const rows = [['Base pair', `${fmt(i)} of ${fmt(nbp)}`], ['Pair', `<span style="color:${PAL['base' + a]}">${a}</span>·<span style="color:${PAL['base' + COMP[a]]}">${COMP[a]}</span>`]];
+    const rows = [['Base pair', tf('{0} of {1}', fmt(i), fmt(nbp))], ['Pair', `<span style="color:${PAL['base' + a]}">${a}</span>·<span style="color:${PAL['base' + COMP[a]]}">${COMP[a]}</span>`]];
     const L = les[j] ? LES[les[j] - 1] : null, LT = L && LESION_TYPES[L.type];
     if (L) rows.push(['Damage', `<span class="z">${LT.name}</span>`]);
-    return { kind: L ? 'Atom · damaged nucleotide' : 'Atom', title: `${EL_NAME[el[j]]} · ${atomLabel(n)}`,
-      sub: `${NUC[base]} ${strand === 1 ? i : nbp - i + 1} · strand ${strand} · ${atomPart(n)}${L ? `<br>${LT.note}` : ''}`,
+    return { kind: L ? 'Atom · damaged nucleotide' : 'Atom', title: `${t_(EL_NAME[el[j]])} · ${atomLabel(n)}`,
+      sub: `${t_(NUC[base])} ${strand === 1 ? i : nbp - i + 1} · ${tf('strand {0}', strand)} · ${t_(atomPart(n))}${L ? `<br>${t_(LT.note)}` : ''}`,
       rows: R(rows), carrier: carrierOf(item.p) };
   }
   if (item.kind === 'gene'){
@@ -3102,7 +3177,7 @@ function inspectorHTML(item, now){
   }
   if (item.kind === 'planet'){
     const k = item.k, p = NET.pathways[k], nd = NET.moons[k].filter(i => NET.neuro.has(i)).map(i => esc(NET.genes[i].s));
-    return { kind: `Planet · ring ${ROMAN[planetRing[k]]}`, title: esc(p.name), sub: esc(p.cls),
+    return { kind: tf('Planet · ring {0}', ROMAN[planetRing[k]]), title: esc(p.name), sub: esc(p.cls),
       rows: R([['Moons', String(NET.moons[k].length)], ['Neurodegeneration', nd.length ? `<span style="color:#FF6A5C">${nd.join(', ')}</span>` : 'None']]), carrier: '' };
   }
   const i = item.i, l = G.loci[G.k[i]] || null, rows = [
@@ -3112,9 +3187,9 @@ function inspectorHTML(item, now){
   if (isFinite(G.b[i])) rows.push(['Effect β', `${G.b[i] > 0 ? '+' : '−'}${Math.abs(G.b[i]).toFixed(4)}${isFinite(G.se?.[i]) ? ` ± ${G.se[i].toFixed(4)}` : ''}`]);
   if (G.a1?.[i]) rows.push(['Alleles', `${esc(G.a1[i])} / ${esc(G.a2?.[i] ?? '')} <span class="i-sub">effect / other</span>`]);
   if (isFinite(G.f?.[i])) rows.push([G.windowed ? 'MAF' : 'EAF', G.f[i].toFixed(3)]);
-  rows.push(['Nearest gene', G.gene[i] ? `<span class="g">${esc(G.gene[i])}</span>${G.gd[i] ? ` · ${(G.gd[i]/1000).toFixed(0)} kb` : ' · inside'}` : '—']);
-  if (G.cs) rows.push(['Fine-mapping', G.cs[i] ? `<span class="g">Consensus candidate</span> · PP ${G.pp[i].toFixed(2)}` : `mean PP ${G.pp[i].toFixed(2)}`]);
-  return { kind: l ? `Variant · ${esc(l.name)} locus` : 'Variant', title: esc(G.rs[i]), sub: `${G.L[i] >= SIG ? 'Genome-wide significant' : 'Below genome-wide significance'} · ${esc(G.study)}`, rows: R(rows), carrier: carrierOf(item.p) };
+  rows.push(['Nearest gene', G.gene[i] ? `<span class="g">${esc(G.gene[i])}</span>${G.gd[i] ? ` · ${(G.gd[i]/1000).toFixed(0)} kb` : ' · ' + t_('inside')}` : '—']);
+  if (G.cs) rows.push(['Fine-mapping', G.cs[i] ? `<span class="g">Consensus candidate</span> · PP ${G.pp[i].toFixed(2)}` : tf('mean PP {0}', G.pp[i].toFixed(2))]);
+  return { kind: l ? tf('Variant · {0} locus', esc(l.name)) : 'Variant', title: esc(G.rs[i]), sub: `${t_(G.L[i] >= SIG ? 'Genome-wide significant' : 'Below genome-wide significance')} · ${esc(G.study)}`, rows: R(rows), carrier: carrierOf(item.p) };
 }
 function renderInspector(now){
   const insp = $('insp'), item = hovered || pinned, st = settledStage();
@@ -3133,7 +3208,7 @@ function renderInspector(now){
     const h = inspectorHTML(item, now);
     $('iKind').innerHTML = h.kind; $('iPin').textContent = item === pinned && !hovered ? 'Pinned' : '';
     $('iTitle').innerHTML = h.title; $('iSub').innerHTML = h.sub; $('iRows').innerHTML = h.rows;
-    $('iCarrier').innerHTML = h.carrier ? `Carried by <b>${esc(h.carrier)}</b>` : '';
+    $('iCarrier').innerHTML = h.carrier ? tf('Carried by <b>{0}</b>', esc(h.carrier)) : '';
     if (key !== inspKey && !RM && t - inspAnimT > 450){ inspAnimT = t; insp.animate([{ opacity: .7, transform: 'translateX(3px)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.7,.1,1)' }); }
     inspKey = key; inspAt = t; inspRect = null;
   }
@@ -3235,7 +3310,7 @@ function buildLabels(){                              // for both studies: the fl
 }
 function buildExplorer(){
   $("gCite").innerHTML = G.ref || ""; $("gCite").hidden = !G.ref;
-  $('exStudy').textContent = `${G.study.split(',')[0]}${G.n ? ` · ${fmt(G.n)} people` : ''} · ${G.build}`;
+  $('exStudy').textContent = `${G.study.split(',')[0]}${G.n ? ` · ${tf('{0} people', fmt(G.n))}` : ''} · ${G.build}`;
   const order = G.loci.map((l, k) => k).sort((a, b) => G.L[G.loci[b].lead] - G.L[G.loci[a].lead]);
   const maxL = Math.log10(G.maxL + 1);
   $('exList').innerHTML = order.map(k => { const l = G.loci[k], L = G.L[l.lead];
@@ -3244,7 +3319,7 @@ function buildExplorer(){
     b.addEventListener('click', () => focusLocus(focusK === +b.dataset.k ? -1 : +b.dataset.k));
   });
   $('exFmWrap').hidden = !G.cs;
-  $('gNote').textContent = `Height is −log₁₀p; distance from the ring is effect size, risk outward.${G.windowed ? ' Each sector is one locus.' : ''} Click a tower to focus its locus.`;
+  $('gNote').textContent = `${t_('Height is −log₁₀p; distance from the ring is effect size, risk outward.')}${G.windowed ? ' ' + t_('Each sector is one locus.') : ''} ${t_('Click a tower to focus its locus.')}`;
   setNum($('gSig'), G.nSig); setNum($('gFm'), G.nFm); setNum($('gSub'), G.N - G.nSig);
   $('gFm').parentElement.hidden = !G.cs;
 }
@@ -3313,7 +3388,7 @@ function showStudy(M, keepAct){                  // make M the study on show: it
   buildExplorer(); gLabels.forEach(e => e.el.classList.remove('on'));
   const sw = $('gSwap');
   $('gsName').textContent = G.cite.replace(/ \d{4}$/, ''); sw.querySelector('.gs-y').textContent = G.cite.match(/\d{4}$/)?.[0] || '';
-  sw.setAttribute('aria-label', `Switch to ${other()?.cite || ''}`);
+  sw.setAttribute('aria-label', tf('Switch to {0}', other()?.cite || ''));
   if (mode === ST.GWAS) rollUp([[$('gSig'), G.nSig], [$('gFm'), G.nFm], [$('gSub'), G.N - G.nSig]]);
 }
 // the flat ring turns twenty times in a second and a half, easing in and out; the labels go first and come back once it has stopped
@@ -3344,11 +3419,11 @@ $('exFm').addEventListener('change', e => { GU.uGFm.value = e.target.checked ? 1
 $('exQ').addEventListener('input', e => {
   const q = e.target.value.trim().toUpperCase(), out = [];
   if (q.length >= 2){
-    G.loci.forEach((l, k) => { if (l.name.toUpperCase().includes(q)) out.push({ t: l.name, s: `locus · chr${l.c}`, k }); });
+    G.loci.forEach((l, k) => { if (l.name.toUpperCase().includes(q)) out.push({ t: l.name, s: `${t_('locus')} · chr${l.c}`, k }); });
     const seen = new Set(out.map(o => o.t));
     for (let i = 0; i < G.N && out.length < 12; i++){
-      const g = G.gene[i]; if (g && g.toUpperCase().startsWith(q) && !seen.has(g)){ seen.add(g); out.push({ t: g, s: G.k[i] >= 0 ? `gene · ${G.loci[G.k[i]].name} locus` : `gene · chr${G.c[i]}`, k: G.k[i], i }); }
-      if (q.startsWith('RS') && G.rs[i].toUpperCase().startsWith(q)) out.push({ t: G.rs[i], s: G.k[i] >= 0 ? `variant · ${G.loci[G.k[i]].name}` : `variant · chr${G.c[i]}`, k: G.k[i], i });
+      const g = G.gene[i]; if (g && g.toUpperCase().startsWith(q) && !seen.has(g)){ seen.add(g); out.push({ t: g, s: G.k[i] >= 0 ? tf('gene · {0} locus', G.loci[G.k[i]].name) : `${t_('gene')} · chr${G.c[i]}`, k: G.k[i], i }); }
+      if (q.startsWith('RS') && G.rs[i].toUpperCase().startsWith(q)) out.push({ t: G.rs[i], s: G.k[i] >= 0 ? `${t_('variant')} · ${G.loci[G.k[i]].name}` : `${t_('variant')} · chr${G.c[i]}`, k: G.k[i], i });
     }
   }
   $('exHits').innerHTML = out.slice(0, 12).map((o, n) => `<li><button data-n="${n}"><span>${esc(o.t)}</span><small>${esc(o.s)}</small></button></li>`).join('');
@@ -3389,6 +3464,8 @@ const linkHiMat = new LineMaterial({ color: 0xffffff, linewidth: 1.8, vertexColo
 const seeded = s => () => (s = (s*16807) % 2147483647)/2147483647;
 async function initNet(){
   const raw = await gunzipJSON(D.net), n = raw.genes.length;
+  raw.pathways.forEach(p => { p.en = p.name; p.name = t_(p.name); p.full = t_(p.full); p.cls = t_(p.cls); });   // (p.en: the English name, the key of PW_SUM)
+  for (const o of [raw.neuro, raw.modif]) for (const k in o) o[k] = t_(o[k]);
   const deg = new Uint16Array(n), nbr = raw.genes.map(() => []);
   raw.edges.forEach(([a, b, k], e) => { deg[a]++; deg[b]++; nbr[a].push([b, k, e]); nbr[b].push([a, k, e]); });
   const members = raw.pathways.map((p, q) => raw.genes.map((g, i) => g.p.includes(q) ? i : -1).filter(i => i >= 0));
@@ -3566,7 +3643,7 @@ function assignNet(){
 function buildNetLabels(){
   netLabelsEl.textContent = '';
   sunLabel = document.createElement('span'); sunLabel.className = 'slabel sun'; sunLabel.textContent = 'DNA'; netLabelsEl.appendChild(sunLabel);
-  rLabels = RINGS.map((r, ri) => { const s = document.createElement('span'); s.className = 'rlabel'; s.textContent = `${ROMAN[ri]} · ${r.name}`; netLabelsEl.appendChild(s); return s; });
+  rLabels = RINGS.map((r, ri) => { const s = document.createElement('span'); s.className = 'rlabel'; s.textContent = `${ROMAN[ri]} · ${t_(r.name)}`; netLabelsEl.appendChild(s); return s; });
   nLabels = NET.genes.map((g, i) => {
     const s = document.createElement('span'); s.className = 'nlabel' + (NET.neuro.has(i) ? ' nd' : ''); s.textContent = g.s; netLabelsEl.appendChild(s); return s;
   });
@@ -3894,7 +3971,7 @@ function renderNetHome(){
   const nd = [...NET.neuro.keys()].sort((a, b) => NET.genes[a].s.localeCompare(NET.genes[b].s));
   const md = [...NET.modif.keys()];
   dsBody.innerHTML = `<p class="ds-intro">Pathways orbit the genome; their genes are moons. The <span class="nd-w">red</span> genes cause neurodegeneration when they fail.</p>`
-    + RINGS.map((r, ri) => `<div class="ds-sec">Ring ${ROMAN[ri]} · ${esc(r.name)}</div><div class="ds-planets">${r.paths.map(planetChip).join('')}</div>`).join('')
+    + RINGS.map((r, ri) => `<div class="ds-sec">${tf('Ring {0}', ROMAN[ri])} · ${esc(t_(r.name))}</div><div class="ds-planets">${r.paths.map(planetChip).join('')}</div>`).join('')
     + `<div class="ds-sec nd-t">Loss causes neurodegeneration</div><div class="ds-chips">${nd.map(i => geneChip(i)).join('')}</div>`
     + `<div class="ds-sec">Modify repeat-expansion disease</div><div class="ds-chips">${md.map(i => geneChip(i)).join('')}</div>`;
   wireDossier();
@@ -3905,30 +3982,30 @@ function renderPath(k){
   const hasRev = p.text.some(t => t.includes('class="rev"'));
   dsBody.innerHTML = crumb([`<b>${esc(p.name)}</b>`])
     + `<div class="ds-step"><button data-step="-1" aria-label="Previous planet">‹</button><button data-step="1" aria-label="Next planet">›</button></div>
-    <div class="ds-kick">Ring ${ROMAN[planetRing[k]]} · ${moons.length} moon${moons.length === 1 ? '' : 's'}</div>
+    <div class="ds-kick">${tf('Ring {0}', ROMAN[planetRing[k]])} · ${tf(moons.length === 1 ? '{0} moon' : '{0} moons', moons.length)}</div>
     <div class="ds-title">${esc(p.name)}</div><div class="ds-sub">${esc(p.cls)}</div>
-    ${PW_SUM[p.name] ? `<p class="ds-plain">${PW_SUM[p.name]}</p>` : ''}
+    ${PW_SUM[p.en] ? `<p class="ds-plain">${t_(PW_SUM[p.en])}</p>` : ''}
     <div class="ds-sec">Moons</div><div class="ds-chips">${moons.map(i => geneChip(i)).join('')}</div>
     ${guests.length ? `<div class="ds-sec">Also working here, from other planets</div><div class="ds-chips">${guests.map(i => geneChip(i, true)).join('')}</div>` : ''}
     <div class="ds-sec">In the compendium${hasRev ? '<span class="ds-rev">revised 2026</span>' : ''}</div>
-    <div class="ds-text">${p.text.map(t => `<p>${t}</p>`).join('')}</div>`;
+    <div class="ds-text">${p.text.map(t => `<p>${t_(t)}</p>`).join('')}</div>`;
   wireDossier();
 }
 function renderGene(i){
   const g = NET.genes[i], k = NET.prim[i], nb = NET.nbr[i], p = NET.pathways[k];
-  const notes = g.n.length ? g.n.map(([q, t]) => `<p><span class="ds-tag">${esc(NET.pathways[q].name)}</span><br>${t}</p>`).join('')
-    : `<p>A core factor of ${g.p.map(q => esc(NET.pathways[q].name)).join(' and ')}; the compendium records no phenotype specific to it.</p>`;
+  const notes = g.n.length ? g.n.map(([q, t]) => `<p><span class="ds-tag">${esc(NET.pathways[q].name)}</span><br>${t_(t)}</p>`).join('')
+    : `<p>${tf('A core factor of {0}; the compendium records no phenotype specific to it.', g.p.map(q => esc(NET.pathways[q].name)).join(' ' + t_('and') + ' '))}</p>`;
   const phys = nb.filter(x => x[1] !== 'g'), gen = nb.filter(x => x[1] === 'g');
   const rev = g.n.some(x => x[1].includes('class="rev"')) || (g.x || '').includes('class="rev"');
   dsBody.innerHTML = crumb([`<button data-path="${k}">${esc(p.name)}</button>`, `<b${NET.neuro.has(i) ? ' class="nd-w"' : ''}>${esc(g.s)}</b>`])
-    + `<div class="ds-kick">Moon of ${esc(p.name)}</div>
+    + `<div class="ds-kick">${tf('Moon of {0}', esc(p.name))}</div>
     <div class="ds-title${NET.neuro.has(i) ? ' nd-w' : ''}">${esc(g.s)}</div>${g.a ? `<div class="ds-sub">${esc(g.a)}</div>` : ''}
     ${NET.neuro.has(i) ? `<div class="ds-badge nd"><b>Neurodegeneration</b>${esc(NET.neuro.get(i))}</div>` : ''}
     ${NET.modif.has(i) ? `<div class="ds-badge md"><b>Modifier</b>${esc(NET.modif.get(i))}</div>` : ''}
     ${g.p.length > 1 ? `<div class="ds-sec">Also serves</div><div class="ds-planets">${g.p.filter(q => q !== k).map(planetChip).join('')}</div>` : ''}
     <div class="ds-sec">In the compendium${rev ? '<span class="ds-rev">revised 2026</span>' : ''}</div>
     <div class="ds-text">${notes}</div>
-    ${g.x ? `<div class="ds-note"><span class="t">${g.x.startsWith('Therapeutic') ? 'Therapeutic angle' : 'Placement'}</span><span style="color:rgba(236,230,218,.86)">${g.x.replace(/^Therapeutic angle: /, '')}</span></div>` : ''}
+    ${g.x ? `<div class="ds-note"><span class="t">${t_(g.x.startsWith('Therapeutic') ? 'Therapeutic angle' : 'Placement')}</span><span style="color:rgba(236,230,218,.86)">${t_(g.x.replace(/^Therapeutic angle: /, ''))}</span></div>` : ''}
     ${phys.length ? `<div class="ds-sec">Works directly with</div><div class="ds-chips">${phys.map(x => geneChip(x[0])).join('')}</div>` : ''}
     ${gen.length ? `<div class="ds-sec">Genetic or functional links</div><div class="ds-chips">${gen.map(x => geneChip(x[0], true)).join('')}</div>` : ''}
     ${!nb.length ? `<div class="ds-sec">Links</div><div class="ds-sub">None curated: it acts alone.</div>` : ''}`;
@@ -3940,7 +4017,7 @@ function buildDossier(){
   $('dsQ').addEventListener('input', e => {
     const q = e.target.value.trim().toUpperCase(), out = [];
     if (q.length >= 1){
-      NET.genes.forEach((g, i) => { if (out.length < 10 && (g.s.startsWith(q) || g.a.toUpperCase().split(/[ ·]+/).some(a => a && a.startsWith(q)))) out.push({ t: g.s, s: `moon of ${NET.pathways[NET.prim[i]].name}`, i }); });
+      NET.genes.forEach((g, i) => { if (out.length < 10 && (g.s.startsWith(q) || g.a.toUpperCase().split(/[ ·]+/).some(a => a && a.startsWith(q)))) out.push({ t: g.s, s: tf('moon of {0}', NET.pathways[NET.prim[i]].name), i }); });
       NET.pathways.forEach((p, k) => { if (q.length >= 2 && (p.name.toUpperCase().includes(q) || p.full.toUpperCase().includes(q))) out.push({ t: p.name, s: 'planet', k }); });
     }
     const ul = $('dsHits');
@@ -5090,11 +5167,11 @@ function moonShow(m){
   moonSel = m; const T = $('moonTip'); T.hidden = !m; $('moonMark').style.display = m ? 'block' : 'none'; if (!m) return;
   const u = m.userData, f = n => n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 1 : 0 });
   T.querySelector('.mt-n').textContent = u.name;
-  T.querySelector('.mt-p').textContent = `Moon of ${SS_NAME[u.k]}${u.inc > 90 ? ' · retrograde' : ''}`;
-  T.querySelector('.mt-s').innerHTML = [['Diameter', `${f(u.r*2)} km`], [`From ${SS_NAME[u.k]}`, `${f(u.a)} km`], ['Orbit', u.P < 2 ? `${f(u.P*24)} hours` : u.P > 400 ? `${f(u.P/365.25)} years` : `${f(u.P)} days`], ['Inclination', `${f(u.inc)}°`]]
+  T.querySelector('.mt-p').textContent = `${tf('Moon of {0}', t_(SS_NAME[u.k]))}${u.inc > 90 ? ' · ' + t_('retrograde') : ''}`;
+  T.querySelector('.mt-s').innerHTML = [['Diameter', `${f(u.r*2)} km`], [tf('From {0}', t_(SS_NAME[u.k])), `${f(u.a)} km`], ['Orbit', u.P < 2 ? tf('{0} hours', f(u.P*24)) : u.P > 400 ? tf('{0} years', f(u.P/365.25)) : tf('{0} days', f(u.P))], ['Inclination', `${f(u.inc)}°`]]
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
-  T.querySelector('.mt-d').textContent = u.desc;
-  T.querySelector('.mt-c').textContent = (u.k === 5 ? 'One of Saturn\'s 274 known moons. ' : '') + (u.tx ? `Map: ${MOON_TEX_CREDIT[u.tx] || 'NASA/JPL/USGS'}, via Celestia.` : 'No map: shown in grey.') + ' Orbits drawn closer than to scale.';
+  T.querySelector('.mt-d').textContent = t_(u.desc);
+  T.querySelector('.mt-c').textContent = (u.k === 5 ? t_('One of Saturn\'s 274 known moons.') + ' ' : '') + (u.tx ? tf('Map: {0}, via Celestia.', MOON_TEX_CREDIT[u.tx] || 'NASA/JPL/USGS') : t_('No map: shown in grey.')) + ' ' + t_('Orbits drawn closer than to scale.');
 }
 $('moonTip').querySelector('.mt-x').addEventListener('click', () => moonShow(null));
 function placeMoonTip(){
@@ -5630,14 +5707,14 @@ async function parseSumstats(file, build, onProg){
   return out;
 }
 async function loadFile(file){
-  const prog = $('exProg'); prog.hidden = false; $('exProgT').textContent = `Reading ${file.name}`;
+  const prog = $('exProg'); prog.hidden = false; $('exProgT').textContent = tf('Reading {0}', file.name);
   try {
     const raw = await parseSumstats(file, $('exBuild').value, (f, rows, minL) => {
       $('exProgBar').style.setProperty('--p', f.toFixed(3));
-      $('exProgT').textContent = `${fmt(rows)} variants read · ${Math.round(f*100)}%${minL ? ` · keeping −log₁₀p ≥ ${minL.toFixed(1)}` : ''}`;
+      $('exProgT').textContent = `${tf('{0} variants read', fmt(rows))} · ${Math.round(f*100)}%${minL ? ` · ${tf('keeping −log₁₀p ≥ {0}', minL.toFixed(1))}` : ''}`;
     });
     setGwas(buildModel(raw), true);
-    $('exProgT').textContent = `Loaded the top ${fmt(raw.L.length)} variants from ${file.name}.`;
+    $('exProgT').textContent = tf('Loaded the top {0} variants from {1}.', fmt(raw.L.length), file.name);
   } catch (err){ $('exProgT').textContent = err.message || 'This file could not be read.'; }
 }
 $('exFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
@@ -5750,10 +5827,10 @@ function renderVisitor(v){
   $('place').textContent = [v.city, v.country].filter(Boolean).join(', ') || 'Somewhere on Earth';
   const ns = v.lat >= 0 ? 'N' : 'S', ew = v.lon >= 0 ? 'E' : 'W';
   scramble($('coords'), `${Math.abs(v.lat).toFixed(2)}° ${ns}   ${Math.abs(v.lon).toFixed(2)}° ${ew}`);
-  $('how').textContent = v.via === 'maxmind' ? `Located by MaxMind GeoIP2 from your IP address${v.acc ? `, within about ${v.acc} km` : ''}.`
-    : v.via === 'ip' ? `Located from your IP address (${v.src}). MaxMind isn't enabled for this domain.`
-    : v.via === 'tz' ? `Approximate, from your time zone (${v.tz}). ${geoConsent() === 'yes' ? "IP lookup isn't reachable from this page." : 'IP lookup is off.'}`
-    : 'Approximate, from your UTC offset.';
+  $('how').textContent = v.via === 'maxmind' ? (v.acc ? tf('Located by MaxMind GeoIP2 from your IP address, within about {0} km.', v.acc) : t_('Located by MaxMind GeoIP2 from your IP address.'))
+    : v.via === 'ip' ? tf('Located from your IP address ({0}). MaxMind isn\'t enabled for this domain.', v.src)
+    : v.via === 'tz' ? `${tf('Approximate, from your time zone ({0}).', v.tz)} ${t_(geoConsent() === 'yes' ? "IP lookup isn't reachable from this page." : 'IP lookup is off.')}`
+    : t_('Approximate, from your UTC offset.');
   $('youTag').textContent = v.city || 'You';
 }
 // every few seconds a random one of the seven networks fires, from a random point inside it (the DMN half the time from its hub)
@@ -5766,7 +5843,7 @@ function fireNet(){
   else { const k = idx[(Math.random()*idx.length) | 0]*3; netU.pos[slot].set(brain.P[k], brain.P[k+1], brain.P[k+2], U.uTime.value); }
   netU.id[slot] = n; netU.col[slot].set(PAL.net[n - 1]);
   const c = PAL.net[n - 1], ev = $('netEv');
-  $('netTxt').textContent = `${NET_NAMES[n]} network`; ev.style.color = c;
+  $('netTxt').textContent = tf('{0} network', t_(NET_NAMES[n])); ev.style.color = c;
   ev.classList.add('on'); clearTimeout(fireNet.t); fireNet.t = setTimeout(() => ev.classList.remove('on'), 3000);
   const now = $('netNow'); now.textContent = NET_NAMES[n]; now.style.color = c;
   const dot = $('netDots').children[n - 1]; dot.classList.remove('fire'); void dot.offsetWidth; dot.classList.add('fire');
@@ -5823,7 +5900,7 @@ async function boot(){
   initParticles(); initDamageFx(); buildPolymerase(); buildZmw(); buildZmwArray(); buildSorterFx(); buildShapes(); buildCosmos(); layoutType();
   ld(.97, 'Preparing the transitions'); await tick(); buildOrders(); buildNetSlots();
   const gm = gmstOf(simNow());
-  $('dnaTitle').textContent = `B-DNA · ${fmt(dna.nbp)} bp · ${fmt(dna.total)} atoms`;
+  $('dnaTitle').textContent = `B-DNA · ${fmt(dna.nbp)} bp · ${tf('{0} atoms', fmt(dna.total))}`;
   const v = await Promise.race([locP, new Promise(r => setTimeout(() => r(null), 1200))]);
   if (v) intro.to.copy(visitorCamDir(gm));
   else locP.then(() => { if (!userMoved) fly = { t: 0, from: null, d: 0 }; });
@@ -5916,10 +5993,10 @@ renderer.setAnimationLoop(() => {
   $('rail').style.setProperty('--prog', ((Sd - FIRST)/(LAST - FIRST)).toFixed(4));
   // the step buttons name where Next goes, and fill a hairline while a chapter turns
   if (stepUI.to !== nav.to){
-    stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? 'Slide the strip on the right to go back' : `Slide the strip on the right · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
+    stepUI.to = nav.to; $('scueT').textContent = nav.to >= LAST ? t_('Slide the strip on the right to go back') : `${t_('Slide the strip on the right')} · ${NEXT[nav.to]}`; $('scue').classList.toggle('up', nav.to >= LAST);
     $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = BAR ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
     if (BAR && !AUTO.on){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
-    $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${nav.to >= LAST ? 'Start again' : 'Next chapter'}: ${NEXT[nav.to]}`);
+    $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${t_(nav.to >= LAST ? 'Start again' : 'Next chapter')}: ${NEXT[nav.to]}`);
     $('stNext').classList.toggle('first', !nav.used);
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
@@ -6058,7 +6135,7 @@ renderer.setAnimationLoop(() => {
       const from = b > readBp && b - readBp < 60 ? readBp + 1 : b;
       for (let x = from; x <= b; x++) if (x >= 0 && x < dna.nbp) typeBase(x);
       readBp = b;
-      if (b >= 0 && b < dna.nbp) $('readTxt').innerHTML = `Reading base pair <b>${fmt(b + 1)}</b> of ${fmt(dna.nbp)}`;
+      if (b >= 0 && b < dna.nbp) $('readTxt').innerHTML = tf('Reading base pair <b>{0}</b> of {1}', fmt(b + 1), fmt(dna.nbp));
     }
   } else pMat.uniforms.uReadOn.value = 0;
   kinDraw(clamp(1 - Math.abs(Sd - ST.DNA)*2.4, 0, 1));
