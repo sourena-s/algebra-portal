@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap">
 <style>
 :root{
   color-scheme: dark;
@@ -507,6 +508,8 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .langs button:hover{color:var(--bone);border-color:rgba(236,230,218,.5)}
 .langs button[aria-pressed=true]{color:var(--void);background:var(--bone);border-color:var(--bone)}
 .langs button[lang=fa]{font-family:'Vazirmatn',var(--sans);letter-spacing:0}
+html:not([lang=en]) .tag{white-space:normal}   /* (translated subtitles are longer than the acronym line) */
+body.el{--sans:'Univia Pro','univia-pro','Exo 2','Commissioner',ui-sans-serif,system-ui,sans-serif}   /* (Greek letters fall through to Commissioner) */
 body.rtl{--sans:'Vazirmatn','Univia Pro','univia-pro','Exo 2',ui-sans-serif,system-ui,sans-serif}
 body.rtl :not(.mark,.mark *){letter-spacing:0!important}
 body.rtl .plate > span,body.rtl .event{text-transform:none}
@@ -636,7 +639,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
     <div class="event" id="readEv"><i></i><span id="readTxt">Reading</span></div>
     <div class="event" id="dmgEv"><i></i><span id="dmgTxt">DNA damage</span></div>
   </div>
-  <div class="anim" style="--d:640ms"><nav class="langs" id="langs" data-ch="-1" aria-label="Language" data-i18n-skip><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="nl" lang="nl">Nederlands</button><button type="button" data-lang="fa" lang="fa" dir="rtl">پارسی</button></nav></div>
+  <div class="anim" style="--d:640ms"><nav class="langs" id="langs" data-ch="-1" aria-label="Language" data-i18n-skip><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="nl" lang="nl">Nederlands</button><button type="button" data-lang="fa" lang="fa" dir="rtl">پارسی</button><button type="button" data-lang="el" lang="el">Ελληνικά</button></nav></div>
 </header>
 
 <div class="hud hud-tr">
@@ -879,7 +882,7 @@ import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 
 // ---------------------------------------------------------------- languages: English (the source), Dutch, Persian
 // i18n/<lang>.json maps English text (whitespace collapsed) to its translation; names, genes, papers and numbers stay as they are.
-const LANGS = ['en', 'nl', 'fa'];
+const LANGS = ['en', 'nl', 'fa', 'el'];
 const LANG = (() => { try { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.includes(q)) return q;
   const v = localStorage.getItem('algebra-lang'); if (LANGS.includes(v)) return v; } catch (e) {} return 'en'; })();
 const I18 = LANG === 'en' ? {} : await fetch(`i18n/${LANG}.json`).then(r => r.ok ? r.json() : {}).catch(() => ({}));
@@ -919,6 +922,7 @@ if (LANG !== 'en') new MutationObserver(ms => {
 }).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: I18_ATTR });
 document.documentElement.lang = LANG;
 if (LANG === 'fa') document.body.classList.add('rtl');
+if (LANG === 'el') document.body.classList.add('el');
 translateDom();
 document.title = t_(document.title);
 for (const b of document.querySelectorAll('#langs [data-lang]')){
