@@ -5792,7 +5792,7 @@ function presetPos(k, lay = layoutT){
   if (k === ST.CHROM) return presetTarget(k).add(dirAt(az.chr, 12*DEG).multiplyScalar(dChr));
   if (k === ST.SMRT){ const [e, d] = presetSph(k); return presetTarget(k).add(dirAt(az.smrt, e).multiplyScalar(d)); }
   if (k === ST.ZMW) return presetTarget(k).add(dirAt(az.smrt, 11*DEG).multiplyScalar(dZmw));
-  if (k === ST.GWAS && lay > .5){ const hz = Math.atan(Math.tan(camera.fov/2*DEG)*camera.aspect), frac = Math.max(.45, (innerWidth - panelR)/innerWidth); const vH = GB ? Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .25 : 0; return presetTarget(k).add(dirAt(0, 14*DEG).multiplyScalar(Math.max(G_LX*(portrait ? .64 : .54)/(Math.tan(hz)*frac), vH/Math.tan(camera.fov/2*DEG)))); }   // (both plots, the mirrored one below, in height too)
+  if (k === ST.GWAS && lay > .5){ const hz = Math.atan(Math.tan(camera.fov/2*DEG)*camera.aspect), frac = Math.max(.45, (innerWidth - panelR)/innerWidth); const vH = GB ? Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .25 : 0; return presetTarget(k).add(dirAt(0, 14*DEG).multiplyScalar(Math.max(G_LX*(portrait ? .55 : .54)/(Math.tan(hz)*frac), vH/Math.tan(camera.fov/2*DEG)))); }   // (both plots, the mirrored one below, in height too)
   if (k === ST.GWAS){ const [e, d] = gwasRingSph(); return presetTarget(k).add(dirAt(az.gwas, e).multiplyScalar(d)); }
   if (k === ST.DNA) return dnaTarget().add(dirAt(az.dna, 24*DEG).multiplyScalar(dDna));
   return dirAt(az.net, 0).multiplyScalar(dNet);
