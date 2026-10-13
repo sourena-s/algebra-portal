@@ -455,7 +455,8 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .glabel.nw b{border-color:rgba(255,91,58,.55)}
 .glabel.dn{flex-direction:column-reverse}
 .glabel.dn::after{background:linear-gradient(transparent,rgba(236,230,218,.5))}
-.stag{position:absolute;left:0;top:0;font-size:9px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);white-space:nowrap;pointer-events:none;translate:calc(-100% - 8px) -50%;opacity:0}
+.stag{position:absolute;left:0;top:0;font-size:9px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);white-space:nowrap;pointer-events:none;translate:-50% calc(-100% - 2px);opacity:0}
+.stag.mir{translate:-50% 2px}   /* (the mirrored study's name hangs under its plot) */
 /* the study switch: a brushed-metal knob filling the flat ring's inner circle (sized in JS; everything in it scales with its font size).
    Brushing: fine concentric grooves; reflections: light swept round the centre, as on a machined aluminium dial */
 .gswap{position:fixed;z-index:3;left:0;top:0;width:10em;height:10em;translate:-50% -50%;padding:0;border-radius:50%;border:0;color:var(--bone);font-family:var(--sans);font-size:11px;display:grid;place-content:center;justify-items:center;gap:.2em;cursor:pointer;opacity:0;pointer-events:none;
@@ -621,7 +622,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
     <span class="st-repair" data-split>The repair system</span>
   </div>
   <div class="lede anim" style="--d:520ms">
-    <p data-ch="-1" id="ledeCosmos">Maps lead to discovery. Beyond them, we explore.</p>
+    <p data-ch="-1" id="ledeCosmos">For centuries we have drawn maps, from the largest scales to the smallest, to understand our universe.</p>
     <p data-ch="0" id="ledeOrbit"></p>
     <p data-ch="1" id="ledeCell"></p>
     <p data-ch="2" id="ledeCortex">An ageing brain. Does its DNA break down in Alzheimer's disease?</p>
@@ -3307,7 +3308,7 @@ function buildLabels(){                              // for both studies: the fl
       labelsEl.appendChild(b); gLabels.push({ M, k, el: b });
     });
     M.guides.forEach(L => { const s = document.createElement('span'); s.className = 'hlabel' + (Math.abs(L - SIG) < 1e-6 ? ' thr' : ''); s.textContent = Math.abs(L - SIG) < 1e-6 ? 'p = 5 × 10⁻⁸' : `p = 10${sup(-L)}`; labelsEl.appendChild(s); hLabels.push({ M, L, el: s }); });
-    const t = document.createElement('span'); t.className = 'stag'; t.textContent = M.cite; labelsEl.appendChild(t); sTags.push({ M, el: t });
+    const t = document.createElement('span'); t.className = 'stag' + (M.mir ? ' mir' : ''); t.textContent = M.cite; labelsEl.appendChild(t); sTags.push({ M, el: t });
   }
   cLabels = G.chrSpan.map(([c]) => { const s = document.createElement('span'); s.className = 'clabel'; s.textContent = c; labelsEl.appendChild(s); return s; });
   for (const e of labelsEl.children){ e.style.opacity = '0'; e._o = 0; }   // (every label starts unseen: it only ever fades in)
@@ -5791,7 +5792,7 @@ function presetPos(k, lay = layoutT){
   if (k === ST.CHROM) return presetTarget(k).add(dirAt(az.chr, 12*DEG).multiplyScalar(dChr));
   if (k === ST.SMRT){ const [e, d] = presetSph(k); return presetTarget(k).add(dirAt(az.smrt, e).multiplyScalar(d)); }
   if (k === ST.ZMW) return presetTarget(k).add(dirAt(az.smrt, 11*DEG).multiplyScalar(dZmw));
-  if (k === ST.GWAS && lay > .5){ const hz = Math.atan(Math.tan(camera.fov/2*DEG)*camera.aspect), frac = Math.max(.45, (innerWidth - panelR)/innerWidth); const vH = GB ? Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .25 : 0; return presetTarget(k).add(dirAt(0, 14*DEG).multiplyScalar(Math.max(G_LX*.54/(Math.tan(hz)*frac), vH/Math.tan(camera.fov/2*DEG)))); }   // (both plots, the mirrored one below, in height too)
+  if (k === ST.GWAS && lay > .5){ const hz = Math.atan(Math.tan(camera.fov/2*DEG)*camera.aspect), frac = Math.max(.45, (innerWidth - panelR)/innerWidth); const vH = GB ? Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .25 : 0; return presetTarget(k).add(dirAt(0, 14*DEG).multiplyScalar(Math.max(G_LX*(portrait ? .64 : .54)/(Math.tan(hz)*frac), vH/Math.tan(camera.fov/2*DEG)))); }   // (both plots, the mirrored one below, in height too)
   if (k === ST.GWAS){ const [e, d] = gwasRingSph(); return presetTarget(k).add(dirAt(az.gwas, e).multiplyScalar(d)); }
   if (k === ST.DNA) return dnaTarget().add(dirAt(az.dna, 24*DEG).multiplyScalar(dDna));
   return dirAt(az.net, 0).multiplyScalar(dNet);
@@ -6084,7 +6085,7 @@ renderer.setAnimationLoop(() => {
   focusAmt += (focusTarget - focusAmt)*Math.min(1, dt*9);
   U.uFocusId.value = focusId; U.uFocusAmt.value = focusAmt;
   EU.uOpacity.value = 1 - smooth(clamp(mCell/.08, 0, 1));   // (the dark globe behind the photograph stays its size: it goes as the Earth starts to shrink)
-  ocean.visible = EU.uOpacity.value > .01; ocean.material.depthWrite = EU.uOpacity.value > .6;
+  ocean.visible = EU.uOpacity.value > .01 && mCell < .002; ocean.material.depthWrite = EU.uOpacity.value > .6;   // (the photograph covers it whole; once the photograph starts to shrink the dark globe would hide it)
   BU.uOpacity.value = (visitor ? 1 : 0)*(1 - clamp(mCell/.12, 0, 1))*(intro.t >= 1 ? 1 : intro.t)*(Sd < 0 ? clamp((COS.z - 2.6)/.2, 0, 1) : 1);   // (the tag is there as the Earth comes close)
   BRU.uOpacity.value = clamp((m1 - .55)/.45, 0, 1)*(1 - clamp(mSort/.3, 0, 1));   // the glass dims as the block comes out
   if (brain) brain.meshes.forEach(m => m.visible = BRU.uOpacity.value > .01);
@@ -6237,7 +6238,7 @@ renderer.setAnimationLoop(() => {
     tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value * clamp(1 + Sd/.03, 0, 1)).toFixed(3);   // (its label once the Earth is reached)
     tag.style.transform = `translate(${((s.x*.5 + .5)*innerWidth + 8).toFixed(1)}px, ${((1 - (s.y*.5 + .5))*innerHeight - 10).toFixed(1)}px)`;
   }
-  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, -.06, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
+  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, .08, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
   const offX = -panelR/2*(stageW(ST.GWAS) + stageW(ST.NET)) + (panelR ? 28 : 0)*stageW(ST.NET);
   if (Math.abs(offX) + Math.abs(offY) > .5) camera.setViewOffset(innerWidth, innerHeight, offX, offY, innerWidth, innerHeight);
   else if (camera.view && camera.view.enabled) camera.clearViewOffset();
@@ -6300,9 +6301,9 @@ function placeGenomeLabels(gv){
     labelFade(h.el, best ? gv*.9*wgt*(1 - smooth(clamp(flat*1.4, 0, 1))) : 0, kf);   // (the flat ring has no height scale to name)
     if (best) h.el.style.transform = `translate(${best[0].toFixed(1)}px, ${best[1].toFixed(1)}px)`;
   }
-  // on the line, each plot's study at its left end, over the top guide (under it on the mirrored plot)
+  // on the line, each plot's study at its middle, over the top guide (under it on the mirrored plot)
   for (const t of sTags){
-    gLayoutJS(0, hOf(Math.max(...t.M.guides)) + .16, 0, lay, grow, tmp3, flat, t.M.mir); const [sx, sy, sz] = screenOf(...xform(m, [tmp3.x, tmp3.y, tmp3.z], 0));
+    gLayoutJS(.5, hOf(Math.max(...t.M.guides)) + .16, 0, lay, grow, tmp3, flat, t.M.mir); const [sx, sy, sz] = screenOf(...xform(m, [tmp3.x, tmp3.y, tmp3.z], 0));
     labelFade(t.el, sz < 1 ? gv*smooth(clamp(lay*2 - 1, 0, 1)) : 0, kf); t.el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px)`;
   }
   // the study switch fills nine tenths of the flat ring's inner circle (inside the points that lean in, below the track)
