@@ -270,13 +270,12 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow .step-next{flex:1;align-self:stretch;min-width:0;min-height:0;margin:0 4px;padding:0;border:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;position:relative;display:block;overflow:visible}
   #stepRow .step-next > svg,#stepRow .step-n,#stepRow .step-t{display:none}
   #stepRow .st-lbl{position:absolute;left:0;right:0;top:50%;translate:0 -50%;text-align:center;font:600 10px var(--sans);letter-spacing:.4em;text-transform:uppercase;color:rgba(236,230,218,.42);pointer-events:none}
-  #stepRow .st-track{display:none!important}
-  #stepRow .st-track{position:absolute;left:6px;right:6px;top:30px;height:2px;border-radius:1px;background:rgba(236,230,218,.16);pointer-events:none}
-  #stepRow .st-fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pos,0)*100%);border-radius:1px;background:linear-gradient(90deg,rgba(236,230,218,.5),var(--ember))}
-  #stepRow .st-tk{position:absolute;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;border-radius:50%;background:rgba(236,230,218,.45)}
+  #stepRow .st-track{position:absolute;left:10px;right:10px;bottom:10px;height:1px;background:rgba(236,230,218,.1);pointer-events:none}   /* (where in this chapter's slide we are: back to the start with each chapter) */
+  #stepRow .st-fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pos,0)*100%);background:rgba(236,230,218,.28)}
+  #stepRow .st-tk{position:absolute;top:50%;width:3px;height:3px;margin:-1.5px 0 0 -1.5px;border-radius:50%;background:rgba(236,230,218,.22)}
   #stepRow .st-tk.lan{width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:none;box-shadow:inset 0 0 0 1px rgba(236,230,218,.45)}
-  #stepRow .st-thumb{position:absolute;top:50%;left:calc(var(--pos,0)*100%);width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--bone);box-shadow:0 0 0 3px rgba(255,91,58,.35),0 0 12px rgba(255,91,58,.55);transition:transform .2s}
-  #stepRow.scrub .st-thumb{transform:scale(1.25)}
+  #stepRow .st-thumb{position:absolute;top:50%;left:calc(var(--pos,0)*100%);width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:rgba(236,230,218,.55);transition:transform .2s,background .2s}
+  #stepRow.scrub .st-thumb{transform:scale(1.5);background:var(--bone)}
   #stepRow .step-bar{left:6px;right:6px;bottom:6px;height:1px;opacity:.7}
   #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:15px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
   #stepRow.auto::after{display:none}
@@ -839,7 +838,6 @@ body.rtl .plabel small{margin:0 6px 0 0}
     <small class="step-h" id="cueH"></small>
     <div class="step-row hint" id="stepRow">
       <button class="step-b" id="stPrev" type="button" aria-label="Previous chapter" title="Previous chapter (←)" disabled><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5"/></svg></button>
-      <button class="step-b" id="stPlay" type="button" aria-label="Play the chapters" aria-pressed="false"><i class="st-pp" aria-hidden="true"></i></button>
       <button class="step-next first" id="stNext" type="button" title="Next chapter (→ or Space)">
         <em class="st-lbl" aria-hidden="true">Slide</em><span class="st-track" id="stTrack" aria-hidden="true"><i class="st-fill"></i><i class="st-thumb"></i></span><span class="step-n"><b id="stNum">I</b>/ XII</span>
         <span class="step-t"><b id="cueB">Next</b><small id="cueS">Through the Solar System to Earth</small></span>
@@ -2929,7 +2927,6 @@ $('stNext').addEventListener('click', () => { if (stepSwiped){ stepSwiped = fals
 $('stFwd').addEventListener('click', () => nav.to >= LAST ? goChapter(FIRST) : stepChapter(1));
 // play: the chapters follow one another on their own, each held a few seconds once it has arrived; the middle of the bar turns it on and off
 const AUTO = { on: false, t: 0, dwell: 5 }; let arEase = 0;
-$('stPlay').addEventListener('click', () => autoPlay(!AUTO.on));
 // the track: this chapter's animation, from here to the next chapter; a tap on it sets the story there
 { const T = $('stTrack'); for (const k of [0, 1]){ const i = document.createElement('i'); i.className = 'st-tk'; i.style.left = `${k*100}%`; T.appendChild(i); } }
 let barTapX = 0; $('stNext').addEventListener('pointerdown', e => { barTapX = e.clientX; });
@@ -2941,7 +2938,7 @@ function barJump(){
 }
 function autoPlay(on){
   AUTO.on = on; AUTO.t = 0; const r = $('stepRow'); r.classList.toggle('auto', on);
-  $('stPlay').setAttribute('aria-pressed', String(on)); $('stPlay').setAttribute('aria-label', on ? 'Pause' : 'Play the chapters');
+  $('stPlay')?.setAttribute('aria-pressed', String(on)); $('stPlay')?.setAttribute('aria-label', on ? 'Pause' : 'Play the chapters');
   $('cueB').textContent = on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next';
   if (on && SCR.hold){ SCR.hold = false; SCR.dir = 1; }                           // (from a paused point: on to the chapter ahead)
   if (on && nav.to >= LAST) goChapter(FIRST);
