@@ -2040,7 +2040,7 @@ function initParticles(){
             vec3 c1 = p + uAmyOut*(.75 + .5*aRnd.z) + h3(aRnd.w*7.7)*.14;
             if (k3F > .5){                                // only ever through the mouth: over it first, then straight down the tube to its place
               vec2 jx = k3P.xz*.55;                       // (inside the mouth, above its own spot: the drop down the tube never meets the wall)
-              vec3 mouthL = vec3(jx.x, TY1 + .2, jx.y), mouthW = (uTubeM*vec4(mouthL, 1.)).xyz, aboveW = (uTubeM*vec4(jx.x*1.4, TY1 + 1., jx.y*1.4, 1.)).xyz;
+              vec3 mouthL = vec3(jx.x, TY1 + .2, jx.y), mouthW = (uTubeM*vec4(mouthL, 1.)).xyz, aboveW = (uTubeM*vec4(jx.x*1.4 + 1.5, TY1 + .3, jx.y*1.4, 1.)).xyz;   // (in from the brain's side, low: the label sits over the mouth)
               if (edp < .74){ float tA = edp/.74, t = tA*tA*(2. - tA), u = 1. - t; flyS = t*u*4.;
                 p = u*u*u*p + 3.*u*u*t*c1 + 3.*u*t*t*aboveW + t*t*t*mouthW; }
               else { float tB = (edp - .74)/.26, t = 1. - (1. - tB)*(1. - tB); p = (uTubeM*vec4(mix(mouthL, k3P, t), 1.)).xyz; }
@@ -5473,7 +5473,7 @@ function assignAmy(camAz){
   // the view turns to the front of the brain, a little to one side, so both amygdalae show; the tube stands in front of it, below
   az.amy = camAz;                                // (the view stays where it is)
   const toCam = dirAt(az.amy, 0), right = new THREE.Vector3(toCam.z, 0, -toCam.x), up = new THREE.Vector3(0, 1, 0), s = portrait ? .62 : .78;
-  AMY.vialPos.set(0, portrait ? -1.5 : -1.12, 0).addScaledVector(toCam, portrait ? .9 : .55); AMY.target.set(0, 0, 0);   // (in front of the brain, below it)
+  AMY.vialPos.set(0, portrait ? -1.5 : -1.12, 0).addScaledVector(toCam, portrait ? .9 : .55).addScaledVector(right, portrait ? -.75 : -1.45); AMY.target.set(0, 0, 0);   // (in front of the brain, below it, to the left: its label stands over it)
   AMY.vialM.compose(AMY.vialPos, new THREE.Quaternion().setFromAxisAngle(up, az.amy), new THREE.Vector3(s*.62, s*.86, s*.62)).multiply(new THREE.Matrix4().makeTranslation(0, -1.24, 0));
   AU.uAmyOut.value.copy(toCam).multiplyScalar(.7).addScaledVector(up, .95).addScaledVector(right, portrait ? 0 : -.3);
   setNum($('amyN'), amyK);
@@ -5632,17 +5632,11 @@ function placeSortLabels(){
     const wa = xform(bm, [c.x, c.y, c.z], 0), wp = wa, lnO = 1 - smooth(clamp((AMY.drop*1.7 - .48)/.17, 0, 1));
     const A = scr(wp), Aa = scr(wa), o = aLbl*(A[2] ? 1 : 0);
     if (aLbl <= .001){ e._cn = e._at = null; e.style.opacity = ln.style.opacity = '0'; return; }
-    if (AMY.drop <= 0 || !e._at){      // the label follows the brain until the amygdalae leave it, then stays put
-      const o0 = xform(bm, [0, 0, 0], 0), B = scr(o0), cu = tmpV.setFromMatrixColumn(camera.matrixWorld, 1).multiplyScalar(BRAIN_HALF), T = scr([o0[0] + cu.x, o0[1] + cu.y, o0[2] + cu.z]);
-      const half = Math.hypot(T[0] - B[0], T[1] - B[1]), at = ([sd, sv]) => [B[0] + sd*half*1.1, B[1] + (sv < 0 ? -.8 : 1.05)*half, sd];   // (the upper corners a little low, clear of the brain chapter's network labels)
-      if (!e._cn){                     // which corner: chosen once, as the label first shows, and kept for the chapter
-        const s0 = Aa[0] >= B[0] ? 1 : -1, w = e._w || (e._w = e.offsetWidth), h = 20;   // diagonal to the brain, the amygdala's side first
-        const free = (x, y, sd) => { const L = sd > 0 ? x : x - w; return L > 10 && L + w < innerWidth - 34 && y - h > 10 && y + h < innerHeight - 10 && !hudObs.some(o => L < o.right + 8 && L + w > o.left - 8 && y - h/2 < o.bottom + 6 && y + h/2 > o.top - 6); };
-        const cs = [[s0, -1], [s0, 1], [-s0, -1], [-s0, 1]]; e._cn = cs.find(c => free(...at(c))) || cs[0]; }
-      e._at = at(e._cn); }
+    { const mo = scr(xform(AU.uTubeM.value.elements, [0, 1.82, 0], 0)), h = e._h || (e._h = e.offsetHeight);   // the label stands over the vial's mouth, a little clear of it
+      e._at = [mo[0], mo[1] - (portrait ? 44 : 46) - h/2, 0]; }
     const [lx, ly, sd] = e._at;
-    e.classList.remove('c', 'l', 'r'); e.classList.add(sd > 0 ? 'l' : 'r'); const ex = labelAt(e, lx, ly, o), ew = e._w;
-    const x0 = sd > 0 ? ex : ex + ew, y0 = ly + (e._h || (e._h = e.offsetHeight))/2 - 1, dx = A[0] - x0, dy = A[1] - y0, len = Math.hypot(dx, dy);
+    e.classList.remove('l', 'r'); e.classList.add('c'); const ex = labelAt(e, lx, ly, o), ew = e._w;
+    const x0 = ex + ew, y0 = ly + (e._h || (e._h = e.offsetHeight))/2 - 1, dx = A[0] - x0, dy = A[1] - y0, len = Math.hypot(dx, dy);
     ln.style.width = `${Math.max(0, len).toFixed(1)}px`; ln.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px) rotate(${Math.atan2(dy, dx)}rad)`; ln.style.opacity = (o*lnO).toFixed(2);
   }
 }
