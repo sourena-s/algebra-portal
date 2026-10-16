@@ -5775,7 +5775,7 @@ function gExtent(){
 }
 // the ring's view: flat, straight down onto it and all of it in frame; standing, from nearly level (flat 1 -> 0 as it rises)
 function gwasRingSph(){
-  const e = gExtent(), f = gFlatNow(), sm = portrait ? .86 : 1;   // (on a phone, clear of the chapter strip at the right edge)
+  const e = gExtent(), f = gFlatNow(), sm = portrait ? .86 : .9;   // (on a phone, clear of the chapter strip at the right edge; on a computer, clear of the slider)
   const both = GB ? (Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .2)/Math.tan(camera.fov/2*DEG) + G_R0 : 0;   // (standing, the two studies reach up and down)
   return [lerp(8, 89.5, f)*DEG, lerp(Math.max(fitDist((G_R0 + .5)/sm), both), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
 }
@@ -6234,8 +6234,8 @@ renderer.setAnimationLoop(() => {
     tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value * clamp(1 + Sd/.03, 0, 1)).toFixed(3);   // (its label once the Earth is reached)
     tag.style.transform = `translate(${((s.x*.5 + .5)*innerWidth + 8).toFixed(1)}px, ${((1 - (s.y*.5 + .5))*innerHeight - 10).toFixed(1)}px)`;
   }
-  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, .08, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
-  const offX = -panelR/2*(stageW(ST.GWAS) + stageW(ST.NET)) + (panelR ? 28 : 0)*stageW(ST.NET);
+  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, .08, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET) + (portrait ? 0 : 26*stageW(ST.GWAS)*(1 - U.uLayout.value));   // (on a computer the rings sit a little high, over the slider)
+  const offX = -panelR/2*(stageW(ST.GWAS)*U.uLayout.value + stageW(ST.NET)) + (panelR ? 28 : 0)*stageW(ST.NET);   // (the rings stand in the middle of the screen; the line keeps clear of the GWAS panel)
   if (Math.abs(offX) + Math.abs(offY) > .5) camera.setViewOffset(innerWidth, innerHeight, offX, offY, innerWidth, innerHeight);
   else if (camera.view && camera.view.enabled) camera.clearViewOffset();
 
