@@ -5628,12 +5628,8 @@ function placeSortLabels(){
     const bm = brainGroup.matrixWorld.elements;
     const [e, ln] = amyLabels, c = AMY.cen[AMY.cen[0].x > 0 ? 0 : 1];            // (x > 0 is the right hemisphere)
     const scr = w => { tmp3.set(w[0], w[1], w[2]).project(camera); return [(tmp3.x*.5 + .5)*innerWidth, (1 - (tmp3.y*.5 + .5))*innerHeight, tmp3.z < 1]; };
-    // the line's end rides with the particles: the same path the shader gives an average one (out of the brain, over the tube's mouth, down into it)
-    const tm = AU.uTubeM.value.elements, wa = xform(bm, [c.x, c.y, c.z], 0), ed = clamp((AMY.drop*1.7 - .65)/.7, 0, 1);
-    let wp = wa;
-    if (ed > 0){ const ou = AU.uAmyOut.value, c1 = [wa[0] + ou.x, wa[1] + ou.y, wa[2] + ou.z], ab = xform(tm, [0, 2.62, 0], 0), mo = xform(tm, [0, 1.82, 0], 0);
-      if (ed < .74){ const tA = ed/.74, t = tA*tA*(2 - tA), u = 1 - t; wp = wa.map((v, i) => u*u*u*v + 3*u*u*t*c1[i] + 3*u*t*t*ab[i] + t*t*t*mo[i]); }
-      else { const tB = (ed - .74)/.26, t = 1 - (1 - tB)*(1 - tB), to = xform(tm, [0, 1.15, 0], 0); wp = mo.map((v, i) => v + (to[i] - v)*t); } }
+    // the line's end stays on the amygdala, and the line fades out just before the amygdalae spill into the tube (the spill starts at drop = .65/1.7)
+    const wa = xform(bm, [c.x, c.y, c.z], 0), wp = wa, lnO = 1 - smooth(clamp((AMY.drop*1.7 - .48)/.17, 0, 1));
     const A = scr(wp), Aa = scr(wa), o = aLbl*(A[2] ? 1 : 0);
     if (aLbl <= .001){ e._cn = e._at = null; e.style.opacity = ln.style.opacity = '0'; return; }
     if (AMY.drop <= 0 || !e._at){      // the label follows the brain until the amygdalae leave it, then stays put
@@ -5647,7 +5643,7 @@ function placeSortLabels(){
     const [lx, ly, sd] = e._at;
     e.classList.remove('c', 'l', 'r'); e.classList.add(sd > 0 ? 'l' : 'r'); const ex = labelAt(e, lx, ly, o), ew = e._w;
     const x0 = sd > 0 ? ex : ex + ew, y0 = ly + (e._h || (e._h = e.offsetHeight))/2 - 1, dx = A[0] - x0, dy = A[1] - y0, len = Math.hypot(dx, dy);
-    ln.style.width = `${Math.max(0, len).toFixed(1)}px`; ln.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px) rotate(${Math.atan2(dy, dx)}rad)`; ln.style.opacity = o.toFixed(2);
+    ln.style.width = `${Math.max(0, len).toFixed(1)}px`; ln.style.transform = `translate(${x0.toFixed(1)}px, ${y0.toFixed(1)}px) rotate(${Math.atan2(dy, dx)}rad)`; ln.style.opacity = (o*lnO).toFixed(2);
   }
 }
 // ---------------------------------------------------------------- loading your own summary statistics (parsed in the browser)
