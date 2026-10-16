@@ -504,11 +504,13 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .cite i{font-style:italic}
 
 /* languages: the picker on the opening chapter, and Persian (right to left; its letters join, so no letter-spacing) */
-.langs{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
-.langs button{font:inherit;font-size:11px;font-weight:500;letter-spacing:.08em;color:rgba(236,230,218,.72);background:rgba(10,12,20,.35);border:1px solid rgba(236,230,218,.22);border-radius:999px;padding:6px 13px;cursor:pointer;transition:color .3s,border-color .3s,background .3s}
+.langs{position:fixed;z-index:6;top:calc(var(--gut) + env(safe-area-inset-top,0px));right:var(--gut);display:flex;flex-direction:column;align-items:flex-end;gap:6px}   /* (top right, on every chapter: the language shown, opening to the others) */
+.langs button{font:inherit;font-size:11px;font-weight:500;letter-spacing:.08em;color:rgba(236,230,218,.72);background:rgba(10,12,20,.85);border:1px solid rgba(236,230,218,.22);border-radius:999px;padding:6px 13px;cursor:pointer;transition:color .3s,border-color .3s,background .3s;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .langs button:hover{color:var(--bone);border-color:rgba(236,230,218,.5)}
-.langs button[aria-pressed=true]{color:var(--void);background:var(--bone);border-color:var(--bone)}
-.langs.folded:not(.open) button[aria-pressed=false]{display:none}   /* (a language is chosen: only it shows, and it opens the rest) */
+.langs button[aria-pressed=true]{order:-1}
+.langs.open button[aria-pressed=true]{color:var(--void);background:var(--bone);border-color:var(--bone)}
+.langs:not(.open) button[aria-pressed=false]{display:none}
+.langs:not(.open) button[aria-pressed=true]::after{content:'';display:inline-block;width:4px;height:4px;margin:0 0 2px 7px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg)}
 .langs button[lang=fa]{font-family:'Vazirmatn',var(--sans);letter-spacing:0}
 html:not([lang=en]) .tag{white-space:normal}   /* (translated subtitles are longer than the acronym line) */
 body.el{--sans:'Univia Pro','univia-pro','Exo 2','Commissioner',ui-sans-serif,system-ui,sans-serif}   /* (Greek letters fall through to Commissioner) */
@@ -520,7 +522,6 @@ body.rtl .lede p,body.rtl .tag{text-align:right}
 body.rtl .cite,body.rtl .legend .cite{direction:ltr;unicode-bidi:isolate;text-align:left}   /* (the citations stay in English) */
 body.rtl .lede p{justify-self:end}
 body.rtl .plate > span,body.rtl .event{left:auto;right:0}
-body.rtl .langs{justify-content:flex-end}
 body.rtl .ds-step{float:left}
 body.rtl .plabel,body.rtl .rlabel{direction:rtl;unicode-bidi:isolate}
 body.rtl .plabel small{margin:0 6px 0 0}
@@ -641,9 +642,9 @@ body.rtl .plabel small{margin:0 6px 0 0}
     <div class="event" id="readEv"><i></i><span id="readTxt">Reading</span></div>
     <div class="event" id="dmgEv"><i></i><span id="dmgTxt">DNA damage</span></div>
   </div>
-  <div class="anim" style="--d:640ms"><nav class="langs" id="langs" data-ch="-1" aria-label="Language" data-i18n-skip><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="nl" lang="nl">Nederlands</button><button type="button" data-lang="fa" lang="fa" dir="rtl">پارسی</button><button type="button" data-lang="el" lang="el">Ελληνικά</button></nav></div>
 </header>
 
+<nav class="langs anim" id="langs" style="--d:640ms" aria-label="Language" data-i18n-skip><button type="button" data-lang="en" lang="en">English</button><button type="button" data-lang="nl" lang="nl">Nederlands</button><button type="button" data-lang="fa" lang="fa" dir="rtl">پارسی</button><button type="button" data-lang="el" lang="el">Ελληνικά</button></nav>
 <div class="hud hud-tr">
   <div class="clock anim" id="simClock" hidden></div>
   <div class="meta anim" id="simDate" hidden>&nbsp;</div>
@@ -927,13 +928,13 @@ if (LANG === 'fa') document.body.classList.add('rtl');
 if (LANG === 'el') document.body.classList.add('el');
 translateDom();
 document.title = t_(document.title);
-// once a language has been chosen the picker folds to that one button; tapping it opens the others again
-{ let chosen = false; try { chosen = LANGS.includes(localStorage.getItem('algebra-lang')); } catch (e) {}
-  document.getElementById('langs').classList.toggle('folded', chosen); }
+// the picker shows the language in use; tapping it opens the others, and a tap anywhere else closes them
+{ const nav = document.getElementById('langs');
+  document.addEventListener('pointerdown', e => { if (!nav.contains(e.target)) nav.classList.remove('open'); }); }
 for (const b of document.querySelectorAll('#langs [data-lang]')){
   b.setAttribute('aria-pressed', b.dataset.lang === LANG);
   b.addEventListener('click', () => {
-    if (b.dataset.lang === LANG){ const nav = document.getElementById('langs'); if (nav.classList.contains('folded') || nav.classList.contains('open')) nav.classList.toggle('open'); b.setAttribute('aria-expanded', nav.classList.contains('open')); return; }
+    if (b.dataset.lang === LANG){ const nav = document.getElementById('langs'); nav.classList.toggle('open'); b.setAttribute('aria-expanded', nav.classList.contains('open')); return; }
     try { localStorage.setItem('algebra-lang', b.dataset.lang); } catch (e) {}
     const u = new URL(location.href); u.searchParams.delete('lang'); if (b.dataset.lang !== 'en' || u.search) u.searchParams.set('lang', b.dataset.lang);
     location.replace(u.href);
