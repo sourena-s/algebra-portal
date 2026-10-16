@@ -508,6 +508,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .langs button{font:inherit;font-size:11px;font-weight:500;letter-spacing:.08em;color:rgba(236,230,218,.72);background:rgba(10,12,20,.35);border:1px solid rgba(236,230,218,.22);border-radius:999px;padding:6px 13px;cursor:pointer;transition:color .3s,border-color .3s,background .3s}
 .langs button:hover{color:var(--bone);border-color:rgba(236,230,218,.5)}
 .langs button[aria-pressed=true]{color:var(--void);background:var(--bone);border-color:var(--bone)}
+.langs.folded:not(.open) button[aria-pressed=false]{display:none}   /* (a language is chosen: only it shows, and it opens the rest) */
 .langs button[lang=fa]{font-family:'Vazirmatn',var(--sans);letter-spacing:0}
 html:not([lang=en]) .tag{white-space:normal}   /* (translated subtitles are longer than the acronym line) */
 body.el{--sans:'Univia Pro','univia-pro','Exo 2','Commissioner',ui-sans-serif,system-ui,sans-serif}   /* (Greek letters fall through to Commissioner) */
@@ -926,10 +927,13 @@ if (LANG === 'fa') document.body.classList.add('rtl');
 if (LANG === 'el') document.body.classList.add('el');
 translateDom();
 document.title = t_(document.title);
+// once a language has been chosen the picker folds to that one button; tapping it opens the others again
+{ let chosen = false; try { chosen = LANGS.includes(localStorage.getItem('algebra-lang')); } catch (e) {}
+  document.getElementById('langs').classList.toggle('folded', chosen); }
 for (const b of document.querySelectorAll('#langs [data-lang]')){
   b.setAttribute('aria-pressed', b.dataset.lang === LANG);
   b.addEventListener('click', () => {
-    if (b.dataset.lang === LANG) return;
+    if (b.dataset.lang === LANG){ const nav = document.getElementById('langs'); if (nav.classList.contains('folded') || nav.classList.contains('open')) nav.classList.toggle('open'); b.setAttribute('aria-expanded', nav.classList.contains('open')); return; }
     try { localStorage.setItem('algebra-lang', b.dataset.lang); } catch (e) {}
     const u = new URL(location.href); u.searchParams.delete('lang'); if (b.dataset.lang !== 'en' || u.search) u.searchParams.set('lang', b.dataset.lang);
     location.replace(u.href);
