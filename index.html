@@ -458,7 +458,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .stag.mir{translate:-50% 2px}   /* (the mirrored study's name hangs under its plot) */
 /* the study switch: a brushed-metal knob filling the flat ring's inner circle (sized in JS; everything in it scales with its font size).
    Brushing: fine concentric grooves; reflections: light swept round the centre, as on a machined aluminium dial */
-.gswap{position:fixed;z-index:3;left:0;top:0;width:10em;height:10em;translate:-50% -50%;padding:0;border-radius:50%;border:0;color:var(--bone);font-family:var(--sans);font-size:11px;display:grid;place-content:center;justify-items:center;gap:.2em;cursor:pointer;opacity:0;pointer-events:none;
+.gswap{position:fixed;z-index:3;left:0;top:0;width:10em;height:10em;translate:-50% -50%;padding:0;border-radius:50%;border:0;color:var(--bone);font-family:var(--sans);font-size:12px;display:grid;place-content:center;justify-items:center;gap:.2em;cursor:pointer;opacity:0;pointer-events:none;
   background:
     radial-gradient(circle at 50% 50%,rgba(255,255,255,.06) 0,rgba(255,255,255,0) 30%),
     conic-gradient(from 20deg,#2C3138,#4A515B 10%,#30353C 20%,#262A30 30%,#3E444D 40%,#515862 46%,#343940 56%,#25292F 66%,#3A4048 76%,#4C535D 83%,#2F343B 92%,#2C3138);
@@ -5776,7 +5776,7 @@ function gExtent(){
 // the ring's view: flat, straight down onto it and all of it in frame; standing, from nearly level (flat 1 -> 0 as it rises)
 function gwasRingSph(){
   const e = gExtent(), f = gFlatNow(), sm = portrait ? .86 : .9;   // (on a phone, clear of the chapter strip at the right edge; on a computer, clear of the slider)
-  const both = GB ? (Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .2)/Math.tan(camera.fov/2*DEG) + G_R0 : 0;   // (standing, the two studies reach up and down)
+  const both = GB ? ((Math.max(hOf(GA.maxL), hOf(GB.maxL)) + .2)/Math.tan(camera.fov/2*DEG) + G_R0)*(portrait ? 1.5 : 1) : 0;   // (standing, the two studies reach up and down; a phone has only the room between the header and the panel)
   return [lerp(8, 89.5, f)*DEG, lerp(Math.max(fitDist((G_R0 + .5)/sm), both), fitDist((e.r + .15)/sm), Math.sqrt(f))];   // (the camera holds back until the ring is nearly up, so it is never cut as it tilts)
 }
 function presetPos(k, lay = layoutT){
@@ -6304,9 +6304,10 @@ function placeGenomeLabels(gv){
   }
   // the study switch fills nine tenths of the flat ring's inner circle (inside the points that lean in, below the track)
   { const sw = $('gSwap'), c = screenOf(...xform(m, [0, 0, 0], 0)), r = G_R0 - .3;
-    const rad = Math.max(...[[r, 0, 0], [0, 0, r], [-r, 0, 0], [0, 0, -r]].map(p => { const q = screenOf(...xform(m, p, 0)); return Math.hypot(q[0] - c[0], q[1] - c[1]); }));
+    let rad = 0; for (let k = 0; k < 24; k++){ const a = k/24*TAU, q = screenOf(...xform(m, [r*Math.cos(a), 0, r*Math.sin(a)], 0)); rad = Math.max(rad, Math.hypot(q[0] - c[0], q[1] - c[1])); }   // (all round the circle, so the ring's turn does not make it pulse)
+    rad = sw._r = sw._r && Math.abs(sw._r - rad) < rad*.25 ? sw._r + (rad - sw._r)*.2 : rad;   // (and eased from frame to frame)
     const o = GB && c[2] < 1 ? gv0*TG.lf*smooth(clamp((flat - .85)/.15, 0, 1))*(1 - smooth(clamp(lay*3, 0, 1))) : 0;
-    sw.style.fontSize = `${(rad*2*.9/10).toFixed(2)}px`; sw.style.left = `${c[0].toFixed(1)}px`; sw.style.top = `${c[1].toFixed(1)}px`;
+    sw.style.scale = (rad*2*.9/10/12).toFixed(4); sw.style.left = `${c[0].toFixed(1)}px`; sw.style.top = `${c[1].toFixed(1)}px`;   // (laid out once at 12px and scaled: a changing font size made its text jitter)
     sw.style.opacity = o.toFixed(3); sw.style.pointerEvents = o > .6 ? 'auto' : 'none'; sw.tabIndex = o > .6 ? 0 : -1; }
 }
 </script>
