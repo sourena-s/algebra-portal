@@ -956,7 +956,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const easeIO = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
 const easeOut = t => 1 - Math.pow(1 - t, 3);
 const smooth = t => t*t*(3 - 2*t);
-const smrtPan = () => smooth(clamp((smrtCam.on - .5)/.5, 0, 1));   // (the SMRT view's back-out and pan up, in the second half of the swing)
+const smrtPan = () => smooth(clamp(smrtCam.on/.7, 0, 1));   // (the SMRT view's back-out and pan up, alongside the swing, so the rising camera never leaves the frame)
 const tick = () => new Promise(r => setTimeout(r, 0));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
