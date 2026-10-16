@@ -2040,7 +2040,7 @@ function initParticles(){
             vec3 c1 = p + uAmyOut*(.75 + .5*aRnd.z) + h3(aRnd.w*7.7)*.14;
             if (k3F > .5){                                // only ever through the mouth: over it first, then straight down the tube to its place
               vec2 jx = k3P.xz*.55;                       // (inside the mouth, above its own spot: the drop down the tube never meets the wall)
-              vec3 mouthL = vec3(jx.x, TY1 + .2, jx.y), mouthW = (uTubeM*vec4(mouthL, 1.)).xyz, aboveW = (uTubeM*vec4(jx.x*1.4 + 1.5, TY1 + .3, jx.y*1.4, 1.)).xyz;   // (in from the brain's side, low: the label sits over the mouth)
+              vec3 mouthL = vec3(jx.x, TY1 + .2, jx.y), mouthW = (uTubeM*vec4(mouthL, 1.)).xyz, aboveW = (uTubeM*vec4(jx.x*1.4 + .4, TY1 + .9, jx.y*1.4, 1.)).xyz;   // (over the mouth, a little to the brain's side)
               if (edp < .74){ float tA = edp/.74, t = tA*tA*(2. - tA), u = 1. - t; flyS = t*u*4.;
                 p = u*u*u*p + 3.*u*u*t*c1 + 3.*u*t*t*aboveW + t*t*t*mouthW; }
               else { float tB = (edp - .74)/.26, t = 1. - (1. - tB)*(1. - tB); p = (uTubeM*vec4(mix(mouthL, k3P, t), 1.)).xyz; }
@@ -5433,7 +5433,7 @@ const AU = { uAmy: { value: 0 }, uDrop: { value: 0 }, uSort: { value: 0 }, uSort
   uAmyOut: { value: new THREE.Vector3(0, 1, 0) }, uAmyC: { value: col('#FFD23F') }, uTilt: { value: 0 }, uPourL: { value: new THREE.Matrix4() },
   uLiqA: { value: new THREE.Vector4(1, 0, 0, 1) }, uLiqB: { value: new THREE.Vector3(1.24, .93, 1) } };
 let pCube = null, amyK = 0, mAmyG = 0, mSortG = 0, mSmG = 0;
-const AMY = { vox: null, n: [0, 0], cen: [new THREE.Vector3(), new THREE.Vector3()], mm: 1, vialM: new THREE.Matrix4(), vialPos: new THREE.Vector3(),
+const AMY = { lblW: new THREE.Vector3(), vox: null, n: [0, 0], cen: [new THREE.Vector3(), new THREE.Vector3()], mm: 1, vialM: new THREE.Matrix4(), vialPos: new THREE.Vector3(),
   target: new THREE.Vector3(), drop: 0, hold: 0 };
 // the same integer hash as the shader, so the page knows which nucleus is crossing the lasers and what it is
 const pcgJS = v => { const s = (Math.imul(v >>> 0, 747796405) + 2891336453) >>> 0, w = Math.imul(((s >>> ((s >>> 28) + 4)) ^ s) >>> 0, 277803737) >>> 0; return ((w >>> 22) ^ w) >>> 0; };
@@ -5473,8 +5473,10 @@ function assignAmy(camAz){
   // the view turns to the front of the brain, a little to one side, so both amygdalae show; the tube stands in front of it, below
   az.amy = camAz;                                // (the view stays where it is)
   const toCam = dirAt(az.amy, 0), right = new THREE.Vector3(toCam.z, 0, -toCam.x), up = new THREE.Vector3(0, 1, 0), s = portrait ? .62 : .78;
-  AMY.vialPos.set(0, portrait ? -1.5 : -1.12, 0).addScaledVector(toCam, portrait ? .9 : .55).addScaledVector(right, portrait ? -.75 : -1.45); AMY.target.set(0, 0, 0);   // (in front of the brain, below it, to the left: its label stands over it)
+  const vx = portrait ? -.38 : -.62, lx = portrait ? -.55 : -.85;   // (the vial a little left of the brain's middle; its label up and to the left of it, clear of the particles' fall)
+  AMY.vialPos.set(0, portrait ? -1.5 : -.94, 0).addScaledVector(toCam, portrait ? .9 : .55).addScaledVector(right, vx); AMY.target.set(0, 0, 0);   // (in front of the brain, below it)
   AMY.vialM.compose(AMY.vialPos, new THREE.Quaternion().setFromAxisAngle(up, az.amy), new THREE.Vector3(s*.62, s*.86, s*.62)).multiply(new THREE.Matrix4().makeTranslation(0, -1.24, 0));
+  AMY.lblW = new THREE.Vector3(0, 1.82, 0).applyMatrix4(AMY.vialM).addScaledVector(right, lx);
   AU.uAmyOut.value.copy(toCam).multiplyScalar(.7).addScaledVector(up, .95).addScaledVector(right, portrait ? 0 : -.3);
   setNum($('amyN'), amyK);
 }
@@ -5632,8 +5634,8 @@ function placeSortLabels(){
     const wa = xform(bm, [c.x, c.y, c.z], 0), wp = wa, lnO = 1 - smooth(clamp((AMY.drop*1.7 - .48)/.17, 0, 1));
     const A = scr(wp), Aa = scr(wa), o = aLbl*(A[2] ? 1 : 0);
     if (aLbl <= .001){ e._cn = e._at = null; e.style.opacity = ln.style.opacity = '0'; return; }
-    { const mo = scr(xform(AU.uTubeM.value.elements, [0, 1.82, 0], 0)), h = e._h || (e._h = e.offsetHeight);   // the label stands over the vial's mouth, a little clear of it
-      e._at = [mo[0], mo[1] - (portrait ? 44 : 46) - h/2, 0]; }
+    { const mo = scr([AMY.lblW.x, AMY.lblW.y, AMY.lblW.z]), h = e._h || (e._h = e.offsetHeight);   // the label stands up and to the left of the vial's mouth
+      e._at = [mo[0], mo[1] - (portrait ? 34 : 40) - h/2, 0]; }
     const [lx, ly, sd] = e._at;
     e.classList.remove('l', 'r'); e.classList.add('c'); const ex = labelAt(e, lx, ly, o), ew = e._w;
     const x0 = ex + ew, y0 = ly + (e._h || (e._h = e.offsetHeight))/2 - 1, dx = A[0] - x0, dy = A[1] - y0, len = Math.hypot(dx, dy);
@@ -6232,7 +6234,7 @@ renderer.setAnimationLoop(() => {
     tag.style.opacity = (clamp((facing - .05)*4, 0, 1) * BU.uOpacity.value * clamp(1 + Sd/.03, 0, 1)).toFixed(3);   // (its label once the Earth is reached)
     tag.style.transform = `translate(${((s.x*.5 + .5)*innerWidth + 8).toFixed(1)}px, ${((1 - (s.y*.5 + .5))*innerHeight - 10).toFixed(1)}px)`;
   }
-  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, .08, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .03*stageW(ST.AMY) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
+  const offY = (portrait ? innerHeight*(.085*stageW(ST.ORBIT) + lerp(.05, .08, U.uLayout.value)*stageW(ST.GWAS) - .04*stageW(ST.SORT) - .045*stageW(ST.CELL)) : 0) + netBandOff*stageW(ST.NET);
   const offX = -panelR/2*(stageW(ST.GWAS) + stageW(ST.NET)) + (panelR ? 28 : 0)*stageW(ST.NET);
   if (Math.abs(offX) + Math.abs(offY) > .5) camera.setViewOffset(innerWidth, innerHeight, offX, offY, innerWidth, innerHeight);
   else if (camera.view && camera.view.enabled) camera.clearViewOffset();
