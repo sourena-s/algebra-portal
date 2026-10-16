@@ -276,7 +276,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
   #stepRow .st-tk.lan{width:5px;height:5px;margin:-2.5px 0 0 -2.5px;background:none;box-shadow:inset 0 0 0 1px rgba(236,230,218,.45)}
   #stepRow .st-thumb{position:absolute;top:50%;left:calc(var(--pos,0)*100%);width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:rgba(236,230,218,.55);transition:transform .2s,background .2s}
   #stepRow.scrub .st-thumb{transform:scale(1.5);background:var(--bone)}
-  #stepRow .step-bar{left:6px;right:6px;bottom:6px;height:1px;opacity:.7}
+  #stepRow .step-bar{display:none}   /* (the slider's thumb already shows the way through the chapter) */
   #stepRow::after{content:'\203A\2002\203A\2002\203A';position:absolute;left:50%;top:50%;translate:-50% -50%;font-size:15px;letter-spacing:.1em;color:rgba(255,91,58,.9);text-shadow:0 0 8px rgba(255,91,58,.6);opacity:0;pointer-events:none}
   #stepRow.auto::after{display:none}
   #stepRow.hint::after{animation:barHint 1.5s ease-in-out .6s 3}
@@ -2957,13 +2957,15 @@ const barPos = () => { const t = SCR.on ? SCR.target : S; return t <= FIRST + 1e
 $('stepRow').addEventListener('pointerdown', e => { if (!ready) return; stepSwipe = { x: e.clientX, y: e.clientY, id: e.pointerId, s0: barPos(), m: 0 }; stepSwiped = false; });
 addEventListener('pointermove', e => {
   const W = stepSwipe; if (!W || e.pointerId !== W.id) return; const dx = e.clientX - W.x;
-  if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = barPos(); $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
+  if (W.done) return;                                                                 // (one swipe turns at most one chapter: another needs a new swipe)
+  if (!W.m && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - W.y)){ W.m = 1; W.x = e.clientX; W.s0 = barPos(); W.lo = Math.ceil(W.s0 - 1e-3) - 1; W.hi = Math.floor(W.s0 + 1e-3) + 1; $('stepRow').classList.add('scrub'); try { $('stepRow').setPointerCapture(e.pointerId); } catch (_){} }
   if (!W.m) return;
   if (intro.t < 1){ intro.t = 1; controls.enabled = true; }
   const w = $('stNext').getBoundingClientRect().width;
-  const v = clamp(W.s0 + (e.clientX - W.x)/Math.max(80, w), FIRST - 1, LAST);
+  const v = clamp(W.s0 + (e.clientX - W.x)/Math.max(80, w), Math.max(FIRST - 1, W.lo), Math.min(LAST, W.hi));
+  if (v >= W.hi - 1e-3 || v <= W.lo + 1e-3) W.done = true;                              // (a chapter's end reached: it lands there and the rest of this swipe is ignored)
   COS.manual = true; COS.za = clamp(v - FIRST + 1, 0, 1);                              // (below the first chapter: the zoom out to Laniakea)
-  SCR.target = Math.max(FIRST, v); SCR.on = true; SCR.hold = true; SCR.t = performance.now();
+  SCR.target = Math.max(FIRST, v); SCR.on = true; SCR.hold = !W.done; SCR.t = performance.now();
   SCR.dir = e.clientX >= W.x ? 1 : -1; nav.busy = false; nav.out = false; nav.used = true; nav.to = Math.round(SCR.target);
 });
 for (const t of ['pointerup', 'pointercancel']) addEventListener(t, e => {
