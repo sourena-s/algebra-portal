@@ -1188,7 +1188,7 @@ composer.addPass(new OutputPass());
 const U = {
   uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uBg: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
   uSun: { value: new THREE.Vector3(1, 0, 0) }, uFocusId: { value: -1 }, uFocusAmt: { value: 0 },
-  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGAct: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
+  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGAct: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uEsb: { value: new THREE.DataTexture(new Float32Array(4), 1, 1, THREE.RGBAFormat, THREE.FloatType) }, uEsbG: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
 };
 
 // ---------------------------------------------------------------- backdrop
@@ -1695,7 +1695,7 @@ function initParticles(){
   pMat = new THREE.ShaderMaterial({
     uniforms: {
       uSat: { value: satTex }, uSatW: { value: texW }, uNSat: { value: NS },
-      uCosV: U.uCosV, uTime: U.uTime, uMorph: U.uMorph, uDna: U.uDna, uGw: U.uGw, uPR: U.uPR, uScale: U.uScale, uFocusId: U.uFocusId, uFocusAmt: U.uFocusAmt,
+      uCosV: U.uCosV, uTime: U.uTime, uMorph: U.uMorph, uDna: U.uDna, uGw: U.uGw, uEsb: U.uEsb, uEsbG: U.uEsbG, uPR: U.uPR, uScale: U.uScale, uFocusId: U.uFocusId, uFocusAmt: U.uFocusAmt,
       uLayout: U.uLayout, uR0: U.uR0, uLx: U.uLx, uGGrow: U.uGGrow, uGFlat: U.uGFlat, uGAct: U.uGAct, ...GU,
       uBrainMat: { value: brainGroup.matrixWorld }, uDnaMat: { value: dnaGroup.matrixWorld }, uGwasMat: { value: gwasGroup.matrixWorld }, uNetMat: { value: netGroup.matrixWorld }, ...NU, ...SU, ...AU, ...CU,
       uPulse: { value: pulseArr }, uNet: { value: netU.pos }, uNetId: { value: netU.id }, uNetC: { value: netU.col },
@@ -1711,6 +1711,7 @@ function initParticles(){
       uniform float uAmy, uDrop, uSort, uSortT, uNCell, uFillT, uTilt; uniform mat4 uTubeM, uSortMat, uPourL; uniform vec3 uNeu, uGlia, uAmyOut, uAmyC; attribute vec4 aCube;
       uniform float uCell, uNucl, uZA, uZB, uZH; uniform vec3 uFoc, uCellC, uFh, uFt, uAx, uBead[4], uNucC[4]; uniform mat4 uCellMat, uChrMat; uniform sampler2D uShape; uniform int uShapeW;
       uniform vec4 uLiqA; uniform vec3 uLiqB;
+      uniform sampler2D uEsb; uniform float uEsbG;
       uniform float uSmrt, uZmw, uZoom, uZmax, uCellT, uZF, uZShift, uZN, uCN, uNP; uniform vec3 uZC; uniform vec4 uZR; uniform mat4 uSmrtMat; uniform sampler2D uCurve, uSeq;
       uniform mat4 uBrainMat, uDnaMat, uGwasMat, uNetMat; uniform float uNetM, uNetFocus, uNetFocusAmt, uNetSelAmt, uNetT, uNetZs; uniform sampler2D uOrb; uniform vec3 uPC[26]; uniform vec4 uPulse[${PULSES}]; uniform vec4 uNet[2]; uniform float uNetId[2]; uniform vec3 uNetC[2]; uniform float uLes[6];
       uniform vec3 uLEO, uMEO, uGEO, uHEO, uGyri, uSulci, uHot1, uHot2, uElC, uElN, uElO, uElP, uElH, uChA, uChB, uSig1, uSig2, uSig3, uBA, uBC, uBG, uBT, uZap;
@@ -2140,9 +2141,24 @@ function initParticles(){
             prevFade = 1. - gone;
             if (uSmrt > .44) p = wT - normalize(mat3(uSmrtMat)*vec3(0., 1., 0.))*.05*(1. - es);   // and the well rises into place
           }
+          if (uEsbG > 0.){                                // VII -> the Empire State: the chip lifts off as a cloud and settles, still flashing, into the tower
+            int ei = int(pid); vec4 eb = texelFetch(uEsb, ivec2(ei % 1024, ei / 1024), 0);
+            float r = rn(pid, 21.), ee = eio(clamp((uEsbG - r*.25 - eb.w*.12)/.6, 0., 1.)), cl = ee*(1. - ee)*4.;
+            vec3 tB = (uSmrtMat*vec4(eb.xyz, 1.)).xyz, upV = normalize(mat3(uSmrtMat)*vec3(0., 1., 0.));
+            vec3 mid = .5*(p + tB) + upV*(.2 + .3*r)*length(tB - p) + h3(r*91.7)*.35;
+            p = mix(mix(p, mid, ee), mix(mid, tB, ee), ee) + h3(r*13.1)*.05*cl*sin(uTime*1.7 + r*6.28);
+            if (pid >= 35721.){                           // (the die's rim and the film between the wells read too, once they have left the chip)
+              float ld = step(rn(pid, 22.), .45), cy = uCellT*(1.6 + 3.2*rn(pid, 23.)) + rn(pid, 24.)*9., F = ld*exp(-fract(cy)*5.5);
+              vec3 lc = baseCol(floor(rn(pid + floor(cy)*4099., 25.)*4.));
+              kSC = mix(kSC, mix(vec3(.46, .52, .62), lc, F), ee); kSA = mix(kSA, (.2 + .9*F)*.6, ee); kSS = mix(kSS, .0058*(1. + .9*F), ee);
+            }
+            kSA *= (1. + .5*cl)*mix(1., .5, ee);   // (packed into the tower, each point a little dimmer)
+          }
         }
         // VI -> VII: the reads become the genome of a disease; points drop to the floor, then rise into their towers
-        float eg = eio(clamp((uGw - (aGP.x*.42 + aRnd.w*.08))/.5, 0., 1.));
+        float gDel = aGP.x*.42 + aRnd.w*.08;
+        if (uEsbG > 0.){ int ei = int(pid); gDel = (1. - texelFetch(uEsb, ivec2(ei % 1024, ei / 1024), 0).w)*.4 + aRnd.w*.08; }   // (out of the tower, from its top down)
+        float eg = eio(clamp((uGw - gDel)/.5, 0., 1.));
         float fly3 = eg*(1. - eg)*4.;
         float gB = step(7.5, aGI.y), gM = step(3.5, aGI.y - 8.*gB);         // (the particle carries the study not on show; its study is the second one)
         vec3 gP = (uGwasMat*vec4(gLayoutM(aGP, gM), 1.)).xyz;
@@ -5345,14 +5361,13 @@ function buildZmwArray(){
   zmwArr = new THREE.Points(g, m); zmwArr.frustumCulled = false; zmwArr.visible = false; zmwArr.renderOrder = 3; smrtGroup.add(zmwArr);
   arrLabel = document.createElement('span'); arrLabel.className = 'zlabel c arr'; arrLabel.innerHTML = 'The same well, again and again<br><b>25 million on one SMRT Cell</b>'; $('arrLabels').appendChild(arrLabel);
 }
-// Into the genome: the SMRT Cell's wells rise, still flashing as they read, into the Empire State Building; then the tower falls
-// into the flat ring of the Manhattan plot. Built in the chip's own frame (smrtGroup): each point climbs straight up out of the well
-// under it, and lands on one variant of the plot (gwasGroup), where the plot's own points take over.
-const ESB = { pts: null, G: null, m: null };
+// Into the genome: the SMRT Cell's own points, the wells first, lift off the chip as a cloud and settle, still flashing as they read,
+// into the Empire State Building; then the tower falls into the flat ring of the Manhattan plot. ESB.tex holds, for every particle,
+// its place in the tower (in the chip's frame, smrtGroup) and its height up it; the particle shader does the rest.
+const ESB = { tex: null, n: 0 };
 function buildEsb(){
-  if (ESB.pts){ scene.remove(ESB.pts); ESB.pts.geometry.dispose(); }
-  const P = [], T = [], I = [], R = mulberry(83), s = 2.25/443, pitch = 2*1.3/63, tv = new THREE.Vector3();   // (metres: 443 m to the antenna's tip)
-  const add = (x, y, z) => { const wx = x*s, wz = z*s, i = clamp(Math.round(wx/pitch) + 31, 0, 62), j = clamp(Math.round(wz/pitch) + 31, 0, 62); P.push(wx, y*s, wz); I.push(j*63 + i, y/443, R()); };
+  const P = [], R = mulberry(83), s = 2.25/443;   // (metres: 443 m to the antenna's tip)
+  const add = (x, y, z) => P.push([x*s, y*s, z*s]);
   const line = (a, b, st) => { const n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])/st)); for (let k = 0; k <= n; k++){ const t = k/n; add(a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t, a[2] + (b[2] - a[2])*t); } };
   const E = 1.6;
   const box = (w, d, y0, y1, pier, floor) => {     // a block w x d m, from y0 to y1 m: its edges, a pier every `pier` m up its faces, a line at every `floor` m
@@ -5376,39 +5391,29 @@ function buildEsb(){
   box(36, 28, 333, 345, 3, 0);            // the 86th-floor observatory
   oct(12, 11, 345, 352, 1); oct(11, 8, 352, 366, 1); oct(8, 6, 366, 373, 1); oct(5.5, 2.5, 373, 381, 0);   // the mooring mast, its fins, the crown at the 102nd floor
   line([0, 381, 0], [0, 443, 0], .9);     // and the antenna
-  const nP = P.length/3, Gs = ESB.G = G;
-  for (let q = 0; q < nP; q++){ const i = Math.floor(R()*Gs.N); gLayoutJS(Gs.u[i], Gs.y[i], Gs.d[i], 0, 1, tv, 1); T.push(tv.x, tv.y, tv.z); }   // (each lands on a variant of the flat ring)
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aT', new THREE.Float32BufferAttribute(T, 3)); g.setAttribute('aI', new THREE.Float32BufferAttribute(I, 3));
-  const mat = new THREE.ShaderMaterial({
-    uniforms: { uGrow: { value: 0 }, uMorph: { value: 0 }, uCellT: SU.uCellT, uPR: U.uPR, uScale: U.uScale,
-      uSm: { value: smrtGroup.matrixWorld }, uGm: { value: gwasGroup.matrixWorld }, uEmb: { value: col(PAL.ember) },
-      uBA: { value: col(PAL.baseA) }, uBC: { value: col(PAL.baseC) }, uBG: { value: col(PAL.baseG) }, uBT: { value: col(PAL.baseT) } },
-    vertexShader: `attribute vec3 aT; attribute vec3 aI; uniform float uGrow, uMorph, uCellT, uPR, uScale; uniform mat4 uSm, uGm; uniform vec3 uEmb, uBA, uBC, uBG, uBT;
-      varying vec3 vC; varying float vA;
-      uint pcg(uint v){ uint s = v*747796405u + 2891336453u, w = ((s >> ((s >> 28u) + 4u)) ^ s)*277803737u; return (w >> 22u) ^ w; }
-      float rn(float id, float k){ return float(pcg(uint(id)*8u + uint(k)))/4294967295.; }
-      vec3 baseCol(float g){ return g < .5 ? uBA : g < 1.5 ? uBC : g < 2.5 ? uBG : uBT; }
-      float eio(float t){ return t < .5 ? 4.*t*t*t : 1. - pow(-2.*t + 2., 3.)*.5; }
-      void main(){
-        float w = aI.x, hf = aI.y, r = aI.z, sd = w + floor(r*997.)*3967., ld = step(rn(sd, 1.), .55);   // each point flashes as a well does, on the chip's clock
-        float cyc = uCellT*(1.6 + 3.2*rn(sd, 2.)) + rn(sd, 3.)*9., F = ld*exp(-fract(cyc)*5.5);
-        vec3 lc = baseCol(floor(rn(sd + floor(cyc)*4099., 4.)*4.));
-        float pitch = 2.*1.3/63., i = mod(w, 63.), j = floor(w/63.);
-        vec3 src = vec3((i - 31.)*pitch, 0., (j - 31.)*pitch);
-        float g = eio(clamp((uGrow - hf*.55 - r*.08)/.4, 0., 1.)), up = g*(1. - g)*4.;   // (floor by floor, each point straight up out of its well)
-        vec3 W = (uSm*vec4(mix(src, position, g), 1.)).xyz;
-        float e = eio(clamp((uMorph - (1. - hf)*.35 - r*.15)/.5, 0., 1.));            // (then the tower falls into the ring, from its top)
-        vec3 Tg = (uGm*vec4(aT, 1.)).xyz, mid = .5*(W + Tg) + vec3(0., .25*length(Tg - W), 0.);
-        W = mix(mix(W, mid, e), mix(mid, Tg, e), e);
-        vec3 C = mix(mix(vec3(.46, .52, .62), lc, F), vec3(1.), up*.3); C = mix(C, uEmb, e);
-        float A = (.22 + 1.1*F + .5*up)*step(.002, g)*(1. - smoothstep(.75, 1., e)), S = .0058*(1. + .9*F + .5*up);
-        vec4 mv = viewMatrix*vec4(W, 1.); gl_Position = projectionMatrix*mv;
-        float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 1.5, 14.*uPR); gl_PointSize = drawn; vC = C; vA = A*min(1., px*px/(drawn*drawn));
-      }`,
-    fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*d*3.)); }`,
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-  ESB.pts = new THREE.Points(g, mat); ESB.pts.frustumCulled = false; ESB.pts.visible = false; ESB.pts.renderOrder = 3; scene.add(ESB.pts); ESB.m = mat.uniforms;
+  for (let q = P.length - 1; q > 0; q--){ const r = Math.floor(R()*(q + 1)); [P[q], P[r]] = [P[r], P[q]]; }
+  // Every particle of the chip gets a place in the tower: both sorted round the tower's axis into equal wedges, then, within a wedge,
+  // the chip's middle goes to the top and its rim to the street, so the cloud lifts like a cloth picked up by its centre.
+  const n = ESB.n = NP, M = P.length, H = 1.3, pitch = 2*H/63, nW = 63*63*9, src = new Float32Array(n*2), tw = new Float32Array(n*3);
+  for (let id = 0; id < n; id++){
+    let x, z;
+    if (id < nW){ const w = Math.floor(id/9); x = (w % 63 - 31)*pitch; z = (Math.floor(w/63) - 31)*pitch; }
+    else { const f = (id - nW)/Math.max(n - nW, 1);
+      if (f < .55){ const die = f < .3, t = (die ? f/.3 : (f - .3)/.25)*4, side = Math.floor(t), u = (t % 1)*2 - 1, Rr = die ? H + .03 : 1.62;
+        [x, z] = side < 1 ? [u, -1] : side < 2 ? [1, u] : side < 3 ? [-u, 1] : [-1, -u]; x *= Rr; z *= Rr; }
+      else { x = (rnJS(id, 2) - .5)*2*H; z = (rnJS(id, 3) - .5)*2*H; } }
+    src[id*2] = Math.atan2(z, x); src[id*2 + 1] = Math.hypot(x, z);
+    const p = P[id % M], j = id < M ? 0 : .004;   // (past the tower's own points, the rest double up on them, a hair apart)
+    tw[id*3] = p[0] + (R() - .5)*j; tw[id*3 + 1] = p[1] + (R() - .5)*j; tw[id*3 + 2] = p[2] + (R() - .5)*j;
+  }
+  const A = [...Array(n).keys()].sort((a, b) => src[a*2] - src[b*2]), B = [...Array(n).keys()].sort((a, b) => Math.atan2(tw[a*3 + 2], tw[a*3]) - Math.atan2(tw[b*3 + 2], tw[b*3]));
+  const K = 48, W = 1024, data = new Float32Array(W*Math.ceil(n/W)*4);
+  for (let k = 0; k < K; k++){
+    const a = Math.floor(k*n/K), b = Math.floor((k + 1)*n/K), ca = A.slice(a, b).sort((p, q) => src[p*2 + 1] - src[q*2 + 1]), cb = B.slice(a, b).sort((p, q) => tw[q*3 + 1] - tw[p*3 + 1]);
+    for (let q = 0; q < ca.length; q++){ const id = ca[q], t = cb[q]; data.set([tw[t*3], tw[t*3 + 1], tw[t*3 + 2], tw[t*3 + 1]/2.25], id*4); }
+  }
+  ESB.tex = new THREE.DataTexture(data, W, data.length/4/W, THREE.RGBAFormat, THREE.FloatType); ESB.tex.needsUpdate = true;
+  U.uEsb.value = ESB.tex;
 }
 // the tower's view, between the chip's and the ring's: from nearly level, all of it in frame
 function esbView(){ const v = camera.fov/2*DEG, hz = Math.atan(Math.tan(v)*camera.aspect); return [8*DEG, Math.max((portrait ? 1.6 : 1.38)/Math.tan(v), .62/Math.tan(hz))*(portrait ? 1.14 : 1), new THREE.Vector3(0, portrait ? 1.3 : 1.12, 0)]; }
@@ -6119,9 +6124,8 @@ renderer.setAnimationLoop(() => {
   // III and IV: the amygdala block, then the sorter
   sortFrame(dt, mAmy, mSort);
   cellFrame(mCell, mNucl);
-  { const on = !RM && mSm > .99 && mGw > 0 && mGw < 1;   // the Empire State, out of the chip's wells, then into the ring
-    if (on && G && (!ESB.pts || ESB.G !== G)) buildEsb();
-    if (ESB.pts){ ESB.pts.visible = on; if (on){ ESB.m.uGrow.value = clamp(mGw/.5, 0, 1)*1.05; ESB.m.uMorph.value = clamp((mGw - .55)/.45, 0, 1); } } }
+  { const on = !RM && mSm > .99 && mGw > 0 && mGw < 1;   // the Empire State, out of the chip's own points, then into the ring
+    if (on && ESB.n !== NP) buildEsb(); U.uEsbG.value = on ? clamp(mGw/.5, 0, 1) : 0; }
   // V and VI: the SMRT Cell, then the well in its middle
   if (mZm > 0 && mGw < 1 && zpol){
     SU.uCellT.value += dt;
