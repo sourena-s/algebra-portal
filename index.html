@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ALGEBRA</title>
+<title>Project ALGEBRA</title>
 <meta name="author" content="Sourena Soheili-Nezhad">
 <meta name="description" content="ALGEBRA, Alzheimer's disease and genomic breakdown in ageing: from the Laniakea supercluster and the Milky Way down to Earth, then the human brain and its seven resting-state networks; both amygdalae are lifted out and their nuclei sorted into neurons and oligodendrocytes; one neuron is opened down to its nucleus and its DNA, which is read in the wells of a PacBio SMRT Cell; then a 3D Manhattan plot of Alzheimer's disease genetics, an all-atom DNA double helix carrying the lesions of ageing neurons, and the genes that repair it.">
 <!-- Univia Pro is a licensed Mostardesign typeface. It is used automatically when installed on the viewer's device.
@@ -72,6 +72,7 @@ body.loading{overflow:hidden}
 
 /* top left: name, plate, lede */
 .hud-tl{top:calc(var(--gut) + env(safe-area-inset-top,0px));left:var(--gut);width:min(420px,calc(100vw - 2*var(--gut)))}
+.kicker{margin:0 0 2px;font-size:11px;font-weight:500;letter-spacing:.42em;text-transform:uppercase;color:rgba(236,230,218,.62)}
 .mark{margin:0;font-weight:200;font-size:clamp(38px,4.9vw,66px);line-height:.95;letter-spacing:.07em;white-space:nowrap;margin-right:-.07em}
 .mark span{display:inline-block;opacity:0;transform:translateY(38%) rotate(5deg);filter:blur(8px)}
 .ready .mark span{animation:enter 1.25s var(--ease) forwards;animation-delay:calc(var(--i)*55ms + 120ms)}
@@ -606,7 +607,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
 <i class="reg tl"></i><i class="reg tr"></i><i class="reg bl"></i><i class="reg br"></i>
 
 <header class="hud hud-tl">
-  <h1 class="mark" aria-label="ALGEBRA"><span style="--i:0;color:var(--ember)">A</span><span style="--i:1">L</span><span style="--i:2">G</span><span style="--i:3">E</span><span style="--i:4">B</span><span style="--i:5">R</span><span style="--i:6">A</span></h1>
+  <p class="kicker anim" style="--d:60ms" data-i18n-skip>Project</p><h1 class="mark" aria-label="Project ALGEBRA"><span style="--i:0;color:var(--ember)">A</span><span style="--i:1">L</span><span style="--i:2">G</span><span style="--i:3">E</span><span style="--i:4">B</span><span style="--i:5">R</span><span style="--i:6">A</span></h1>
   <div class="tag anim" style="--d:360ms"><b>AL</b>zheimer's disease and <b>GE</b>nomic <b>BR</b>eakdown in <b>A</b>geing</div>
   <div class="plate anim" style="--d:420ms">
     <span class="st-cosmos" data-split>The ageing universe</span>
@@ -2904,8 +2905,9 @@ function goChapter(k){
   const n = Math.abs(k - S);
   nav.from = S; nav.to = k; nav.t0 = performance.now(); nav.busy = true; nav.used = true;
   nav.dur = (RM ? .35 : Math.min(5.4, 2.1 + .7*Math.max(0, n - 1)))*1000;       // one chapter in about two seconds; a long jump a little longer
-  nav.soft = !RM && n <= 1.001 && ((Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || Math.max(S, k) <= ST.CELL + .001);   // into the nucleus, and the DNA into the well: slower, and even
-  if (nav.soft) nav.dur = Math.max(S, k) <= .001 ? 9000 : Math.max(S, k) <= ST.CELL + .001 ? 6000 : Math.min(S, k) < ST.CHROM - .001 ? 7000 : 5200;
+  const esbW = Math.min(S, k) >= ST.SMRT - .001 && Math.max(S, k) <= ST.GWAS + .001;   // (the Empire State takes its time)
+  nav.soft = !RM && n <= 1.001 && ((Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || Math.max(S, k) <= ST.CELL + .001 || esbW);   // into the nucleus, and the DNA into the well: slower, and even
+  if (nav.soft) nav.dur = esbW ? 10000 : Math.max(S, k) <= .001 ? 9000 : Math.max(S, k) <= ST.CELL + .001 ? 6000 : Math.min(S, k) < ST.CHROM - .001 ? 7000 : 5200;
   try { history.replaceState(null, '', '#' + HASH[k]); } catch (e) {}
 }
 const stepChapter = d => goChapter(SCR.hold ? (d > 0 ? Math.floor(S + 1e-3) + 1 : Math.ceil(S - 1e-3) - 1) : nav.to + d);   // (from a paused point: the chapters either side of it)
@@ -3012,8 +3014,8 @@ function scrollStory(px){
 function scrSettle(tNow){
   SCR.on = false;
   const b = Math.floor(SCR.target), f = SCR.target - b, k = clamp(SCR.dir > 0 ? (f > .06 ? b + 1 : b) : (f < .94 ? b : b + 1), FIRST, LAST), d = Math.abs(k - S);
-  const cos = Math.min(S, k) < -.001 && Math.max(S, k) <= .001, slow = cos || (Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || (Math.min(S, k) >= -.001 && Math.max(S, k) <= ST.CELL + .001);
-  Object.assign(nav, { from: S, to: k, t0: tNow, soft: slow, out: !slow, busy: d > 1e-4, dur: RM ? 300 : Math.max(350, d*(cos ? 9000 : slow ? 5200 : 1700)) });
+  const esbW = !RM && Math.min(S, k) >= ST.SMRT - .001 && Math.max(S, k) <= ST.GWAS + .001, cos = Math.min(S, k) < -.001 && Math.max(S, k) <= .001, slow = cos || esbW || (Math.min(S, k) >= ST.SORT - .001 && Math.max(S, k) <= ST.ZMW + .001) || (Math.min(S, k) >= -.001 && Math.max(S, k) <= ST.CELL + .001);
+  Object.assign(nav, { from: S, to: k, t0: tNow, soft: slow, out: !slow, busy: d > 1e-4, dur: RM ? 300 : Math.max(350, d*(cos ? 9000 : esbW ? 10000 : slow ? 5200 : 1700)) });
   try { history.replaceState(null, '', '#' + HASH[k]); } catch (e) {}
 }
 const scrollsItself = (el, dy) => { for (; el && el !== document.body && el !== document.documentElement; el = el.parentElement){
@@ -5343,6 +5345,73 @@ function buildZmwArray(){
   zmwArr = new THREE.Points(g, m); zmwArr.frustumCulled = false; zmwArr.visible = false; zmwArr.renderOrder = 3; smrtGroup.add(zmwArr);
   arrLabel = document.createElement('span'); arrLabel.className = 'zlabel c arr'; arrLabel.innerHTML = 'The same well, again and again<br><b>25 million on one SMRT Cell</b>'; $('arrLabels').appendChild(arrLabel);
 }
+// Into the genome: the SMRT Cell's wells rise, still flashing as they read, into the Empire State Building; then the tower falls
+// into the flat ring of the Manhattan plot. Built in the chip's own frame (smrtGroup): each point climbs straight up out of the well
+// under it, and lands on one variant of the plot (gwasGroup), where the plot's own points take over.
+const ESB = { pts: null, G: null, m: null };
+function buildEsb(){
+  if (ESB.pts){ scene.remove(ESB.pts); ESB.pts.geometry.dispose(); }
+  const P = [], T = [], I = [], R = mulberry(83), s = 2.25/443, pitch = 2*1.3/63, tv = new THREE.Vector3();   // (metres: 443 m to the antenna's tip)
+  const add = (x, y, z) => { const wx = x*s, wz = z*s, i = clamp(Math.round(wx/pitch) + 31, 0, 62), j = clamp(Math.round(wz/pitch) + 31, 0, 62); P.push(wx, y*s, wz); I.push(j*63 + i, y/443, R()); };
+  const line = (a, b, st) => { const n = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])/st)); for (let k = 0; k <= n; k++){ const t = k/n; add(a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t, a[2] + (b[2] - a[2])*t); } };
+  const E = 1.6;
+  const box = (w, d, y0, y1, pier, floor) => {     // a block w x d m, from y0 to y1 m: its edges, a pier every `pier` m up its faces, a line at every `floor` m
+    const X = w/2, Z = d/2, c = [[-X, -Z], [X, -Z], [X, Z], [-X, Z]];
+    for (let k = 0; k < 4; k++){ const [x0, z0] = c[k], [x1, z1] = c[(k + 1) % 4], L = Math.hypot(x1 - x0, z1 - z0);
+      line([x0, y0, z0], [x0, y1, z0], E); line([x0, y1, z0], [x1, y1, z1], E); line([x0, y0, z0], [x1, y0, z1], E*1.5);
+      if (pier){ const n = Math.round(L/pier); for (let q = 1; q < n; q++){ const t = q/n; line([x0 + (x1 - x0)*t, y0, z0 + (z1 - z0)*t], [x0 + (x1 - x0)*t, y1, z0 + (z1 - z0)*t], E*1.8); } }
+      if (floor) for (let y = y0 + floor; y < y1 - .5; y += floor) line([x0, y, z0], [x1, y, z1], E*1.8); }
+    for (let x = -X + 4; x < X - 1; x += 4) line([x, y1, -Z], [x, y1, Z], E*2.6);      // (its roof, faintly)
+  };
+  const oct = (r0, r1, y0, y1, fins) => { for (let k = 0; k < 8; k++){ const a0 = (k + .5)/8*TAU, a1 = (k + 1.5)/8*TAU, cs = Math.cos(a0), sn = Math.sin(a0);
+    line([r0*cs, y0, r0*sn], [r1*cs, y1, r1*sn], E*.8); line([r0*cs, y0, r0*sn], [r0*Math.cos(a1), y0, r0*Math.sin(a1)], E*.8); line([r1*cs, y1, r1*sn], [r1*Math.cos(a1), y1, r1*Math.sin(a1)], E*.8);
+    if (fins){ const am = (k + 1)/8*TAU, rm = (r0 + r1)/2; line([r0*Math.cos(am), y0, r0*Math.sin(am)], [r1*Math.cos(am), y1, r1*Math.sin(am)], E); } } };
+  box(129, 61, 0, 25, 6, 4.2);           // the five-storey base, along Fifth Avenue and 34th Street
+  box(104, 50, 25, 88, 4.5, 8.4);         // the tower's broad lower stages, to the 21st floor
+  box(92, 46, 88, 103, 4.5, 0);           // its setbacks at the 21st, 25th and 30th floors
+  box(80, 44, 103, 118, 4.5, 0);
+  box(70, 42, 118, 128, 4.5, 0);
+  box(57, 40, 128, 320, 3.8, 0);          // the shaft, floors 30 to 81, its limestone piers running unbroken up it
+  box(46, 34, 320, 333, 3.8, 0);          // the 81st to 85th floors
+  box(36, 28, 333, 345, 3, 0);            // the 86th-floor observatory
+  oct(12, 11, 345, 352, 1); oct(11, 8, 352, 366, 1); oct(8, 6, 366, 373, 1); oct(5.5, 2.5, 373, 381, 0);   // the mooring mast, its fins, the crown at the 102nd floor
+  line([0, 381, 0], [0, 443, 0], .9);     // and the antenna
+  const nP = P.length/3, Gs = ESB.G = G;
+  for (let q = 0; q < nP; q++){ const i = Math.floor(R()*Gs.N); gLayoutJS(Gs.u[i], Gs.y[i], Gs.d[i], 0, 1, tv, 1); T.push(tv.x, tv.y, tv.z); }   // (each lands on a variant of the flat ring)
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('aT', new THREE.Float32BufferAttribute(T, 3)); g.setAttribute('aI', new THREE.Float32BufferAttribute(I, 3));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uGrow: { value: 0 }, uMorph: { value: 0 }, uCellT: SU.uCellT, uPR: U.uPR, uScale: U.uScale,
+      uSm: { value: smrtGroup.matrixWorld }, uGm: { value: gwasGroup.matrixWorld }, uEmb: { value: col(PAL.ember) },
+      uBA: { value: col(PAL.baseA) }, uBC: { value: col(PAL.baseC) }, uBG: { value: col(PAL.baseG) }, uBT: { value: col(PAL.baseT) } },
+    vertexShader: `attribute vec3 aT; attribute vec3 aI; uniform float uGrow, uMorph, uCellT, uPR, uScale; uniform mat4 uSm, uGm; uniform vec3 uEmb, uBA, uBC, uBG, uBT;
+      varying vec3 vC; varying float vA;
+      uint pcg(uint v){ uint s = v*747796405u + 2891336453u, w = ((s >> ((s >> 28u) + 4u)) ^ s)*277803737u; return (w >> 22u) ^ w; }
+      float rn(float id, float k){ return float(pcg(uint(id)*8u + uint(k)))/4294967295.; }
+      vec3 baseCol(float g){ return g < .5 ? uBA : g < 1.5 ? uBC : g < 2.5 ? uBG : uBT; }
+      float eio(float t){ return t < .5 ? 4.*t*t*t : 1. - pow(-2.*t + 2., 3.)*.5; }
+      void main(){
+        float w = aI.x, hf = aI.y, r = aI.z, sd = w + floor(r*997.)*3967., ld = step(rn(sd, 1.), .55);   // each point flashes as a well does, on the chip's clock
+        float cyc = uCellT*(1.6 + 3.2*rn(sd, 2.)) + rn(sd, 3.)*9., F = ld*exp(-fract(cyc)*5.5);
+        vec3 lc = baseCol(floor(rn(sd + floor(cyc)*4099., 4.)*4.));
+        float pitch = 2.*1.3/63., i = mod(w, 63.), j = floor(w/63.);
+        vec3 src = vec3((i - 31.)*pitch, 0., (j - 31.)*pitch);
+        float g = eio(clamp((uGrow - hf*.55 - r*.08)/.4, 0., 1.)), up = g*(1. - g)*4.;   // (floor by floor, each point straight up out of its well)
+        vec3 W = (uSm*vec4(mix(src, position, g), 1.)).xyz;
+        float e = eio(clamp((uMorph - (1. - hf)*.35 - r*.15)/.5, 0., 1.));            // (then the tower falls into the ring, from its top)
+        vec3 Tg = (uGm*vec4(aT, 1.)).xyz, mid = .5*(W + Tg) + vec3(0., .25*length(Tg - W), 0.);
+        W = mix(mix(W, mid, e), mix(mid, Tg, e), e);
+        vec3 C = mix(mix(vec3(.46, .52, .62), lc, F), vec3(1.), up*.3); C = mix(C, uEmb, e);
+        float A = (.22 + 1.1*F + .5*up)*step(.002, g)*(1. - smoothstep(.75, 1., e)), S = .0058*(1. + .9*F + .5*up);
+        vec4 mv = viewMatrix*vec4(W, 1.); gl_Position = projectionMatrix*mv;
+        float px = S*uScale/-mv.z*uPR, drawn = clamp(px, 1.5, 14.*uPR); gl_PointSize = drawn; vC = C; vA = A*min(1., px*px/(drawn*drawn));
+      }`,
+    fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d = length(gl_PointCoord - .5)*2.; if (d > 1.) discard; gl_FragColor = vec4(vC, vA*exp(-d*d*3.)); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  ESB.pts = new THREE.Points(g, mat); ESB.pts.frustumCulled = false; ESB.pts.visible = false; ESB.pts.renderOrder = 3; scene.add(ESB.pts); ESB.m = mat.uniforms;
+}
+// the tower's view, between the chip's and the ring's: from nearly level, all of it in frame
+function esbView(){ const v = camera.fov/2*DEG, hz = Math.atan(Math.tan(v)*camera.aspect); return [8*DEG, Math.max((portrait ? 1.6 : 1.38)/Math.tan(v), .62/Math.tan(hz))*(portrait ? 1.14 : 1), new THREE.Vector3(0, portrait ? 1.3 : 1.12, 0)]; }
 function buildZmw(){
   // the template's path: through the polymerase on the floor of the well, up the well as a narrow pair, out into a circle above
   const s = .06, yb = -.535, Rc = .55, yc = .72, V = (x, y) => new THREE.Vector3(x, y, 0);
@@ -5800,7 +5869,7 @@ function dnaTarget(){
 }
 function presetTarget(k){
   return k === ST.DNA ? dnaTarget() : k === ST.GWAS ? new THREE.Vector3(0, GB ? 0 : layoutT > .5 ? .75 : clamp(.42*gExtent().y, .5, 1)*(1 - gFlatNow()), 0) : k === ST.ZMW ? new THREE.Vector3(0, .06, 0) : k === ST.SMRT ? new THREE.Vector3(0, 1.05*smrtPan(), 0) : k === ST.AMY ? new THREE.Vector3()
-    : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.4 : -.36, 0) : new THREE.Vector3();
+    : k === ST.SORT ? new THREE.Vector3(0, portrait ? -.02 : -.27, 0) : k === ST.CELL ? new THREE.Vector3(0, portrait ? -.36 : -.32, 0) : new THREE.Vector3();
 }
 const sph = new THREE.Spherical();
 function presetSph(k){        // [elevation, distance] for each chapter
@@ -5934,10 +6003,10 @@ boot().catch(err => { console.error(err); fail('Something went wrong while build
 // ---------------------------------------------------------------- frame loop
 const tmpV = new THREE.Vector3(), tmpW = new THREE.Vector3();
 const stepUI = { to: -99 };
-let prevM = new Array(10).fill(0), mAmy = 0, mSort = 0, mCell = 0, mNucl = 0, mSm = 0, mZm = 0, mGw = 0, mDna = 0, mNet = 0;
+let gwV = 0, prevM = new Array(10).fill(0), mAmy = 0, mSort = 0, mCell = 0, mNucl = 0, mSm = 0, mZm = 0, mGw = 0, mDna = 0, mNet = 0;
 const stageW = k => clamp(1 - Math.abs(Sd - k), 0, 1);          // how much of chapter k is on screen
 const AR_OK = [1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]; AR_OK[-1] = 1;                            // chapters that may turn slowly on their own
-const BLOOM_BASE = [0, .02, -.16, -.08, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [0, .4, .3, .35, .3, .35, .3, .4, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;   // (no bump from the Earth to the neuron: its nucleus appears mid-way and would flash)
+const BLOOM_BASE = [0, .02, -.16, -.08, .02, .05, .08, .08, .06, .04, .1], BLOOM_BUMP = [0, .4, .3, .35, .3, .35, .3, .15, .45, .4]; BLOOM_BASE[-1] = -.06; BLOOM_BUMP[-1] = .2;   // (no bump from the Earth to the neuron: its nucleus appears mid-way and would flash)
 renderer.setAnimationLoop(() => {
   const tNow = performance.now(), dt = Math.min(.05, (tNow - lastT)/1000); lastT = tNow;
   U.uTime.value += dt;
@@ -5960,6 +6029,7 @@ renderer.setAnimationLoop(() => {
   const inTransit = nav.busy || navSettle > 0 || Math.abs(Sd - Math.round(Sd)) > .002;   // only a real transition steers the camera
   mCell = clamp(Sd, 0, 1); m1 = clamp(Sd - 1, 0, 1); mAmy = clamp(Sd - 2, 0, 1); mSort = clamp(Sd - 3, 0, 1); mNucl = clamp(Sd - 4, 0, 1);   // (the story's order: Earth, neuron, brain, amygdalae, sorter, nucleus)
   mZm = clamp(Sd - 5, 0, 1); mSm = clamp(Sd - 6, 0, 1); mGw = clamp(Sd - 7, 0, 1); mDna = clamp(Sd - 8, 0, 1); mNet = clamp(Sd - 9, 0, 1);
+  gwV = RM ? mGw : clamp((mGw - .55)/.45, 0, 1);   // (the plot itself comes only after the Empire State has risen out of the chip, in the second half of the way)
   mAmyG = mAmy; mSortG = mSort; mSmG = mNucl; mCellG = mCell; mNuclG = mNucl; mSeqG = mZm;   // (mSmG: leaving the sorter)
   // entering a transition: align the next shape to the camera and match particles to it
   const camAz = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
@@ -6012,7 +6082,7 @@ renderer.setAnimationLoop(() => {
     if (el.inert !== off) el.inert = off;
   }
 
-  U.uMorph.value = m1; U.uDna.value = mDna; U.uGw.value = mGw; U.uGone.value = mCell; U.uBg.value = mCell;
+  U.uMorph.value = m1; U.uDna.value = mDna; U.uGw.value = gwV; U.uGone.value = mCell; U.uBg.value = mCell;
   layoutV += (layoutT - layoutV)*Math.min(1, dt*2.2); if (Math.abs(layoutT - layoutV) < 1e-4) layoutV = layoutT; U.uLayout.value = easeIO(layoutV);
   spinFrame(dt);
   gwasGroup.rotation.y = lerp(gYaw + gSpin, Math.round(gYaw/(2*Math.PI))*2*Math.PI, U.uLayout.value);
@@ -6042,13 +6112,16 @@ renderer.setAnimationLoop(() => {
   }
   toggleFrame(dt);
   if (GINTRO.done) U.uGFlat.value += (gFlatT - U.uGFlat.value)*Math.min(1, dt*2.5);   // (the ring button lays the ring down flat)
-  U.uGVis.value = clamp((mGw - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
+  U.uGVis.value = clamp((gwV - .35)/.65, 0, 1)*(1 - clamp(mDna/.35, 0, 1));
   // the repair system: orbits, focus and selection
   netGroup.updateMatrixWorld(true);
   if (NET) netFrame(dt, mNet);
   // III and IV: the amygdala block, then the sorter
   sortFrame(dt, mAmy, mSort);
   cellFrame(mCell, mNucl);
+  { const on = !RM && mSm > .99 && mGw > 0 && mGw < 1;   // the Empire State, out of the chip's wells, then into the ring
+    if (on && G && (!ESB.pts || ESB.G !== G)) buildEsb();
+    if (ESB.pts){ ESB.pts.visible = on; if (on){ ESB.m.uGrow.value = clamp(mGw/.5, 0, 1)*1.05; ESB.m.uMorph.value = clamp((mGw - .55)/.45, 0, 1); } } }
   // V and VI: the SMRT Cell, then the well in its middle
   if (mZm > 0 && mGw < 1 && zpol){
     SU.uCellT.value += dt;
@@ -6067,7 +6140,7 @@ renderer.setAnimationLoop(() => {
   { const C = smrtCam, here = mSm > .999 && mGw < .001 && settledStage() === ST.SMRT;   // the camera: two seconds after the cell has lit up
     C.t = here ? C.t + dt : 0; C.after = here && C.on >= 1 ? (C.after || 0) + dt : 0; const want = here && C.t > (RM ? 0 : 2) ? 1 : 0;
     C.on = want ? Math.min(1, C.on + dt/(RM ? .01 : 4)) : mSm > .9 && mGw > .001 && mGw < .999 ? C.on : Math.max(0, C.on - dt/.35)*(mSm > .9 && mGw < .2 ? 1 : 0);   // (on the way to the Manhattan plot it holds, so the view it leaves never jumps)
-    const gone = 1 - smooth(clamp(mGw/.2, 0, 1));                 // (leaving for the Manhattan plot, the camera is gone within the first fifth; its view still holds)
+    const gone = 1 - smooth(clamp(mGw/.06, 0, 1));                 // (leaving for the Manhattan plot, the camera is gone within the first fifth; its view still holds)
     C.g.visible = C.on*gone > .002; const k = smooth(C.on)*gone, fl = .92 + .08*Math.sin(U.uTime.value*3.1);
     if (C.on <= 0) C.s0 = null;
     if (here && C.on > 0 && C.on < 1 && !nav.busy){ const [e, d] = presetSph(ST.SMRT), tg = presetTarget(ST.SMRT);   // (the view settles with the camera's arrival)
@@ -6172,10 +6245,13 @@ renderer.setAnimationLoop(() => {
     // keep whatever angle the viewer (or auto-rotation) has reached; ease only elevation, distance and focus point
     camFly = null; controls.enabled = true;
     const i = Math.min(LAST - 1, Math.floor(Sd)), f = easeIO(Sd - i), [ea, da] = presetSph(i), [eb, db] = presetSph(i + 1);
-    const tgt = presetTarget(i).lerp(presetTarget(i + 1), f), k = Math.min(1, dt*4.5);
+    let tgt = presetTarget(i).lerp(presetTarget(i + 1), f), eN = lerp(ea, eb, f), dN = lerp(da, db, f); const k = Math.min(1, dt*4.5);
+    if (i === ST.SMRT && !RM){ const p = Sd - i, [eT, dT, tT] = esbView();   // (from the chip to the Empire State, then down onto the ring)
+      if (p < .55){ const u = easeIO(p/.55); tgt = presetTarget(i).lerp(tT, u); eN = lerp(ea, eT, u); dN = lerp(da, dT, u); }
+      else { const u = easeIO((p - .55)/.45); tgt = tT.clone().lerp(presetTarget(i + 1), u); eN = lerp(eT, eb, u); dN = lerp(dT, db, u); } }
     controls.target.lerp(tgt, k);
     sph.setFromVector3(tmpV.copy(camera.position).sub(controls.target));
-    sph.phi = lerp(sph.phi, Math.PI/2 - lerp(ea, eb, f), k); sph.radius = lerp(sph.radius, lerp(da, db, f), k);
+    sph.phi = lerp(sph.phi, Math.PI/2 - eN, k); sph.radius = lerp(sph.radius, dN, k);
     // some chapters also want a direction: the front of the brain, the sorter, the cut through the well, the flat map square on
     const aT = f > 0 ? azFor(i + 1) : azFor(Math.round(Sd)), dTh = aT === null ? 0 : wrapA(aT - sph.theta);
     sph.theta += dTh*k*(f > 0 ? f : 1);
