@@ -6386,7 +6386,9 @@ function placeGenomeLabels(gv){
   { const sw = $('gSwap'), c = screenOf(...xform(m, [0, 0, 0], 0)), r = G_R0 - .3;
     let rad = 0; for (let k = 0; k < 24; k++){ const a = k/24*TAU, q = screenOf(...xform(m, [r*Math.cos(a), 0, r*Math.sin(a)], 0)); rad = Math.max(rad, Math.hypot(q[0] - c[0], q[1] - c[1])); }   // (all round the circle, so the ring's turn does not make it pulse)
     rad = sw._r = sw._r && Math.abs(sw._r - rad) < rad*.25 ? sw._r + (rad - sw._r)*.2 : rad;   // (and eased from frame to frame)
-    const o = GB && c[2] < 1 ? gv0*TG.lf*smooth(clamp((flat - .85)/.15, 0, 1))*(1 - smooth(clamp(lay*3, 0, 1))) : 0;
+    const now = performance.now(), dt = Math.min(.1, (now - (sw._t || now))/1000); sw._t = now;
+    sw._in = gwV > .995 ? Math.min(1, (sw._in || 0) + dt/.6) : 0;   // (only once the disk has fully formed out of the tower, then over 0.6 s)
+    const o = GB && c[2] < 1 ? smooth(sw._in)*gv0*TG.lf*smooth(clamp((flat - .85)/.15, 0, 1))*(1 - smooth(clamp(lay*3, 0, 1))) : 0;
     sw.style.scale = (rad*2*.9/10/12).toFixed(4); sw.style.left = `${c[0].toFixed(1)}px`; sw.style.top = `${c[1].toFixed(1)}px`;   // (laid out once at 12px and scaled: a changing font size made its text jitter)
     sw.style.opacity = o.toFixed(3); sw.style.pointerEvents = o > .6 ? 'auto' : 'none'; sw.tabIndex = o > .6 ? 0 : -1; }
 }
