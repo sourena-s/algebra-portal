@@ -4,6 +4,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Project ALGEBRA</title>
 <meta name="author" content="Sourena Soheili-Nezhad">
+<meta name="theme-color" content="#04060B">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Project ALGEBRA">
+<meta property="og:title" content="Project ALGEBRA: Alzheimer's disease and genomic breakdown in ageing">
+<meta property="og:description" content="An interactive 3D journey from the Laniakea supercluster down to the DNA of a single neuron: does the ageing brain's DNA break down in Alzheimer's disease?">
+<meta property="og:url" content="https://sourena-s.github.io/algebra-portal/">
+<meta property="og:image" content="https://sourena-s.github.io/algebra-portal/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Project ALGEBRA: the Milky Way, where the story begins">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2304060B'/%3E%3Cpath d='M17 51 32 13l15 38M22.6 37h18.8' fill='none' stroke='%23FF5B3A' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <meta name="description" content="ALGEBRA, Alzheimer's disease and genomic breakdown in ageing: from the Laniakea supercluster and the Milky Way down to Earth, then the human brain and its seven resting-state networks; both amygdalae are lifted out and their nuclei sorted into neurons and oligodendrocytes; one neuron is opened down to its nucleus and its DNA, which is read in the wells of a PacBio SMRT Cell; then a 3D Manhattan plot of Alzheimer's disease genetics, an all-atom DNA double helix carrying the lesions of ageing neurons, and the genes that repair it.">
 <!-- Univia Pro is a licensed Mostardesign typeface. It is used automatically when installed on the viewer's device.
      On your own host, load it from your Adobe Fonts web project, e.g.
@@ -11,9 +23,14 @@
      Exo 2 is the openly licensed fallback. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- the datasets start downloading at once, beside three.js, rather than once the scene's script has loaded and started -->
+<link rel="preload" href="data/brain.bin" as="fetch" crossorigin>
+<link rel="preload" href="data/dna.bin" as="fetch" crossorigin>
+<link rel="preload" href="data/genes.bin" as="fetch" crossorigin>
+<link rel="preload" href="data/gwas.bin" as="fetch" crossorigin>
+<link rel="preload" href="data/gwas2.bin" as="fetch" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&family=Vazirmatn:wght@100..900&family=Commissioner:wght@100..900&display=swap">
 <style>
 :root{
   color-scheme: dark;
@@ -117,7 +134,7 @@ body[data-mode=dna] #dmgEv.on{opacity:1;transform:none}
 .inspector{top:calc(var(--gut) + 150px + env(safe-area-inset-top,0px));right:var(--gut);width:272px;padding:14px 16px 15px;border:1px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;transform:translateX(10px);transition:opacity .35s var(--ease),transform .45s var(--ease)}
 .inspector.on{opacity:1;transform:none}
 .inspector.idle{opacity:.55;transform:none}
-body[data-mode=repair] .inspector.idle,body[data-mode=genome] .inspector.idle,body[data-mode=amygdala] .inspector.idle,body[data-mode=sorter] .inspector.idle,body[data-mode=neuron] .inspector.idle,body[data-mode=chromatin] .inspector.idle,body[data-mode=smrt] .inspector.idle,body[data-mode=zmw] .inspector.idle{opacity:0}
+body[data-mode=orbit] .inspector.idle,body[data-mode=repair] .inspector.idle,body[data-mode=genome] .inspector.idle,body[data-mode=amygdala] .inspector.idle,body[data-mode=sorter] .inspector.idle,body[data-mode=neuron] .inspector.idle,body[data-mode=chromatin] .inspector.idle,body[data-mode=smrt] .inspector.idle,body[data-mode=zmw] .inspector.idle{opacity:0}
 .inspector.idle .i-body{display:none}
 .i-kicker{display:flex;justify-content:space-between;gap:10px;font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dust)}
 .i-kicker .pin{color:var(--ember)}
@@ -155,7 +172,7 @@ body[data-mode=repair] .inspector.idle,body[data-mode=genome] .inspector.idle,bo
 .stats dd .km{display:block;margin-top:2px;font-size:10.5px;color:var(--dust)}
 
 /* bottom left: the genome explorer (chapter IV) */
-.explore{pointer-events:auto;width:min(340px,calc(100vw - 2*var(--gut)));max-height:calc(100vh - 330px);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.explore{pointer-events:auto;width:min(340px,calc(100vw - 2*var(--gut)));max-height:calc(100vh - 330px);max-height:calc(100dvh - 330px);box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .ex-head b{display:block;font-size:13px;font-weight:600;letter-spacing:.02em}
 .ex-head span{display:block;margin-top:3px;font-size:10.5px;color:var(--dust);line-height:1.45}
 .ex-search{position:relative}
@@ -216,6 +233,8 @@ input[type=range]{flex:1;accent-color:var(--ember);height:18px;min-width:0}
 .row .k{display:flex;align-items:center;gap:7px;font-weight:600;letter-spacing:.08em;font-size:11px}
 .row .k i{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;transition:scale .45s var(--spring)}
 .row .k i.ring{background:none;border:1.5px solid currentColor;width:5px;height:5px}
+.row .k{white-space:nowrap}.row .k i{flex:none}
+.legend[data-ch="3"] .row,.legend[data-ch="7"] .row{grid-template-columns:64px 1fr auto}   /* (room for L-AMY and DRAWN, each with its dot) */
 .row:hover .k i,.row:focus-visible .k i{scale:1.8}
 .row.fire .k i{animation:fire 1.6s var(--ease)}
 @keyframes fire{0%{scale:1}18%{scale:2.6;box-shadow:0 0 18px currentColor}100%{scale:1}}
@@ -261,6 +280,9 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
     border:1px solid rgba(236,230,218,.14);border-radius:26px;background:linear-gradient(180deg,rgba(28,34,48,.42),rgba(10,13,22,.5));
     -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 30px rgba(0,0,0,.35);transition:border-color .3s}
   #stepRow.scrub{border-color:rgba(255,91,58,.4)}
+  #stepRow .step-next.first{animation:none}   /* (until the first chapter is turned, the whole player glows now and then, round its own curve) */
+  #stepRow.first{animation:barNudge 2.6s var(--ease) 3s infinite}
+  @keyframes barNudge{0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 30px rgba(0,0,0,.35),0 0 0 0 rgba(255,91,58,0)}35%{box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 30px rgba(0,0,0,.35),0 0 0 4px rgba(255,91,58,.16),0 0 22px rgba(255,91,58,.16)}}
   #stepRow .step-b{flex:none;width:40px;height:40px;min-height:0;padding:0;border:0;border-radius:50%;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;color:rgba(236,230,218,.8);display:grid;place-items:center;transition:background .2s,color .2s}
   #stepRow .step-b:active{background:rgba(236,230,218,.1)}
   #stepRow .step-b svg{width:13px;height:13px;stroke-width:1.6}
@@ -342,7 +364,7 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .ds-key i.k-n{width:5px;height:5px;background:none;border:1.5px solid #FF5A4A;box-shadow:0 0 7px #FF5A4A}
 .ds-key i.k-l{width:12px;height:1px;border-radius:0;background:#9A9A9A;box-shadow:none}
 .nz{z-index:3;right:calc(var(--gut) + 22px);bottom:calc(var(--gut) + env(safe-area-inset-bottom,0px));display:flex;align-items:flex-end;gap:12px}
-.nz-hint{padding-bottom:4px;font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--dust);white-space:nowrap}
+.nz-hint{display:none}   /* (the hint above the player says it: beside the buttons it ran into the player on most laptops) */
 .nz-btns{display:flex;flex-direction:column;border:1px solid var(--hair);background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .nz button{display:grid;place-items:center;width:34px;height:32px;padding:0;border:0;background:none;color:var(--bone);font:300 19px/1 var(--sans);cursor:pointer;transition:background .25s,color .25s}
 .nz button+button{border-top:1px solid var(--hair)}
@@ -358,8 +380,9 @@ body[data-mode=dna] .inspector{top:auto;right:auto;left:var(--gut);bottom:calc(v
 .pmax:hover,.pmax:focus-visible{border-color:rgba(236,230,218,.5);background:rgba(236,230,218,.06);outline:none}
 .pmax i{display:block;width:10px;height:9px;box-sizing:border-box;border:1.3px solid currentColor;transition:height .35s var(--ease),border-width .35s var(--ease)}
 .explore.max .pmax i{height:1.3px;border-width:1.3px 0 0}
-.explore{transition:max-height .5s var(--ease),min-height .5s var(--ease),width .5s var(--ease)}
-.hud.explore.max{width:min(560px,calc(100vw - 2*var(--gut)));min-height:calc(100vh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));max-height:calc(100vh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));z-index:4}
+.explore{transition:max-height .5s var(--ease),min-height .5s var(--ease),width .5s var(--ease),bottom .5s var(--ease)}
+.hud.explore.max{width:min(560px,calc(100vw - 2*var(--gut)));min-height:calc(100vh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));max-height:calc(100vh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));min-height:calc(100dvh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 2*var(--gut) - 140px - env(safe-area-inset-bottom,0px));z-index:4}   /* (dvh: the height a phone shows, toolbar and all; vh where it is not known) */
+@media (min-width:761px){ .hud.explore.max{bottom:calc(var(--gut) + 84px + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 2*var(--gut) - 224px - env(safe-area-inset-bottom,0px));max-height:calc(100vh - 2*var(--gut) - 224px - env(safe-area-inset-bottom,0px));min-height:calc(100dvh - 2*var(--gut) - 224px - env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 2*var(--gut) - 224px - env(safe-area-inset-bottom,0px))} }   /* (on a computer, maximized, it ends above the player and its hint, rather than over its back button; its top stays where it was) */
 .ds-intro{margin:2px 0 4px;font-size:11.5px;line-height:1.5;color:rgba(236,230,218,.8)}
 .ds-planets{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 .pchip{display:grid;grid-template-columns:8px 1fr auto;align-items:center;gap:7px;padding:6px 7px;border:1px solid rgba(236,230,218,.08);background:rgba(4,6,11,.35);color:var(--bone);font:400 10.5px/1.25 var(--sans);text-align:left;cursor:pointer;transition:border-color .3s,background .3s,transform .35s var(--ease)}
@@ -541,6 +564,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
   body[data-mode=dna] .events{max-width:calc(50vw - var(--gut) - 8px)}
   body[data-mode=dna] .event{font-size:9px;letter-spacing:.06em}
   body[data-mode=dna] #ledeDna{max-width:calc(50vw - var(--gut) - 10px);font-size:12.5px}
+  body.rtl[data-mode=dna] #ledeDna{justify-self:start}   /* (in the left half, as in every language: the kinetics panel holds the right) */
   body[data-mode=dna] .inspector{left:var(--gut);right:var(--gut);bottom:calc(var(--gut) + 64px + env(safe-area-inset-bottom,0px))}
   .place{font-size:21px}
   .stats{margin-top:10px}
@@ -593,7 +617,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
 }
 </style>
 
-<canvas id="gl" tabindex="-1" aria-label="Interactive 3D scene: satellites around Earth, then, one chapter at a time, a brain; both amygdalae light up and are lifted out into a tube, their nuclei sorted, one neuron and its chromosomes shown, its DNA sequenced in one well of a chip, then a 3D Manhattan plot of Alzheimer's disease, a DNA double helix and a map of DNA repair genes"></canvas>
+<canvas id="gl" tabindex="-1" aria-label="Interactive 3D scene: from the Laniakea supercluster and the Milky Way down to Earth, which shrinks into the nucleus of a neuron; then the brain and its seven resting-state networks; both amygdalae light up and are lifted out into a tube, their nuclei sorted by laser; one nucleus and its DNA, read in one well of a SMRT Cell, whose wells rise into the Empire State Building; then a 3D Manhattan plot of Alzheimer's disease, a DNA double helix with its lesions and a map of DNA repair genes"></canvas>
 <div id="labels" aria-hidden="true"></div>
 <button class="gswap" id="gSwap" type="button" tabindex="-1" aria-label="Switch to Uffelmann et al. 2026"><b id="gsName">EADB et al.</b><span class="gs-y">2026</span></button>
 <div id="netLabels"></div>
@@ -854,6 +878,7 @@ body.rtl .plabel small{margin:0 6px 0 0}
 
 <div id="loader" role="status">
   <div class="ld-txt" id="ldTxt">Loading…</div>
+  <noscript><style>#ldTxt{display:none}</style><div class="ld-txt" style="animation:none">This interactive 3D story needs JavaScript.</div></noscript>
 </div>
 
 <aside class="consent" id="consent" role="dialog" aria-labelledby="csT" aria-describedby="csD" hidden>
@@ -882,7 +907,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MarchingCubes } from 'three/addons/objects/MarchingCubes.js';
 
-// ---------------------------------------------------------------- languages: English (the source), Dutch, Persian
+// ---------------------------------------------------------------- languages: English (the source), Dutch, Persian and Greek
 // i18n/<lang>.json maps English text (whitespace collapsed) to its translation; names, genes, papers and numbers stay as they are.
 const LANGS = ['en', 'nl', 'fa', 'el'];
 const LANG = (() => { try { const q = new URLSearchParams(location.search).get('lang'); if (LANGS.includes(q)) return q;
@@ -928,8 +953,9 @@ if (LANG === 'el') document.body.classList.add('el');
 translateDom();
 document.title = t_(document.title);
 // the picker shows the language in use; tapping it opens the others, and a tap anywhere else closes them
-{ const nav = document.getElementById('langs');
-  document.addEventListener('pointerdown', e => { if (!nav.contains(e.target)) nav.classList.remove('open'); }); }
+{ const nav = document.getElementById('langs'), shut = () => { nav.classList.remove('open'); nav.querySelector('[aria-pressed="true"]')?.setAttribute('aria-expanded', 'false'); };
+  document.addEventListener('pointerdown', e => { if (!nav.contains(e.target)) shut(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.classList.contains('open')) shut(); }); }
 for (const b of document.querySelectorAll('#langs [data-lang]')){
   b.setAttribute('aria-pressed', b.dataset.lang === LANG);
   b.addEventListener('click', () => {
@@ -961,7 +987,7 @@ const smrtPan = () => smooth(clamp(smrtCam.on/.7, 0, 1));   // (the SMRT view's 
 const tick = () => new Promise(r => setTimeout(r, 0));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-// ---------------------------------------------------------------- simulated clock: 20x real time from page load
+// ---------------------------------------------------------------- simulated clock: 30x real time from page load
 const SPEED = 30;
 const simT0 = Date.now(), perfT0 = performance.now();
 const simNow = () => simT0 + (performance.now() - perfT0) * SPEED;
@@ -1084,7 +1110,7 @@ async function loadBin(name){
   return u[0] === 0x1f && u[1] === 0x8b ? gunzip(u) : u;
 }
 const loadJSON = async name => JSON.parse(new TextDecoder().decode(await loadBin(name)));
-const BIN = { brain: loadBin('brain'), dna: loadBin('dna'), genes: loadJSON('genes'), gwas: loadJSON('gwas'), gwas2: loadJSON('gwas2') };   // fetched at once, in parallel; tle only if the live feeds fail
+const BIN = { brain: loadBin('brain'), dna: loadBin('dna'), genes: loadJSON('genes'), gwas: loadJSON('gwas'), gwas2: loadJSON('gwas2') };   // fetched at once, in parallel (data/tle.bin, an old satellite snapshot, is no longer used)
 async function fetchText(url, ms){
   const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
   try { const r = await fetch(url, { signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return await r.text(); }
@@ -1188,7 +1214,7 @@ composer.addPass(new OutputPass());
 const U = {
   uTime: { value: 0 }, uMorph: { value: 0 }, uDna: { value: 0 }, uGw: { value: 0 }, uGone: { value: 0 }, uBg: { value: 0 }, uPR: { value: renderer.getPixelRatio() }, uScale: { value: 800 },
   uSun: { value: new THREE.Vector3(1, 0, 0) }, uFocusId: { value: -1 }, uFocusAmt: { value: 0 },
-  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGAct: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uEsb: { value: new THREE.DataTexture(new Float32Array(4), 1, 1, THREE.RGBAFormat, THREE.FloatType) }, uEsbG: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
+  uCosV: { value: 0 }, uLayout: { value: 0 }, uGGrow: { value: 1 }, uGFlat: { value: 1 }, uGAct: { value: 0 }, uR0: { value: G_R0 }, uLx: { value: G_LX }, uGVis: { value: 0 }, uEsb: { value: Object.assign(new THREE.DataTexture(new Float32Array(4), 1, 1, THREE.RGBAFormat, THREE.FloatType), { needsUpdate: true }) }, uEsbG: { value: 0 }, uFocusU: { value: new THREE.Vector3(0, 0, 0) }
 };
 
 // ---------------------------------------------------------------- backdrop
@@ -2559,8 +2585,8 @@ function layoutType(){
   typeU.uCur.value = typeCount % typeCap;
   typeMask();
 }
-function typeMask(){                                 // dim the letters behind the header, clock, legend, inspector and rail
-  const els = [document.querySelector('.hud-tl'), document.querySelector('.hud-tr'), document.querySelector(`.hud-br .legend[data-ch="${mode === ST.ZMW ? ST.ZMW : ST.DNA}"]`), $('insp'), $('rail')];
+function typeMask(){                                 // dim the letters behind the header, clock, legend, inspector and language picker
+  const els = [document.querySelector('.hud-tl'), document.querySelector('.hud-tr'), document.querySelector(`.hud-br .legend[data-ch="${mode === ST.ZMW ? ST.ZMW : ST.DNA}"]`), $('insp'), $('langs')];
   els.forEach((el, k) => {
     const r = el?.getBoundingClientRect(), u = typeU.uM.value[k];
     if (!r || !r.width) u.set(0, 0, 0, 0);
@@ -2866,23 +2892,27 @@ flyGeo.setAttribute('aB', new THREE.BufferAttribute(new Float32Array(FLY_N*2), 2
 flyGeo.setAttribute('aG', new THREE.BufferAttribute(new Float32Array(FLY_N).fill(-1), 1));
 flyGeo.setAttribute('aT', new THREE.BufferAttribute(new Float32Array(FLY_N).fill(-99), 1));
 const flyPts = new THREE.Points(flyGeo, new THREE.ShaderMaterial({
-  uniforms: { uTex: typeU.uTex, uTime: U.uTime, uPR: U.uPR, uSize: typeU.uSize, uOn: typeU.uOn, uBA: typeU.uBA, uBC: typeU.uBC, uBG: typeU.uBG, uBT: typeU.uBT, uZap: typeU.uZap },
-  vertexShader: `attribute vec2 aB; attribute float aG, aT; uniform float uTime, uPR, uSize; varying float vG, vK;
+  uniforms: { uTex: typeU.uTex, uTime: U.uTime, uPR: U.uPR, uSize: typeU.uSize, uOn: typeU.uOn, uRes: typeU.uRes, uM: typeU.uM, uBA: typeU.uBA, uBC: typeU.uBC, uBG: typeU.uBG, uBT: typeU.uBT, uZap: typeU.uZap },
+  vertexShader: `attribute vec2 aB; attribute float aG, aT; uniform float uTime, uPR, uSize; uniform vec2 uRes; uniform vec4 uM[5]; varying float vG, vK, vMask;
+    float inR(vec4 r, vec2 p){ return step(r.x, p.x)*step(p.x, r.z)*step(r.y, p.y)*step(p.y, r.w); }
     void main(){
       float k = (uTime - aT)/${FLY_T.toFixed(2)}; vG = aG; vK = k;
       if (aG < -.5 || k < 0. || k > 1.){ gl_Position = vec4(2., 2., 0., 1.); gl_PointSize = 0.; return; }
       float e = 1. - pow(clamp(1. - k, 0., 1.), 2.4);                                   // out of the enzyme fast, easing into its place
       vec2 a = position.xy, b = aB, m = .5*(a + b) + vec2(sin(aT*5.3)*.12, .18 + .1*sin(aT*7.1));
-      gl_Position = vec4(mix(mix(a, m, e), mix(m, b, e), e), 0., 1.);
+      vec2 P = mix(mix(a, m, e), mix(m, b, e), e), px = vec2((P.x*.5 + .5)*uRes.x, (.5 - P.y*.5)*uRes.y);
+      float q = 0.; for (int j = 0; j < 5; j++) q = max(q, inR(uM[j], px));
+      vMask = 1. - .8*q;                                                               // (as quiet as the typed letters, over the text)
+      gl_Position = vec4(P, 0., 1.);
       gl_PointSize = mix(max(uSize*1.8, 30.), uSize, e)*uPR;
     }`,
-  fragmentShader: `uniform sampler2D uTex; uniform vec3 uBA, uBC, uBG, uBT, uZap; uniform float uOn; varying float vG, vK;
+  fragmentShader: `uniform sampler2D uTex; uniform vec3 uBA, uBC, uBG, uBT, uZap; uniform float uOn; varying float vG, vK, vMask;
     void main(){
       vec2 pc = gl_PointCoord; float g = mod(vG, 4.), les = step(3.5, vG);
       float t = texture2D(uTex, vec2((g + pc.x)/4., 1. - pc.y)).a;
       vec3 c = g < .5 ? uBA : g < 1.5 ? uBC : g < 2.5 ? uBG : uBT;
       c = mix(mix(c, uZap, les*.85), vec3(1.), .35*(1. - vK));
-      gl_FragColor = vec4(c, t*smoothstep(0., .07, vK)*(.95 - .1*vK)*uOn);
+      gl_FragColor = vec4(c, t*smoothstep(0., .07, vK)*(.95 - .1*vK)*uOn*vMask);
     }`,
   transparent: true, depthTest: false, depthWrite: false, blending: THREE.AdditiveBlending
 }));
@@ -2930,7 +2960,7 @@ const stepChapter = d => goChapter(SCR.hold ? (d > 0 ? Math.floor(S + 1e-3) + 1 
 let navSettle = 0;                                               // the camera keeps easing into a chapter for this long, or until it arrives
 const azFor = k => k === ST.ORBIT ? (v => Math.atan2(v.x, v.z))(orbitDir()) : k === ST.SORT ? az.sort : k === ST.CELL ? az.neu : k === ST.CHROM ? az.chr : k === ST.ZMW ? az.smrt : k === ST.NET ? az.net : null;
 for (const ev of ['pointerdown', 'touchstart', 'wheel']) canvas.addEventListener(ev, () => { if (!nav.busy) navSettle = 0; }, { passive: true });   // a hand on the scene takes over
-const setHint = m => { $('cueH').textContent = m === ST.NET ? (COARSE ? 'Drag to pan · pinch to zoom · tap a name to read it' : 'Drag to pan · pinch or ⌘-scroll to zoom')
+const setHint = m => { $('cueH').textContent = m === ST.NET ? (COARSE ? 'Drag to pan · pinch to zoom · tap a name to read it' : 'Scroll, pinch or double-click to zoom · drag to pan')
   : COARSE ? 'Drag to turn · pinch to zoom · two fingers to pan' : 'Drag to turn · scroll to zoom · right-drag to pan'; };
 setHint(0);
 function navStage(tNow){
@@ -3000,6 +3030,8 @@ addEventListener('keydown', e => {
     if (k === '-' || k === '_'){ netZoomBy(1/1.7); return; }
     if (k === '0'){ netFit(); return; }
   }
+  if ((k === 'ArrowRight' || k === 'ArrowLeft') && focusK >= 0 && settledStage() === ST.GWAS){   // (a locus in focus: the arrows step through the loci, as the repair map's step through its genes)
+    const n = G.loci.length; focusLocus((focusK + (k === 'ArrowRight' ? 1 : -1) + n) % n); e.preventDefault(); return; }
   if (nav.to === FIRST && !nav.busy && (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp')){ COS.manual = true; COS.za = 0; e.preventDefault(); return; }   // (back out to Laniakea)
   if (nav.to === FIRST && !nav.busy && COS.za < .99 && (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ')){ COS.manual = true; COS.za = 1; e.preventDefault(); return; }
   if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || (k === ' ' && !e.target.closest?.('button'))){ stepChapter(1); e.preventDefault(); }
@@ -3081,7 +3113,7 @@ const pointer = { x: 0, y: 0, inside: false, moved: false, downX: 0, downY: 0, d
 let hovered = null, pinned = null, inspKey = '', inspAt = 0, inspRect = null, inspAnimT = 0;
 const pv = new THREE.Matrix4();
 const settledStage = () => { const r = Math.round(Sd); return Math.abs(Sd - r) < .003 ? r : -9; };
-const KINDS = ['sat', '', 'brain', '', '', '', '', '', 'gwas', 'dna', 'gene'];     // what can be picked in each chapter (nothing in III, or V to IX)
+const KINDS = ['', '', 'brain', '', '', '', '', '', 'gwas', 'dna', 'gene'];     // what can be picked in each chapter (nothing in I to III, or V to IX)
 const kindOk = (item, st) => st === ST.NET ? item.kind === 'gene' || item.kind === 'planet' : !!KINDS[st] && item.kind === KINDS[st];
 function worldOf(item){
   if (!item) return null;
@@ -3114,7 +3146,7 @@ function pick(){
       if (disc > 0 && -b - Math.sqrt(disc) > 0 && -b - Math.sqrt(disc) < L) continue;   // behind the Earth
       bd = d2; best = { kind: 'sat', i };
     }
-  } else if (st === 1){
+  } else if (st === ST.BRAIN){
     // template vertices and cerebellum/brainstem points only, facing the camera
     const m = brainGroup.matrixWorld.elements, { P, N, T: TT, NET, nv, cortex, total } = brain;
     const fid = focusAmt > .5 && ((focusId >= 10 && focusId < 20) || focusId > 40) ? focusId : -1;
@@ -3461,10 +3493,8 @@ $('exQ').addEventListener('input', e => {
   }));
 });
 $('exQ').addEventListener('keydown', e => { if (e.key === 'Enter'){ const b = $('exHits').querySelector('button'); if (b) b.click(); } if (e.key === 'Escape') $('exHits').innerHTML = ''; });
-addEventListener('keydown', e => {
+addEventListener('keydown', e => {   // (the arrows, with a locus in focus, are among the chapter keys)
   if (settledStage() !== ST.GWAS || e.target.closest?.('input')) return;
-  const n = G.loci.length;
-  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); const cur = focusK < 0 ? (e.key === 'ArrowRight' ? -1 : 0) : focusK; focusLocus((cur + (e.key === 'ArrowRight' ? 1 : -1) + n) % n); }
   if (e.key === 'Escape'){ pinned = null; focusLocus(-1); }
 });
 
@@ -5161,7 +5191,6 @@ function cosmosFrame(dt, Sd){
     m.position.set(u.d*Math.cos(th), 0, u.d*Math.sin(th)).applyQuaternion(u.q); m.rotation.y = -th;
     m.material.uniforms.uOn.value = pu.uOn.value; m.material.uniforms.uSunW.value.copy(sunW); }
   COS.sun.visible = sunOn > .003; COS.sun.position.copy(pl.oS); COS.sun.scale.setScalar(.009*pl.sS); COS.sun.material.uniforms.uOn.value = sunOn*(1 - cosSm(2.7, 2.9, z))*plNear; COS.sun.material.uniforms.uSunW.value.copy(sunW).add(new THREE.Vector3(0, 1e3, 0));
-  // the Moon: set just off the line from the camera to the Earth, 60 Earth radii out (384,400 km), so the zoom carries it past the camera
   // the Moon: where it really is now (a low-precision lunar ephemeris), at its real distance from the Earth, its near side toward
   // the Earth and lit by the real Sun. The camera's approach is laid out round it (COS.fb), so the zoom carries it past the camera.
   { const mw = moonDirW(simNow()), D = mw.km/RE*pl.sE, eW = _tv[0].copy(pl.oE).applyQuaternion(Q), C = Math.max(1e-6, camera.position.distanceTo(eW));
@@ -5717,18 +5746,20 @@ function placeSortLabels(){
   }
 }
 // ---------------------------------------------------------------- loading your own summary statistics (parsed in the browser)
+// (the GWAS Catalog's older harmonised files keep the study's own coordinates in chromosome and base_pair_location, and the
+// harmonised GRCh38 ones in hm_*: those come first; its current files have no hm_ columns, and their own are already GRCh38)
 const ALIAS = {
-  c: ['chromosome', 'chr', 'chrom', '#chrom', 'hm_chrom', '#chr', 'chr_name'],
-  p: ['base_pair_location', 'pos', 'bp', 'position', 'hm_pos', 'genpos', 'base_pair'],
+  c: ['hm_chrom', 'chromosome', 'chr', 'chrom', '#chrom', '#chr', 'chr_name'],
+  p: ['hm_pos', 'base_pair_location', 'pos', 'bp', 'position', 'genpos', 'base_pair'],
   pv: ['p_value', 'p', 'pval', 'p-value', 'pvalue', 'p.value', 'p_bolt_lmm'],
   nl: ['neg_log_10_p_value', 'log10p', 'mlog10p', '-log10p', 'neglog10p'],
-  b: ['beta', 'b', 'effect', 'hm_beta', 'effect_size', 'logor'],
-  or: ['odds_ratio', 'or', 'hm_odds_ratio'],
+  b: ['hm_beta', 'beta', 'b', 'effect', 'effect_size', 'logor'],
+  or: ['hm_odds_ratio', 'odds_ratio', 'or'],
   se: ['standard_error', 'se', 'stderr', 'sebeta', 'se_beta'],
-  a1: ['effect_allele', 'a1', 'alt', 'hm_effect_allele', 'allele1', 'ea', 'tested_allele'],
-  a2: ['other_allele', 'a2', 'ref', 'hm_other_allele', 'allele2', 'nea', 'non_effect_allele'],
-  f: ['effect_allele_frequency', 'eaf', 'freq', 'frq', 'maf', 'a1freq', 'hm_effect_allele_frequency', 'af_alt', 'freq1'],
-  rs: ['rsid', 'variant_id', 'snp', 'rs_id', 'hm_rsid', 'markername', 'id', 'rs', 'snpid']
+  a1: ['hm_effect_allele', 'effect_allele', 'a1', 'alt', 'allele1', 'ea', 'tested_allele'],
+  a2: ['hm_other_allele', 'other_allele', 'a2', 'ref', 'allele2', 'nea', 'non_effect_allele'],
+  f: ['hm_effect_allele_frequency', 'effect_allele_frequency', 'eaf', 'freq', 'frq', 'maf', 'a1freq', 'af_alt', 'freq1'],
+  rs: ['hm_rsid', 'rsid', 'variant_id', 'snp', 'rs_id', 'markername', 'id', 'rs', 'snpid']
 };
 async function parseSumstats(file, build, onProg){
   const N = Math.min(NS, 20000);
@@ -5761,8 +5792,8 @@ async function parseSumstats(file, build, onProg){
       else { const pv = +f[idx.pv]; if (pv > 0) L = -Math.log10(pv);
         else if (pv === 0 && idx.b >= 0 && idx.se >= 0){ const z = Math.abs(+f[idx.b] / +f[idx.se]); L = (z*z/2 + Math.log(z*Math.sqrt(2*Math.PI)) - Math.log(2))/Math.LN10; } else continue; }
       if (!isFinite(L) || (hn === N && L <= hL[0])) continue;
-      const c = parseInt(String(f[idx.c]).replace(/^chr/i, ''), 10); if (!(c >= 1 && c <= 22)) continue;
-      const row = [c, +f[idx.p], f];
+      const c = parseInt(String(f[idx.c]).replace(/^chr/i, ''), 10), pos = +f[idx.p]; if (!(c >= 1 && c <= 22) || !(pos > 0)) continue;   // (and a position, or the row has no place on the genome)
+      const row = [c, pos, f];
       if (hn < N){ hL[hn] = L; hRow[hn] = row; up(hn++); } else { hL[0] = L; hRow[0] = row; down(0); }
     }
     const t = performance.now();
@@ -5903,7 +5934,7 @@ function renderVisitor(v){
   const ns = v.lat >= 0 ? 'N' : 'S', ew = v.lon >= 0 ? 'E' : 'W';
   scramble($('coords'), `${Math.abs(v.lat).toFixed(2)}° ${ns}   ${Math.abs(v.lon).toFixed(2)}° ${ew}`);
   $('how').textContent = v.via === 'maxmind' ? (v.acc ? tf('Located by MaxMind GeoIP2 from your IP address, within about {0} km.', v.acc) : t_('Located by MaxMind GeoIP2 from your IP address.'))
-    : v.via === 'ip' ? tf('Located from your IP address ({0}). MaxMind isn\'t enabled for this domain.', v.src)
+    : v.via === 'ip' ? tf('Located from your IP address ({0}).', v.src)
     : v.via === 'tz' ? `${tf('Approximate, from your time zone ({0}).', v.tz)} ${t_(geoConsent() === 'yes' ? "IP lookup isn't reachable from this page." : 'IP lookup is off.')}`
     : t_('Approximate, from your UTC offset.');
   $('youTag').textContent = v.city || 'You';
@@ -5993,6 +6024,7 @@ async function boot(){
 // (not the scatter plot's two gate names, which sit inside the plot; nor the amygdala's: it picks a corner clear of them itself, so it never blinks as the chapter's text slides in)
 const hudObs = [];
 setInterval(() => {
+  if (document.hidden) return;                       // (nothing to keep clear while the page is out of sight)
   const obs = [], all = hudObs; all.length = 0;
   for (const el of document.querySelectorAll('.hud-tl .mark, .hud-tl .tag, .hud-tl .plate, .lede p, .hud-tr, .legend, .explore, .dossier, .inspector:not(.idle), .step')){
     const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
@@ -6060,7 +6092,8 @@ renderer.setAnimationLoop(() => {
     if (mode === ST.DNA){ const E = dna.M.elements; rollUp([[$('eC'), E.C], [$('eN'), E.N], [$('eO'), E.O], [$('eP'), E.P], [$('eH'), E.H], [$('eDmg'), LES.length]]); readW = nextLesionBp(readW) - 30; readHold = 0; kinReset(); typeMask(); }
     if (mode !== ST.DNA) $('dmgEv').classList.remove('on');
     if (mode === ST.GWAS) rollUp([[$('gSig'), G.nSig], [$('gFm'), G.nFm], [$('gSub'), G.N - G.nSig]]);
-    if (mode !== ST.GWAS && focusK >= 0){ focusK = -1; GU.uGFocus.value = -1; }
+    if (mode !== ST.GWAS && focusK >= 0){ focusK = -1; GU.uGFocus.value = -1; U.uFocusU.value.set(0, 0, 0);   // (and its chromosome, list entry and label let go of it)
+      $('exList').querySelectorAll('.lc.on').forEach(b => b.classList.remove('on')); gLabels.forEach(g => g.el.classList.remove('on')); }
     if (mode === ST.ZMW) typeMask();
     if (mode !== ST.NET && NET) netReset();
     setHint(mode);
@@ -6073,7 +6106,7 @@ renderer.setAnimationLoop(() => {
     $('stNum').textContent = nav.to < 0 ? 'I' : ROMAN9[nav.to]; $('cueB').textContent = AUTO.on ? 'Playing' : nav.to >= LAST ? 'Again' : 'Next'; $('cueS').textContent = BAR ? CHN[nav.to >= LAST ? 0 : nav.to + 2] : NEXT[nav.to];
     if (BAR && !AUTO.on){ const r = $('stepRow'); r.classList.remove('hint'); void r.offsetWidth; r.classList.add('hint'); }   // (the arrows run along the bar again: it can be slid)
     $('stPrev').disabled = false; $('stNext').setAttribute('aria-label', `${t_(nav.to >= LAST ? 'Start again' : 'Next chapter')}: ${NEXT[nav.to]}`);
-    $('stNext').classList.toggle('first', !nav.used);
+    $('stNext').classList.toggle('first', !nav.used); $('stepRow').classList.toggle('first', !nav.used);
   }
   { const f = SCR.on ? S - Math.floor(S + 1e-4) : 0; $('stepRow').style.setProperty('--f', (f < 1e-3 ? 0 : f).toFixed(3)); }   // (the trail on the bar: how far into the next chapter)
   autoFrame(dt);
