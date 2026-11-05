@@ -14,6 +14,7 @@ The page and its code are in `index.html` (~660 KB). Large assets live beside it
 
 - `<style>` at the top holds the design tokens on `:root`. The palette includes `--void`, `--bone`, network colours `--net1..7`, base colours `--base-a/c/g/t`, and element colours `--el-*`. The site is dark-only.
 - `window.NOOS_DATA` (one long line near the import map) keeps only the small inline data: the `net` and `land` datasets, their metadata, and the time-zone table.
+- `NOOS_DATA.net` is the DNA repair compendium: gzipped, base64-encoded compact JSON with `pathways` (name, class, gene groups, text), `genes` (symbol, pathways `p`, notes `n` as `[pathway, html]`, placement or therapeutic note `x`), `edges`, `prim` (each gene's planet), `neuro` and `modif`. Every text in it is also a dictionary key, and a statement wrapped in `<span class="rev">` is marked "revised 2026" in the dossier. To change it, decode, edit, re-encode (gzip, base64) and update the three dictionaries. The plain-language pathway summaries are `PW_SUM` in the scene code.
 - The import map, which pins `three@0.170.0` from jsDelivr.
 - After it comes the main `<script type="module">` with all scene code.
 - Long lines still hold `NOOS_DATA` and the amygdala voxel data `AMY_VOX` (~22 KB).
