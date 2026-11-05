@@ -2626,20 +2626,23 @@ function kinPulse(b, t0, les){                            // base b's pulse star
   return pw;
 }
 const kinN = t => { const i = Math.floor(t), f = t - i, h = k => { const x = Math.sin(k*127.1 + 311.7)*43758.5453; return x - Math.floor(x); }; return lerp(h(i), h(i + 1), f*f*(3 - 2*f))*2 - 1; };
-const sm01 = x => { x = clamp(x, 0, 1); return x*x*(3 - 2*x); };
 function kinDraw(vis){
   if (vis < .01) return;
-  const cv = KIN.cv || (KIN.cv = $('kinCv')), w = cv.clientWidth, h = cv.clientHeight; if (!w || !h) return;
+  const cv = KIN.cv || (KIN.cv = $('kinCv')), w = cv.clientWidth, h = cv.clientHeight; if (w < 60 || h < 30) return;
   const dpr = Math.min(2, devicePixelRatio || 1), W = Math.round(w*dpr), H = Math.round(h*dpr);
   if (cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; }
   const g = KIN.g || (KIN.g = cv.getContext('2d')); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-  const L = 15, R = 4, top = 17, y0 = h - 15, now = KIN.t, t0 = now - KIN_WIN, X = t => L + (t - t0)/KIN_WIN*(w - L - R), hy = y0 - top - 12;
-  KIN.gapT = 8/(w - L - R)*KIN_WIN;                        // (the time a letter needs to itself)
+  const L = 15, R = 4, top = 17, y0 = h - 15, now = KIN.t, span = w - L - R, hy = y0 - top - 12;
+  // the time in view: close enough in to read each pulse's shape, and out to take in a stall at a lesion, and a moment after it
+  const lesT = KIN.ev.reduce((m, e) => e.les ? Math.max(m, e.t0) : m, -99), want = KIN.pend || now - lesT < .8 ? KIN_WIN : clamp(span/270, .7, 1.2);
+  const dtw = clamp(now - (KIN.wt ?? now), 0, .1); KIN.wt = now; KIN.win = KIN.win ? KIN.win + (want - KIN.win)*Math.min(1, dtw*3) : want;
+  const win = KIN.win, t0 = now - win, X = t => L + (t - t0)/win*span;
+  KIN.gapT = 8/span*win;                                   // (the time a letter needs to itself)
   const font = s => `600 ${s}px 'Univia Pro','univia-pro','Exo 2',sans-serif`;
   g.lineWidth = 1; g.strokeStyle = 'rgba(236,230,218,.16)'; g.beginPath(); g.moveTo(L, y0 + .5); g.lineTo(w - R, y0 + .5); g.moveTo(L - .5, top - 6); g.lineTo(L - .5, y0 + .5); g.stroke();
   g.fillStyle = 'rgba(140,149,168,.9)'; g.font = font(8);
   for (let s = Math.ceil(t0/.25)*.25; s <= now; s += .25) g.fillRect(X(s) - .5, y0 + 1, 1, 3);     // a tick every real second
-  g.textBaseline = 'alphabetic'; g.textAlign = 'right'; g.fillText(t_('NOW'), w - R, h - 2); g.textAlign = 'left'; g.fillText(`−${Math.round(KIN_WIN*KIN_X)} S`, L + 2, h - 2); g.textAlign = 'center'; g.fillText(t_('TIME'), (L + w - R)/2, h - 2);
+  g.textBaseline = 'alphabetic'; g.textAlign = 'right'; g.fillText(t_('NOW'), w - R, h - 2); g.textAlign = 'left'; g.fillText(`−${Math.round(win*KIN_X)} S`, L + 2, h - 2); g.textAlign = 'center'; g.fillText(t_('TIME'), (L + w - R)/2, h - 2);
   g.save(); g.translate(8, (top + y0)/2); g.rotate(-Math.PI/2); g.textAlign = 'center'; g.fillText(t_('INTENSITY'), 0, 0); g.restore();
   // the long waits at lesions: a band over the gap, and its IPD beside the bracket; a stall still going on grows at the right edge
   const gaps = KIN.ev.filter(e => e.les).map(e => [e.t0 - e.ipd, e.t0, e.x, false]);
@@ -2652,22 +2655,30 @@ function kinDraw(vis){
     g.font = font(8); const tw = g.measureText(txt).width;
     if (xb - xa > tw + 6){ g.fillStyle = '#A9CBFF'; g.textAlign = 'center'; g.fillText(txt, (xa + xb)/2, top + 12); }   // (under the bracket that spans the delay)
   }
-  // the baseline: the well's background, a little noisy
-  g.strokeStyle = 'rgba(200,208,224,.42)'; g.lineWidth = 1; g.beginPath();
-  for (let x = L; x <= w - R; x += 1.5){ const t = t0 + (x - L)/(w - L - R)*KIN_WIN, y = y0 - 3 - 1.6*kinN(t*260) - .8*kinN(t*47 + 9); x === L ? g.moveTo(x, y) : g.lineTo(x, y); }
-  g.stroke();
-  // the pulses, one per base, in its dye's colour; the letter above
-  g.textAlign = 'center'; g.font = font(8.5);
+  // the four dye channels, overlaid as the camera records them: each a faint noisy baseline (labelled nucleotides diffusing through
+  // the light above the floor), and for every base added one pulse in its own channel: up within a frame as the nucleotide is held,
+  // a plateau as long as it is held (the PW) flickering frame by frame with photon noise, and down within a frame as its dye is cut
+  // away. The dark stretches between the pulses are the IPDs.
+  const FR = .01/KIN_X, px = win/span, ramp = Math.max(FR, 1.5*px), CH = 'ACGT';   // (FR: one 10 ms camera frame, on this clock)
+  const hz = k => { const x = Math.sin(k*91.37 + 17.1)*43758.5453; return x - Math.floor(x); };
+  const baseY = (c, t) => y0 - 3 - 1.2*kinN(t*260 + c*37.3) - .6*kinN(t*47 + 9 + c*13.1);
+  g.save(); g.beginPath(); g.rect(L, 0, span, h); g.clip();
+  g.lineWidth = 1;
+  for (let c = 0; c < 4; c++){ g.strokeStyle = KIN_HEX[CH[c]] + '4D'; g.beginPath();
+    for (let x = L; x <= w - R; x += 1.5){ const y = baseY(c, t0 + (x - L)*px); x === L ? g.moveTo(x, y) : g.lineTo(x, y); }
+    g.stroke(); }
+  g.textAlign = 'center'; g.font = font(8.5); g.lineJoin = 'miter';
   for (const e of KIN.ev){
-    const a = e.t0, b = Math.min(now, e.t0 + e.pw); if (b < t0 || a > now) continue;
-    const xa = X(Math.max(a, t0)), xb = X(b), c = KIN_HEX[e.base], Hh = e.amp*hy, n = Math.max(3, Math.ceil((xb - xa)/1.2));
-    g.beginPath(); g.moveTo(xa, y0 - 3);
-    for (let i = 0; i <= n; i++){ const t = Math.max(a, t0) + (b - Math.max(a, t0))*i/n, u = (t - e.t0)/e.pw, env = sm01(u/.025)*sm01((1 - u)/.025);
-      g.lineTo(X(t), y0 - 3 - env*Hh*(1 + .02*kinN(t*300 + e.b))); }
-    g.lineTo(xb, y0 - 3);
-    g.fillStyle = c + '5C'; g.fill(); g.strokeStyle = c; g.lineWidth = 1.25; g.lineJoin = 'miter'; g.stroke();
-    if (e.lab){ g.fillStyle = c; g.fillText(e.base, X(e.t0 + e.pw*.5), y0 - 3 - Hh - 3); }
+    const a = e.t0, end = e.t0 + e.pw, b = Math.min(now, end); if (b < t0 || a > now) continue;
+    const c = CH.indexOf(e.base), col = KIN_HEX[e.base], Hh = e.amp*hy, r = Math.min(ramp, e.pw/2);
+    const lev = t => baseY(c, t) - clamp(Math.min(t - a, end - t)/r, 0, 1)*Hh*(1 + .06*(2*hz(Math.floor(t/FR) + e.b*7.7) - 1));
+    g.beginPath(); g.moveTo(X(a), baseY(c, a));
+    for (let t = Math.min(a + r, b); ; t = Math.min(t + px, b)){ g.lineTo(X(t), lev(t)); if (t >= b || t >= end - r) break; }   // up, then along the plateau
+    if (b >= end - r){ g.lineTo(X(end - r), lev(end - r)); g.lineTo(X(b), baseY(c, b)); } else g.lineTo(X(b), baseY(c, b));   // and down (a pulse still being held runs into the right edge)
+    g.fillStyle = col + '5C'; g.fill(); g.strokeStyle = col; g.lineWidth = 1.25; g.stroke();
+    if (e.lab){ g.fillStyle = col; g.fillText(e.base, X(a + e.pw*.5), baseY(c, a) - Hh*1.06 - 3); }
   }
+  g.restore();
   // the readout: the last base's IPD and PW, a few times a second
   if (now - KIN.readAt > .22 || now < KIN.readAt){ KIN.readAt = now; const e = KIN.last, el = $('kinRead');
     if (!e) el.innerHTML = '&nbsp;';
