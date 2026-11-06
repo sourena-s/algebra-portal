@@ -1126,7 +1126,7 @@ async function maxmind(){
     window.geoip2[MAXMIND.service](v => { clearTimeout(t); res(v); }, e => { clearTimeout(t); rej(e); }); });
   const L = r.location || {};
   if (!isFinite(L.latitude)) throw new Error('no location');
-  return { lat: L.latitude, lon: L.longitude, acc: L.accuracy_radius, city: r.city?.names?.en || r.subdivisions?.[0]?.names?.en || '', country: r.country?.names?.en || '', via: 'maxmind' };
+  return { lat: L.latitude, lon: L.longitude, acc: L.accuracy_radius, city: r.city?.names?.en || r.subdivisions?.[0]?.names?.en || '', country: r.country?.names?.en || '', cc: r.country?.iso_code, via: 'maxmind' };
 }
 // IP lookups only with the visitor's consent (the privacy notice); otherwise the time zone places them
 const CONSENT_KEY = 'algebra-geo';
@@ -1135,9 +1135,9 @@ async function locate(useIP = geoConsent() === 'yes'){
   if (useIP) {
   try { return await maxmind(); } catch (e) {}
   const apis = [
-    ['https://ipwho.is/', j => j.success !== false && { lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country }],
-    ['https://get.geojs.io/v1/ip/geo.json', j => ({ lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country })],
-    ['https://ipapi.co/json/', j => !j.error && { lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country_name }]
+    ['https://ipwho.is/', j => j.success !== false && { lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country, cc: j.country_code }],
+    ['https://get.geojs.io/v1/ip/geo.json', j => ({ lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country, cc: j.country_code })],
+    ['https://ipapi.co/json/', j => !j.error && { lat: +j.latitude, lon: +j.longitude, city: j.city, country: j.country_name, cc: j.country_code }]
   ];
   for (const [url, pick] of apis){
     try { const r = pick(JSON.parse(await fetchText(url, 3500))); if (r && isFinite(r.lat) && isFinite(r.lon) && (r.lat || r.lon)) return { ...r, via: 'ip', src: new URL(url).hostname }; } catch (e) {}
@@ -1146,7 +1146,7 @@ async function locate(useIP = geoConsent() === 'yes'){
   let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
   const key = D.tz[tz] ? tz : TZ_ALIAS[tz];
   const row = key && D.tz[key];
-  if (row) return { lat: row[0], lon: row[1], city: key.split('/').pop().replace(/_/g, ' '), country: regionName(row[2]), via: 'tz', tz };
+  if (row) return { lat: row[0], lon: row[1], city: key.split('/').pop().replace(/_/g, ' '), country: regionName(row[2]), cc: row[2], via: 'tz', tz };
   const off = -new Date().getTimezoneOffset() / 60;
   return { lat: 20, lon: clamp(off * 15, -180, 180), city: 'Your time zone', country: '', via: 'offset' };
 }
@@ -3302,7 +3302,9 @@ canvas.addEventListener('pointerdown', e => { pointer.downX = e.clientX; pointer
 canvas.addEventListener('pointerup', e => {
   if (Math.hypot(e.clientX - pointer.downX, e.clientY - pointer.downY) > 6 || performance.now() - pointer.downT > 600) return;
   if (performance.now() - nvMultiT < 450) return;                  // the end of a pinch is not a tap
-  if (moonTap(e.clientX, e.clientY)) return;                          // (a moon in the Solar System: its card)
+  if (planetTap(e.clientX, e.clientY, true)) return;                  // (a planet in the Solar System: fly to it and its moons)
+  if (moonTap(e.clientX, e.clientY)) return;                          // (then one of its moons: its card)
+  if (planetTap(e.clientX, e.clientY)) return;                        // (empty space: back out)
   pointer.x = e.clientX; pointer.y = e.clientY; pointer.inside = true; pick();
   if (hovered && (hovered.kind === 'gene' || hovered.kind === 'planet')) netClick(hovered);
   else if (hovered){ pinned = hovered; if (hovered.kind === 'gwas') focusLocus(G.k[hovered.i], { keepPin: true, vi: hovered.i }); }
@@ -5044,14 +5046,18 @@ function buildSolarSystem(){
   ring.rotation.x = -Math.PI/2 + .45; ring.renderOrder = -5; COS.planets[5].add(ring); COS.ring = ring;
   // the moons: each planet's system is a group at the planet, measured in its radius and tilted to its equator; each moon on its own
   // orbit (tilted about a line of nodes of its own). Moons that share an orbit share its phase.
-  COS.sys = []; COS.moons = [];
+  COS.sys = []; COS.moons = []; COS.orbs = [];
   for (const [k, name, a, r, P, inc, tx, ph, desc] of MOONS){
     let S = COS.sys[k]; if (!S){ S = COS.sys[k] = new THREE.Group(); S.rotation.x = SS_TILT[k]*DEG; S.visible = false; cosGroup.add(S); }
     const d = moonDist(a/SS_PR[k]), q = new THREE.Quaternion().setFromEuler(new THREE.Euler(inc*DEG, inc > 5 ? MOON_HASH(name + 'Ω')*TAU : 0, 0, 'YXZ'));
     const m = new THREE.Mesh(sph, lit([.6, .58, .55], [.76, .73, .68], 0, 0, tx ? tex(`assets/moons/${tx}.jpg`) : null)); m.scale.setScalar(Math.max(r/SS_PR[k], k === 5 ? .014 : .025)); m.renderOrder = -6;
     S.add(m);
-    m.userData = { k, name, a, r, P, inc, desc, tx, d, q, w: .6/Math.sqrt(P), ph: MOON_HASH('o' + Math.round(a/1000))*TAU + (ph || 0)*DEG };
+    m.userData = { k, name, a, r, P, inc, desc, tx, d, q, s0: m.scale.x, w: .6/Math.sqrt(P), ph: MOON_HASH('o' + Math.round(a/1000))*TAU + (ph || 0)*DEG };
     COS.moons.push(m);
+    // its orbit, drawn only while its planet is the one in focus (a tap on the planet)
+    const oP = []; for (let i = 0; i <= 128; i++){ const a = i/128*TAU; oP.push(new THREE.Vector3(d*Math.cos(a), 0, d*Math.sin(a)).applyQuaternion(q)); }
+    const o = new THREE.Line(new THREE.BufferGeometry().setFromPoints(oP), new THREE.LineBasicMaterial({ color: 0xece6da, transparent: true, opacity: 0, depthWrite: false }));
+    o.renderOrder = -7; o.visible = false; S.add(o); (COS.orbs[k] = COS.orbs[k] || []).push(o);
   }
   COS.sun = new THREE.Mesh(sph, lit([1., .78, .4], [1., .9, .6], 0, 1)); COS.sun.scale.setScalar(.009); COS.sun.renderOrder = -6; cosGroup.add(COS.sun);
   COS.moon = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), moonMaterial()); COS.moon.renderOrder = -6; cosGroup.add(COS.moon);
@@ -5142,7 +5148,7 @@ function cosmosFrame(dt, Sd){
   // back into the flight
   const freeWant = SCR.hold && here && z > 2.02 && z < 2.72;
   if (freeWant && !COS.free){ COS.free = true; COS.qF = Q.clone(); }
-  else if (!freeWant && COS.free){ COS.free = false; COS.qOff = COS.qF.clone().multiply(Q.clone().invert()); COS.qW = 1; }
+  else if (!freeWant && COS.free){ COS.free = false; planetFocus(-1, true); COS.qOff = COS.qF.clone().multiply(Q.clone().invert()); COS.qW = 1; }
   if (COS.free) Q.copy(COS.qF); else if (COS.qW > 0){ COS.qW = Math.max(0, COS.qW - dt/1.4); Q.premultiply(new THREE.Quaternion().slerp(COS.qOff, smooth(COS.qW))); }
   if (COS.free) controls.minDistance = 1e-3; else if (controls.minDistance < 1) controls.minDistance = Math.min(1, camera.position.distanceTo(controls.target));
   const Qi = _q[3].copy(Q).invert();
@@ -5172,7 +5178,7 @@ function cosmosFrame(dt, Sd){
     } }
   earth.updateMatrixWorld(true);
   $('cosLabels').style.display = 'none';
-  if (!here){ return; }
+  if (!here){ planetFocus(-1, true); return; }
   cosGroup.quaternion.copy(Q);
   const setP = (o, s, off, on) => { o.visible = on > .003; o.position.copy(off); o.scale.setScalar(s); o.material.uniforms.uS.value = s; o.material.uniforms.uOn.value = on; };
   // I. Laniakea, closing on one point of its river until nothing else is in view; the point is the Milky Way, and grows into it
@@ -5200,6 +5206,7 @@ function cosmosFrame(dt, Sd){
   for (const m of COS.moons){ const u = m.userData, pu = COS.planets[u.k].material.uniforms, th = u.ph + U.uTime.value*u.w;
     if (!COS.sys[u.k].visible) continue;
     m.position.set(u.d*Math.cos(th), 0, u.d*Math.sin(th)).applyQuaternion(u.q); m.rotation.y = -th;
+    m.scale.setScalar(u.s0*(1 + (u.k === COS.focK ? 2*(COS.focA || 0) : 0)));   // (its planet in focus, drawn larger so they can be seen going round)
     m.material.uniforms.uOn.value = pu.uOn.value; m.material.uniforms.uSunW.value.copy(sunW); }
   COS.sun.visible = sunOn > .003; COS.sun.position.copy(pl.oS); COS.sun.scale.setScalar(.009*pl.sS); COS.sun.material.uniforms.uOn.value = sunOn*(1 - cosSm(2.7, 2.9, z))*plNear; COS.sun.material.uniforms.uSunW.value.copy(sunW).add(new THREE.Vector3(0, 1e3, 0));
   // the Moon: where it really is now (a low-precision lunar ephemeris), at its real distance from the Earth, its near side toward
@@ -5217,6 +5224,53 @@ function cosmosFrame(dt, Sd){
     cosGroup.updateMatrixWorld(true); COS.moon.up.set(0, 1, 0).applyQuaternion(R); COS.moon.lookAt(eW);   // (the near side, the photographed face, toward the Earth)
     const MoU = COS.moon.material.uniforms; MoU.uOn.value = mOn; MoU.uR.value = .2727*pl.sE; MoU.uLightW.value.copy(U.uSun.value).applyQuaternion(R); }
   cosGroup.updateMatrixWorld(true);
+  planetFocusStep(dt);
+}
+
+// ---------------------------------------------------------------- a planet in focus: tap one while the view is paused in the Solar System
+// The camera flies to it and holds it in the middle of the view as it goes round the Sun, just far enough out for the orbits of all its
+// moons to fit; those orbits are drawn, and the moons go on round them. A tap on empty space flies back out to where the view was.
+const planetScreen = k => { const m = COS.planets[k], w = m.getWorldPosition(new THREE.Vector3()), dist = w.distanceTo(camera.position), p = w.clone().project(camera);
+  return { x: (p.x*.5 + .5)*innerWidth, y: (1 - (p.y*.5 + .5))*innerHeight, rad: m.scale.x/dist*innerHeight/2/Math.tan(camera.fov*DEG/2), on: p.z < 1 && m.visible && m.material.uniforms.uOn.value > .2 }; };
+function planetTap(x, y, first){
+  if (!COS.free || !COS.planets) return false;
+  let best = -1, bd = 1e9; COS.planets.forEach((m, k) => { if (!m) return; const s = planetScreen(k); if (!s.on) return; const d = Math.hypot(s.x - x, s.y - y); if (d < Math.max(22, s.rad + 10) && d < bd){ bd = d; best = k; } });
+  if (first) return best >= 0 && (!COS.foc || COS.foc.k !== best) ? (moonShow(null), planetFocus(best), true) : false;   // (a planet not yet in focus wins over its moons, too close to it to tell apart)
+  if (best < 0){ if (COS.foc && COS.foc.k >= 0){ planetFocus(-1); return true; } return false; }
+  if (!COS.foc || COS.foc.k !== best) planetFocus(best);
+  return true;
+}
+function planetFocus(k, now){
+  const F = COS.foc;
+  if (now){ if (F){ COS.foc = null; controls.enabled = true; } if (camera.near !== .05){ camera.near = .05; camera.updateProjectionMatrix(); } return; }
+  if (k < 0){ if (!F || F.k < 0) return; COS.foc = { k: -1, t: 0, home: F.home }; return; }   // (back out to the view before the first tap)
+  // how far out: the outermost of its moons' orbits, with the moon on it (or, with no moons, a few of its own radii)
+  let ext = 3.2; for (const m of COS.moons) if (m.userData.k === k) ext = Math.max(ext, m.userData.d + 3*m.userData.s0);
+  COS.foc = { k, t: 0, ext, home: F ? F.home : { tgt: controls.target.clone(), pos: camera.position.clone() } }; COS.focK = k;
+}
+function planetFocusStep(dt){
+  const F = COS.foc; COS.focA = (COS.focA || 0) + ((F && F.k >= 0 ? 1 : 0) - (COS.focA || 0))*Math.min(1, dt*2.5);
+  COS.orbs.forEach((L, k) => { if (!L) return; const on = k === COS.focK ? COS.focA*COS.planets[k].material.uniforms.uOn.value*.3 : 0; for (const o of L){ o.visible = on > .003; o.material.opacity = on; } });
+  let near = .05;
+  if (F){
+    let P, D;
+    if (F.k >= 0){ const pm = COS.planets[F.k], a = camera.aspect, h = Math.atan(Math.tan(camera.fov*DEG/2)*Math.min(1, a));   // (the narrower of the two half-angles of the view)
+      P = pm.getWorldPosition(_tv[0]); D = pm.scale.x*F.ext/Math.sin(h)*1.3; }
+    else { P = _tv[0].copy(F.home.tgt); D = F.home.pos.distanceTo(F.home.tgt); }
+    if (F.t < 1){
+      if (!F.p0){ F.p0 = controls.target.clone(); F.d0 = Math.max(1e-6, camera.position.distanceTo(controls.target)); F.dir = camera.position.clone().sub(controls.target).normalize();
+        if (F.k < 0) F.dir2 = F.home.pos.clone().sub(F.home.tgt).normalize(); }
+      F.t = Math.min(1, F.t + dt/(RM ? .01 : 2.2)); const e = easeIO(F.t), eT = easeIO(Math.min(1, F.t*1.5));
+      controls.target.copy(F.p0).lerp(P, eT);
+      const dir = F.dir2 ? _tv[1].copy(F.dir).lerp(F.dir2, e).normalize() : F.dir;
+      camera.position.copy(controls.target).addScaledVector(dir, F.d0*Math.pow(D/F.d0, e));   // (the distance closes in proportion, not in a straight line)
+      controls.enabled = false;
+      if (F.t >= 1){ controls.enabled = true; if (F.k < 0){ COS.foc = null; } }
+    } else { const dv = _tv[1].copy(P).sub(F.prev); controls.target.add(dv); camera.position.add(dv); }   // (it goes round the Sun: the view goes with it)
+    if (COS.foc) F.prev = (F.prev || new THREE.Vector3()).copy(P);
+    near = Math.min(.05, Math.max(1e-6, D*.02));
+  }
+  if (Math.abs(camera.near - near) > 1e-9){ camera.near = near; camera.updateProjectionMatrix(); }
 }
 
 // ---------------------------------------------------------------- a moon's card: tap a moon in the Solar System to read about it
@@ -5941,14 +5995,16 @@ const stampFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'shor
 const simTicker = new Ticker($('simClock'), new Set([0, 1, 3, 4]));
 function renderSource(){ $('src').innerHTML = '&nbsp;'; }
 function renderVisitor(v){
-  $('place').textContent = [v.city, v.country].filter(Boolean).join(', ') || 'Somewhere on Earth';
+  // the country only (a city from an IP address or a time zone is often not the visitor's own), named in the page's language
+  const land = (() => { if (/^[A-Z]{2}$/i.test(v.cc || '')) try { return new Intl.DisplayNames([LANG, 'en'], { type: 'region' }).of(v.cc.toUpperCase()); } catch (e) {} return v.country || ''; })();
+  $('place').textContent = land || t_('Somewhere on Earth');
   const ns = v.lat >= 0 ? 'N' : 'S', ew = v.lon >= 0 ? 'E' : 'W';
   scramble($('coords'), `${Math.abs(v.lat).toFixed(2)}° ${ns}   ${Math.abs(v.lon).toFixed(2)}° ${ew}`);
   $('how').textContent = v.via === 'maxmind' ? (v.acc ? tf('Located by MaxMind GeoIP2 from your IP address, within about {0} km.', v.acc) : t_('Located by MaxMind GeoIP2 from your IP address.'))
     : v.via === 'ip' ? tf('Located from your IP address ({0}).', v.src)
     : v.via === 'tz' ? `${tf('Approximate, from your time zone ({0}).', v.tz)} ${t_(geoConsent() === 'yes' ? "IP lookup isn't reachable from this page." : 'IP lookup is off.')}`
     : t_('Approximate, from your UTC offset.');
-  $('youTag').textContent = v.city || 'You';
+  $('youTag').textContent = land || t_('You');
 }
 // every few seconds a random one of the seven networks fires, from a random point inside it (the DMN half the time from its hub)
 let lastNet = 0;
